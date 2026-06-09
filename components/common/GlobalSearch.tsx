@@ -63,15 +63,34 @@ export const GlobalSearch: React.FC = () => {
             return;
         }
 
-        const lowerQuery = debouncedQuery.toLowerCase();
+        const lowerQuery = debouncedQuery.toLowerCase().trim();
         const normalizedQuery = removeAccents(lowerQuery);
-        const foundResults: SearchResult[] = [];
+        const queryWords = normalizedQuery.split(/\s+/).filter(Boolean);
+        const foundResults: (SearchResult & { _score: number })[] = [];
+
+        const getNameScore = (normalizedName: string) => {
+            const nameParts = normalizedName.split(/\s+/);
+            const lastName = nameParts[nameParts.length - 1] || '';
+
+            // Exact last-name (tên gọi) match — highest priority
+            if (queryWords.length === 1 && lastName === queryWords[0]) return 5;
+            // Last name starts with query
+            if (queryWords.length === 1 && lastName.startsWith(queryWords[0])) return 4;
+            // All query words match parts of the name
+            if (queryWords.every(w => normalizedName.includes(w))) return 3;
+            // Single word partial match anywhere in name
+            if (normalizedName.includes(normalizedQuery)) return 2;
+            return 0;
+        };
 
         // Search Students
         state.students.forEach(s => {
             const normalizedName = removeAccents(s.name.toLowerCase());
-            if (normalizedName.includes(normalizedQuery) || s.phone.includes(debouncedQuery) || s.id.toLowerCase().includes(lowerQuery)) {
-                // Find enrolled classes
+            const phoneMatch = (s.phone || '').includes(debouncedQuery.trim());
+            const idMatch = s.id.toLowerCase().includes(lowerQuery);
+            const nameScore = getNameScore(normalizedName);
+
+            if (nameScore > 0 || phoneMatch || idMatch) {
                 const enrolledClassNames = state.classes
                     .filter(c => c.studentIds.includes(s.id))
                     .map(c => c.name)
@@ -81,12 +100,15 @@ export const GlobalSearch: React.FC = () => {
                     ? `Lớp: ${enrolledClassNames}` 
                     : `Phụ huynh: ${s.parentName}`;
 
+                const score = phoneMatch ? 6 : idMatch ? 1 : nameScore;
+
                 foundResults.push({ 
                     id: s.id, 
                     name: s.name, 
                     type: 'student', 
                     path: `/student/${s.id}`, 
-                    context: contextInfo 
+                    context: contextInfo,
+                    _score: score
                 });
             }
         });
@@ -95,24 +117,42 @@ export const GlobalSearch: React.FC = () => {
         state.teachers.forEach(t => {
             const normalizedName = removeAccents(t.name.toLowerCase());
             const normalizedSubject = removeAccents(t.subject.toLowerCase());
-            if (normalizedName.includes(normalizedQuery) || normalizedSubject.includes(normalizedQuery)) {
-                foundResults.push({ id: t.id, name: t.name, type: 'teacher', path: `/teacher/${t.id}`, context: `Môn: ${t.subject}` });
+            const nameScore = getNameScore(normalizedName);
+            const subjectMatch = queryWords.every(w => normalizedSubject.includes(w));
+
+            if (nameScore > 0 || subjectMatch) {
+                foundResults.push({ 
+                    id: t.id, name: t.name, type: 'teacher', 
+                    path: `/teacher/${t.id}`, context: `Môn: ${t.subject}`,
+                    _score: nameScore > 0 ? nameScore : 1
+                });
             }
         });
 
         // Search Classes
         state.classes.forEach(c => {
             const normalizedName = removeAccents(c.name.toLowerCase());
-            if (normalizedName.includes(normalizedQuery)) {
+            const classMatch = queryWords.every(w => normalizedName.includes(w));
+            if (classMatch) {
                 const teacherNames = (c.teacherIds || [])
                     .map(teacherId => state.teachers.find(t => t.id === teacherId)?.name)
                     .filter(name => !!name)
                     .join(', ');
-                foundResults.push({ id: c.id, name: c.name, type: 'class', path: `/class/${c.id}`, context: `GV: ${teacherNames || 'N/A'}` });
+                foundResults.push({ 
+                    id: c.id, name: c.name, type: 'class', 
+                    path: `/class/${c.id}`, context: `GV: ${teacherNames || 'N/A'}`,
+                    _score: 1
+                });
             }
         });
 
-        setResults(foundResults.slice(0, 10)); // Limit results
+        // Sort by score descending, then by name
+        foundResults.sort((a, b) => {
+            if (b._score !== a._score) return b._score - a._score;
+            return a.name.localeCompare(b.name, 'vi');
+        });
+
+        setResults(foundResults.slice(0, 15)); // Increased limit
         setActiveIndex(-1);
     }, [debouncedQuery, state.students, state.teachers, state.classes]);
     

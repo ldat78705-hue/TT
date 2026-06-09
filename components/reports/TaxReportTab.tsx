@@ -302,8 +302,8 @@ export const TaxReportTab: React.FC = () => {
                                 {' '}năm <span>{vnDate.getFullYear()}</span>
                             </p>
                             <p className="font-bold uppercase">NGƯỜI ĐẠI DIỆN HỘ KINH DOANH/<br/>CÁ NHÂN KINH DOANH</p>
-                            <p className="italic text-sm mb-4">(Ký, ghi rõ họ tên, đóng dấu (nếu có))</p>
-                            <div className="h-24 flex items-center justify-center mb-4">
+                            <p className="italic text-sm mb-2">(Ký, ghi rõ họ tên, đóng dấu (nếu có))</p>
+                            <div className="h-16 flex items-center justify-center mb-1">
                                 {settings.taxSignatureUrl && (
                                     <img src={settings.taxSignatureUrl} alt="Signature" className="max-h-full object-contain" />
                                 )}
