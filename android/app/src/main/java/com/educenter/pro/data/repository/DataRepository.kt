@@ -57,8 +57,19 @@ class DataRepository @Inject constructor(
                     newShards.add(ShardEntity(id = document.id, data = jsonStr))
                 }
             }
+            if (newShards.isNotEmpty()) {
+                shardDao.clearAll()
+                shardDao.insertShards(newShards)
+            }
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+        try {
+            val localShards = shardDao.getAllShards()
+            rebuildAppDataFromLocal(localShards)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            _appData.value = AppData()
         }
     }
 
