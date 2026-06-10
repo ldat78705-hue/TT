@@ -61,7 +61,7 @@ fun LoginScreen(
         if (uiState.error != null) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = uiState.error!!,
+                text = uiState.error ?: "",
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall
             )

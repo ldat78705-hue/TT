@@ -41,7 +41,7 @@ fun ClassesScreen(
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text(selectedClass!!.name) },
+                    title = { Text(selectedClass?.name ?: "") },
                     navigationIcon = {
                         IconButton(onClick = { viewModel.clearSelection() }) {
                             Icon(Icons.Default.ArrowBack, contentDescription = "Back")

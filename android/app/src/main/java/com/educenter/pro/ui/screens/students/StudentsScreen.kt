@@ -95,8 +95,10 @@ fun StudentsScreen(
                 student = selectedStudentForEdit,
                 onDismiss = { selectedStudentForEdit = null },
                 onSave = { name, phone, parentName ->
-                    val updated = selectedStudentForEdit!!.copy(name = name, phone = phone, parentName = parentName)
-                    viewModel.updateStudent(updated)
+                    selectedStudentForEdit?.let {
+                        val updated = it.copy(name = name, phone = phone, parentName = parentName)
+                        viewModel.updateStudent(updated)
+                    }
                     selectedStudentForEdit = null
                 }
             )
@@ -123,7 +125,9 @@ fun StudentsScreen(
                     Button(onClick = {
                         val amount = feeAmountText.toDoubleOrNull()
                         if (amount != null && amount > 0) {
-                            viewModel.collectFee(selectedStudentForFee!!.id, amount)
+                            selectedStudentForFee?.let {
+                                viewModel.collectFee(it.id, amount)
+                            }
                         }
                         selectedStudentForFee = null
                         feeAmountText = ""

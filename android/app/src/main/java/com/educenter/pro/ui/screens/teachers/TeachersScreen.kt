@@ -82,7 +82,9 @@ fun TeachersScreen(
                 teacher = selectedForEdit,
                 onDismiss = { selectedForEdit = null },
                 onSave = { n, p, s ->
-                    viewModel.updateTeacher(selectedForEdit!!.copy(name = n, phone = p, subject = s))
+                    selectedForEdit?.let {
+                        viewModel.updateTeacher(it.copy(name = n, phone = p, subject = s))
+                    }
                     selectedForEdit = null
                 }
             )
