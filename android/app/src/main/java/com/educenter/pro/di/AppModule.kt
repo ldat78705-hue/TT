@@ -36,7 +36,8 @@ object AppModule {
     @Provides
     @Singleton
     fun provideFirebaseFirestore(): FirebaseFirestore {
-        return FirebaseFirestore.getInstance()
+        val app = com.google.firebase.FirebaseApp.getInstance()
+        return FirebaseFirestore.getInstance(app, "ai-studio-1201c9cd-f201-4fe5-8e8c-fc40d170de52")
     }
 
     @Provides

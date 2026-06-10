@@ -17,6 +17,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Checklist
 import com.educenter.pro.ui.screens.dashboard.DashboardScreen
 import com.educenter.pro.ui.screens.login.LoginScreen
 import com.educenter.pro.ui.screens.splash.SplashScreen
@@ -24,6 +25,7 @@ import com.educenter.pro.ui.screens.classes.ClassesScreen
 import com.educenter.pro.ui.screens.students.StudentsScreen
 import com.educenter.pro.ui.screens.profile.ProfileScreen
 import com.educenter.pro.ui.screens.teachers.TeachersScreen
+import com.educenter.pro.ui.screens.attendance.AttendanceScreen
 
 import androidx.compose.runtime.collectAsState
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -37,9 +39,10 @@ sealed class Screen(val route: String, val title: String? = null, val icon: andr
     object Teachers : Screen("teachers", "Giáo viên", Icons.Filled.Person)
     object Profile : Screen("profile", "Cá nhân", Icons.Filled.AccountCircle)
     object Transactions : Screen("transactions", "Sổ Quỹ")
+    object Attendance : Screen("attendance", "Điểm danh", Icons.Filled.Checklist)
 }
 
-val bottomNavItems = listOf(Screen.Home, Screen.Classes, Screen.Students, Screen.Teachers, Screen.Profile)
+val bottomNavItems = listOf(Screen.Home, Screen.Students, Screen.Attendance, Screen.Profile)
 
 @Composable
 fun AppNavigation() {
@@ -143,6 +146,9 @@ fun AppNavigation() {
                 com.educenter.pro.ui.screens.profile.TransactionsScreen(
                     onBack = { navController.popBackStack() }
                 )
+            }
+            composable(Screen.Attendance.route) {
+                AttendanceScreen()
             }
         }
     }
