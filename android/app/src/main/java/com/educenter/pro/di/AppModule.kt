@@ -61,7 +61,20 @@ object AppModule {
     @Provides
     @Singleton
     fun provideSharedPreferences(@ApplicationContext context: Context): SharedPreferences {
-        return context.getSharedPreferences("educenter_prefs", Context.MODE_PRIVATE)
+        return try {
+            androidx.security.crypto.EncryptedSharedPreferences.create(
+                "educenter_secure_prefs",
+                androidx.security.crypto.MasterKeys.getOrCreate(
+                    androidx.security.crypto.MasterKeys.AES256_GCM_SPEC
+                ),
+                context,
+                androidx.security.crypto.EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                androidx.security.crypto.EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+        } catch (e: Exception) {
+            // Fallback to regular prefs if encryption fails (e.g., on old devices)
+            context.getSharedPreferences("educenter_prefs", Context.MODE_PRIVATE)
+        }
     }
 
     @Provides
