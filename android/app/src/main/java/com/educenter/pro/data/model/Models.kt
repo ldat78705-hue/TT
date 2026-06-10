@@ -9,7 +9,9 @@ data class Settings(
     val address: String = "",
     val phone: String = "",
     val logoUrl: String = "",
-    val taxId: String = ""
+    val taxId: String = "",
+    val adminPassword: String = "",
+    val viewerAccountActive: Boolean = true
 )
 
 data class Student(
@@ -18,14 +20,18 @@ data class Student(
     val phone: String,
     val parentName: String,
     val status: PersonStatus,
-    val balance: Double = 0.0
+    val balance: Double = 0.0,
+    val dob: String = "",
+    val password: String? = null
 )
 
 data class Teacher(
     val id: String,
     val name: String,
     val phone: String,
-    val subject: String
+    val subject: String,
+    val password: String = "",
+    val role: UserRole = UserRole.TEACHER
 )
 
 data class ClassSchedule(
@@ -75,7 +81,8 @@ data class Staff(
     val id: String,
     val name: String,
     val email: String,
-    val role: UserRole
+    val role: UserRole,
+    val password: String = ""
 )
 
 data class AppData(
