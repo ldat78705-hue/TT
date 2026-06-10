@@ -87,7 +87,11 @@ class DataRepository @Inject constructor(
         prefs.edit().clear().apply()
         _currentUserRole.value = com.educenter.pro.data.model.UserRole.VIEWER
         _appData.value = null
-        kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch { shardDao.clearAll() }
+        _pendingOpsCount.value = 0
+        kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
+            shardDao.clearAll()
+            pendingOpDao.clearAll()
+        }
     }
 
     suspend fun syncData() = withContext(Dispatchers.IO) {

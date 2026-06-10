@@ -262,61 +262,28 @@ class AttendanceViewModel @Inject constructor(
 
     /**
      * Build a formatted absence notification message for sharing via Zalo/Messenger.
-     * Returns null if no students are absent.
+     * Matches the Web version format EXACTLY — only lists UNEXCUSED_ABSENT students.
+     * Returns null if no students are unexcused absent.
      */
     fun buildAbsenceReport(): String? {
-        val classId = _selectedClassId.value ?: return null
-        val date = _selectedDate.value
-        val className = classes.value.find { it.id == classId }?.name ?: "N/A"
         val students = studentsInClass.value
         val entries = _attendanceMap.value
 
-        val absentStudents = mutableListOf<Pair<String, String>>() // name, type
-        entries.forEach { (studentId, entry) ->
-            when (entry.status) {
-                "ABSENT" -> {
-                    val name = students.find { it.id == studentId }?.name ?: return@forEach
-                    absentStudents.add(name to "Vắng có phép")
-                }
-                "UNEXCUSED_ABSENT" -> {
-                    val name = students.find { it.id == studentId }?.name ?: return@forEach
-                    absentStudents.add(name to "Vắng không phép")
-                }
-                "LATE" -> {
-                    val name = students.find { it.id == studentId }?.name ?: return@forEach
-                    absentStudents.add(name to "Đi muộn")
-                }
-            }
-        }
+        // Only UNEXCUSED_ABSENT — same as Web version
+        val unexcusedNames = entries
+            .filter { it.value.status == "UNEXCUSED_ABSENT" }
+            .mapNotNull { (studentId, _) -> students.find { it.id == studentId }?.name }
 
-        if (absentStudents.isEmpty()) return null
+        if (unexcusedNames.isEmpty()) return null
 
-        val formattedDate = formatDateForReport(date)
         val sb = StringBuilder()
-        sb.appendLine("📋 THÔNG BÁO ĐIỂM DANH")
-        sb.appendLine("Lớp: $className | Ngày: $formattedDate")
-        sb.appendLine()
-        
-        val absent = absentStudents.filter { it.second.startsWith("Vắng") }
-        val late = absentStudents.filter { it.second == "Đi muộn" }
-        
-        if (absent.isNotEmpty()) {
-            sb.appendLine("❌ HS vắng:")
-            absent.forEachIndexed { i, (name, type) ->
-                sb.appendLine("${i + 1}. $name - $type")
-            }
+        sb.appendLine("Kính gửi Quý Phụ huynh, hiện tại đã vào giờ học nhưng chưa thấy các học sinh sau có mặt tại lớp:")
+        unexcusedNames.forEach { name ->
+            sb.appendLine(name)
         }
-        if (late.isNotEmpty()) {
-            if (absent.isNotEmpty()) sb.appendLine()
-            sb.appendLine("⏰ HS đi muộn:")
-            late.forEachIndexed { i, (name, _) ->
-                sb.appendLine("${i + 1}. $name")
-            }
-        }
-
-        sb.appendLine()
-        sb.appendLine("Phụ huynh vui lòng liên hệ trung tâm nếu cần.")
-        return sb.toString().trim()
+        sb.appendLine("Quý Phụ huynh vui lòng kiểm tra và phản hồi lại giúp ạ.")
+        sb.append("Xin cảm ơn!")
+        return sb.toString()
     }
 
     private fun formatDateForReport(dateStr: String): String {
