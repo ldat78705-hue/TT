@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -69,7 +70,7 @@ class DataRepository @Inject constructor(
         prefs.edit().clear().apply()
         _currentUserRole.value = com.educenter.pro.data.model.UserRole.VIEWER
         _appData.value = null
-        Thread { shardDao.clearAll() }.start()
+        kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch { shardDao.clearAll() }
     }
 
     suspend fun syncData() = withContext(Dispatchers.IO) {
