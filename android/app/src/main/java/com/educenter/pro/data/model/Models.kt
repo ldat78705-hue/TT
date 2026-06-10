@@ -19,8 +19,12 @@ data class Student(
     val name: String = "",
     val phone: String = "",
     val parentName: String = "",
+    val email: String = "",
+    val address: String = "",
+    val gender: String = "Khác",
     val status: PersonStatus = PersonStatus.ACTIVE,
     val balance: Double = 0.0,
+    val discountPercentage: Double = 0.0,
     val dob: String = "",
     val password: String? = null
 )

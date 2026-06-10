@@ -86,4 +86,15 @@ class AttendanceViewModel @Inject constructor(
             dataRepository.recordAttendance(classId, studentId, date, status)
         }
     }
+
+    fun markAllAttendance(status: String) {
+        val classId = _selectedClassId.value ?: return
+        val date = _selectedDate.value
+        val students = studentsInClass.value
+        viewModelScope.launch {
+            students.forEach { student ->
+                dataRepository.recordAttendance(classId, student.id, date, status)
+            }
+        }
+    }
 }

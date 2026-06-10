@@ -59,14 +59,29 @@ class StudentsViewModel @Inject constructor(
         _searchQuery.value = newQuery
     }
 
-    fun addStudent(name: String, phone: String, parentName: String) {
+    fun addStudent(
+        name: String, 
+        phone: String, 
+        parentName: String,
+        email: String,
+        address: String,
+        gender: String,
+        dob: String,
+        discountPercentage: Double,
+        status: com.educenter.pro.data.model.PersonStatus
+    ) {
         val currentStudents = _allStudents.value.toMutableList()
         val newStudent = Student(
             id = java.util.UUID.randomUUID().toString(),
             name = name,
             phone = phone,
             parentName = parentName,
-            status = com.educenter.pro.data.model.PersonStatus.ACTIVE,
+            email = email,
+            address = address,
+            gender = gender,
+            dob = dob,
+            discountPercentage = discountPercentage,
+            status = status,
             balance = 0.0
         )
         currentStudents.add(newStudent)

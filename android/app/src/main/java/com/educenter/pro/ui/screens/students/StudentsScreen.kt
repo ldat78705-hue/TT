@@ -90,8 +90,8 @@ fun StudentsScreen(
             AddOrEditStudentDialog(
                 student = null,
                 onDismiss = { showAddDialog = false },
-                onSave = { name, phone, parentName ->
-                    viewModel.addStudent(name, phone, parentName)
+                onSave = { name, phone, parentName, email, address, gender, dob, discount, status ->
+                    viewModel.addStudent(name, phone, parentName, email, address, gender, dob, discount, status)
                     showAddDialog = false
                 }
             )
@@ -101,9 +101,13 @@ fun StudentsScreen(
             AddOrEditStudentDialog(
                 student = selectedStudentForEdit,
                 onDismiss = { selectedStudentForEdit = null },
-                onSave = { name, phone, parentName ->
+                onSave = { name, phone, parentName, email, address, gender, dob, discount, status ->
                     selectedStudentForEdit?.let {
-                        val updated = it.copy(name = name, phone = phone, parentName = parentName)
+                        val updated = it.copy(
+                            name = name, phone = phone, parentName = parentName,
+                            email = email, address = address, gender = gender,
+                            dob = dob, discountPercentage = discount, status = status
+                        )
                         viewModel.updateStudent(updated)
                     }
                     selectedStudentForEdit = null
@@ -186,26 +190,65 @@ fun StudentsScreen(
 fun AddOrEditStudentDialog(
     student: Student?,
     onDismiss: () -> Unit,
-    onSave: (String, String, String) -> Unit
+    onSave: (String, String, String, String, String, String, String, Double, com.educenter.pro.data.model.PersonStatus) -> Unit
 ) {
     var name by remember { mutableStateOf(student?.name ?: "") }
     var phone by remember { mutableStateOf(student?.phone ?: "") }
     var parentName by remember { mutableStateOf(student?.parentName ?: "") }
+    var email by remember { mutableStateOf(student?.email ?: "") }
+    var address by remember { mutableStateOf(student?.address ?: "") }
+    var gender by remember { mutableStateOf(student?.gender ?: "Khác") }
+    var dob by remember { mutableStateOf(student?.dob ?: "") }
+    var discountText by remember { mutableStateOf(student?.discountPercentage?.toString() ?: "0") }
+    var isActive by remember { mutableStateOf(student?.status == com.educenter.pro.data.model.PersonStatus.ACTIVE) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (student == null) "Thêm Học viên" else "Sửa Học viên") },
         text = {
-            Column {
-                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Họ Tên") }, singleLine = true)
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Số điện thoại") }, singleLine = true, keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Phone))
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(value = parentName, onValueChange = { parentName = it }, label = { Text("Tên Phụ huynh") }, singleLine = true)
+            LazyColumn {
+                item { OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Họ Tên") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
+                item { Spacer(modifier = Modifier.height(8.dp)) }
+                item { OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Số điện thoại") }, singleLine = true, keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Phone), modifier = Modifier.fillMaxWidth()) }
+                item { Spacer(modifier = Modifier.height(8.dp)) }
+                item { OutlinedTextField(value = parentName, onValueChange = { parentName = it }, label = { Text("Tên Phụ huynh") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
+                item { Spacer(modifier = Modifier.height(8.dp)) }
+                item { OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
+                item { Spacer(modifier = Modifier.height(8.dp)) }
+                item { OutlinedTextField(value = dob, onValueChange = { dob = it }, label = { Text("Ngày sinh (YYYY-MM-DD)") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
+                item { Spacer(modifier = Modifier.height(8.dp)) }
+                item { OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Địa chỉ") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
+                item { Spacer(modifier = Modifier.height(8.dp)) }
+                item {
+                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        Text("Giới tính: ", style = MaterialTheme.typography.bodyMedium)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        listOf("Nam", "Nữ", "Khác").forEach { g ->
+                            RadioButton(selected = gender == g, onClick = { gender = g })
+                            Text(g)
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+                    }
+                }
+                item { Spacer(modifier = Modifier.height(8.dp)) }
+                item { OutlinedTextField(value = discountText, onValueChange = { discountText = it }, label = { Text("% Giảm học phí") }, singleLine = true, keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth()) }
+                item { Spacer(modifier = Modifier.height(8.dp)) }
+                item {
+                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        Checkbox(checked = isActive, onCheckedChange = { isActive = it })
+                        Text("Đang theo học (ACTIVE)")
+                    }
+                }
             }
         },
         confirmButton = {
-            Button(onClick = { if (name.isNotBlank()) onSave(name, phone, parentName) }) {
+            Button(onClick = { 
+                if (name.isNotBlank()) {
+                    val discount = discountText.toDoubleOrNull() ?: 0.0
+                    val status = if (isActive) com.educenter.pro.data.model.PersonStatus.ACTIVE else com.educenter.pro.data.model.PersonStatus.INACTIVE
+                    onSave(name, phone, parentName, email, address, gender, dob, discount, status)
+                }
+            }) {
                 Text("Lưu")
             }
         },
@@ -297,6 +340,8 @@ fun StudentDetailDialog(
     val currencyFormatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
     var selectedTab by remember { mutableIntStateOf(0) }
     
+    val studentClasses = classes.filter { it.studentIds.contains(student.id) }
+    
     AlertDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier.fillMaxHeight(0.9f).fillMaxWidth(0.95f),
@@ -305,7 +350,17 @@ fun StudentDetailDialog(
             Column(modifier = Modifier.fillMaxSize()) {
                 Text(student.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Text("SĐT: ${student.phone} | PH: ${student.parentName}")
+                if (student.email.isNotBlank()) Text("Email: ${student.email}")
+                if (student.address.isNotBlank()) Text("Địa chỉ: ${student.address}")
                 Text("Số dư: ${currencyFormatter.format(student.balance)}", fontWeight = FontWeight.Bold, color = if(student.balance < 0) Color.Red else Color(0xFF10B981))
+                
+                if (studentClasses.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Lớp đang học:", fontWeight = FontWeight.Bold)
+                    studentClasses.forEach { cls ->
+                        Text("- ${cls.name}")
+                    }
+                }
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 

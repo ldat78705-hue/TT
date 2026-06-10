@@ -90,6 +90,22 @@ fun AttendanceScreen(
                         Text("Lớp này chưa có học viên", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 } else {
+                    Text("Thao tác nhanh:", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    @OptIn(ExperimentalLayoutApi::class)
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Button(onClick = { viewModel.markAllAttendance("PRESENT") }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)) { Text("Tất cả có mặt", style = MaterialTheme.typography.labelSmall) }
+                        Button(onClick = { viewModel.markAllAttendance("LATE") }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF59E0B)), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)) { Text("Tất cả đi muộn", style = MaterialTheme.typography.labelSmall) }
+                        Button(onClick = { viewModel.markAllAttendance("ABSENT") }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6)), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)) { Text("Tất cả có phép", style = MaterialTheme.typography.labelSmall) }
+                        Button(onClick = { viewModel.markAllAttendance("UNEXCUSED_ABSENT") }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)) { Text("Tất cả không phép", style = MaterialTheme.typography.labelSmall) }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
@@ -101,33 +117,38 @@ fun AttendanceScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                             ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(student.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                                    
-                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
+                                    Text(student.name, style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    @OptIn(ExperimentalLayoutApi::class)
+                                    FlowRow(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
                                         Button(
                                             onClick = { viewModel.markAttendance(student.id, "PRESENT") },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = if (status == "PRESENT") Color(0xFF10B981) else Color.LightGray
-                                            ),
-                                            contentPadding = PaddingValues(horizontal = 8.dp)
-                                        ) {
-                                            Text("Có mặt", color = if (status == "PRESENT") Color.White else Color.Black)
-                                        }
+                                            colors = ButtonDefaults.buttonColors(containerColor = if (status == "PRESENT") Color(0xFF10B981) else Color.LightGray),
+                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                        ) { Text("Có mặt", color = if (status == "PRESENT") Color.White else Color.Black, style = MaterialTheme.typography.labelSmall) }
                                         
                                         Button(
+                                            onClick = { viewModel.markAttendance(student.id, "LATE") },
+                                            colors = ButtonDefaults.buttonColors(containerColor = if (status == "LATE") Color(0xFFF59E0B) else Color.LightGray),
+                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                        ) { Text("Trễ", color = if (status == "LATE") Color.White else Color.Black, style = MaterialTheme.typography.labelSmall) }
+
+                                        Button(
                                             onClick = { viewModel.markAttendance(student.id, "ABSENT") },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = if (status == "ABSENT") Color(0xFFEF4444) else Color.LightGray
-                                            ),
-                                            contentPadding = PaddingValues(horizontal = 8.dp)
-                                        ) {
-                                            Text("Vắng", color = if (status == "ABSENT") Color.White else Color.Black)
-                                        }
+                                            colors = ButtonDefaults.buttonColors(containerColor = if (status == "ABSENT") Color(0xFF3B82F6) else Color.LightGray),
+                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                        ) { Text("Có phép", color = if (status == "ABSENT") Color.White else Color.Black, style = MaterialTheme.typography.labelSmall) }
+
+                                        Button(
+                                            onClick = { viewModel.markAttendance(student.id, "UNEXCUSED_ABSENT") },
+                                            colors = ButtonDefaults.buttonColors(containerColor = if (status == "UNEXCUSED_ABSENT") Color(0xFFEF4444) else Color.LightGray),
+                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                        ) { Text("Không phép", color = if (status == "UNEXCUSED_ABSENT") Color.White else Color.Black, style = MaterialTheme.typography.labelSmall) }
                                     }
                                 }
                             }
