@@ -225,7 +225,7 @@ const AppRoutes: React.FC = () => {
                     <Route path={ROUTES.PARENT_FINANCE} element={<ParentFinanceScreen />} />
                 </Route>
 
-                <Route path="*" element={<Navigate to={isAuthenticated ? (role === UserRole.PARENT ? ROUTES.PARENT_DASHBOARD : ROUTES.DASHBOARD) : ROUTES.LOGIN} replace />} />
+                <Route path="*" element={<Navigate to={isAuthenticated ? (role === UserRole.PARENT ? ROUTES.PARENT_DASHBOARD : (role === UserRole.ACCOUNTANT ? ROUTES.FINANCE : ROUTES.DASHBOARD)) : ROUTES.LOGIN} replace />} />
             </Routes>
         </>
     );

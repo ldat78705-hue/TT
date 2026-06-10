@@ -33,7 +33,9 @@ export const LoginScreen: React.FC = () => {
     
     useEffect(() => {
         if (isAuthenticated) {
-            const destination = role === UserRole.PARENT ? ROUTES.PARENT_DASHBOARD : ROUTES.DASHBOARD;
+            const destination = role === UserRole.PARENT ? ROUTES.PARENT_DASHBOARD : 
+                                role === UserRole.ACCOUNTANT ? ROUTES.FINANCE : 
+                                ROUTES.DASHBOARD;
             navigate(destination, { replace: true });
         }
     }, [isAuthenticated, role, navigate]);
