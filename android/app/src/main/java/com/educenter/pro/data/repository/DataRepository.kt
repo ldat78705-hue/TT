@@ -217,9 +217,8 @@ class DataRepository @Inject constructor(
     }
 
     private inline fun <reified T> parseList(json: String): List<T> {
-        val type = object : TypeToken<List<T>>() {}.type
         return try {
-            gson.fromJson(json, type) ?: emptyList()
+            gson.fromJson(json, Array<T>::class.java)?.toList() ?: emptyList()
         } catch (e: Exception) {
             emptyList()
         }
