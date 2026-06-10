@@ -4,7 +4,7 @@ import { applyOperation } from './_lib/operations.js';
 import { verifyToken } from './_lib/jwt.js';
 import { UserRole } from '../types.js';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, doc, getDocs, collection, writeBatch, onSnapshot } from 'firebase/firestore';
+import { getFirestore, doc, getDocs, collection, writeBatch, onSnapshot, runTransaction } from 'firebase/firestore';
 import { hashPassword } from './_lib/crypto.js';
 import { authenticateServer } from './_lib/serverAuth.js';
 import fs from 'fs';
@@ -334,6 +334,151 @@ export async function executeOperationInternal(operation: { op: string, payload:
     }
 }
 
+export async function executeAttendanceTransaction(payload: any) {
+    await acquireLock();
+    try {
+        await authenticateServer();
+        const records: any[] = payload;
+        
+        // Group by shard key
+        const shardsAffected = new Set<string>();
+        records.forEach(r => {
+            const shardKey = getShardKey(r, 'attendance');
+            shardsAffected.add(shardKey);
+        });
+
+        // We also need to read classes to get teacherIds if needed
+        shardsAffected.add('classes');
+
+        await runTransaction(db, async (transaction) => {
+            const shardRefs = Array.from(shardsAffected).map(k => doc(db, 'db_core_v2_secure_9a8b7c6d5e4f3g2h1', k));
+            const snapshots = await Promise.all(shardRefs.map(ref => transaction.get(ref)));
+            
+            const currentData: any = {};
+            snapshots.forEach((snap, i) => {
+                const key = Array.from(shardsAffected)[i];
+                if (snap.exists()) {
+                    currentData[key] = snap.data().data || [];
+                } else {
+                    currentData[key] = [];
+                }
+            });
+
+            const classes = currentData['classes'];
+
+            const recordsByClassDate = new Map<string, any[]>();
+            records.forEach(r => {
+                const key = `${r.classId}|${r.date}`;
+                if (!recordsByClassDate.has(key)) recordsByClassDate.set(key, []);
+                recordsByClassDate.get(key)!.push(r);
+            });
+
+            // For each shard, we update its records
+            const updatedShardsData: any = {};
+
+            recordsByClassDate.forEach((newRecords, key) => {
+                const [classId, date] = key.split('|');
+                const cls = classes.find((c: any) => c.id === classId);
+                const currentTeacherIds = cls ? cls.teacherIds : [];
+                
+                // Which shard does this date belong to?
+                const sample = { date };
+                const sKey = getShardKey(sample, 'attendance');
+                
+                if (!updatedShardsData[sKey]) {
+                    updatedShardsData[sKey] = [...currentData[sKey]]; // clone
+                }
+
+                // Remove old records for this class and date
+                updatedShardsData[sKey] = updatedShardsData[sKey].filter((a: any) => !(a.classId === classId && a.date === date));
+                
+                const generateUniqueId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+                
+                const recordsWithIds = newRecords.map(record => ({
+                    ...record, 
+                    id: record.id || generateUniqueId('ATT'),
+                    teacherIds: record.teacherIds || currentTeacherIds
+                }));
+                
+                updatedShardsData[sKey].push(...recordsWithIds);
+            });
+
+            // Write back
+            Object.keys(updatedShardsData).forEach(sKey => {
+                const ref = doc(db, 'db_core_v2_secure_9a8b7c6d5e4f3g2h1', sKey);
+                transaction.set(ref, { data: updatedShardsData[sKey] });
+            });
+
+            const syncRef = doc(db, 'db_core_v2_secure_9a8b7c6d5e4f3g2h1', '_sync');
+            const newSyncId = Date.now().toString() + '_' + Math.random().toString(36).substring(2);
+            transaction.set(syncRef, { syncId: newSyncId, lastUpdatedAt: Date.now() });
+        });
+        
+        // Force full refresh next time
+        cachedData = null;
+        fetchPromise = null;
+        
+        // Return latest full data
+        return applySmartWindowFilter(await getSplitData());
+    } finally {
+        releaseLock();
+    }
+}
+
+export async function executeTuitionTransaction(payload: any) {
+    await acquireLock();
+    try {
+        await authenticateServer();
+        const { studentId, amount, date, description, type, paymentMethod } = payload;
+        const finalAmount = type === 'CREDIT' ? amount : -amount;
+        
+        const shardKey = getShardKey({ date }, 'transactions');
+        
+        await runTransaction(db, async (transaction) => {
+            const txRef = doc(db, 'db_core_v2_secure_9a8b7c6d5e4f3g2h1', shardKey);
+            const studentsRef = doc(db, 'db_core_v2_secure_9a8b7c6d5e4f3g2h1', 'students');
+            
+            const [txSnap, studentsSnap] = await Promise.all([transaction.get(txRef), transaction.get(studentsRef)]);
+            
+            const transactions = txSnap.exists() ? txSnap.data().data || [] : [];
+            const students = studentsSnap.exists() ? studentsSnap.data().data || [] : [];
+            
+            const student = students.find((s: any) => s.id === studentId);
+            if (student) {
+                student.balance += finalAmount;
+                // Note: Recalculate invoices logic is omitted here for simplicity because manual payments 
+                // typically don't trigger invoice recalculation directly unless they cover the invoice fully.
+                // The full recalculation runs on standard save.
+            }
+            
+            const generateUniqueId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+            transactions.push({ 
+                id: generateUniqueId('TRX'), 
+                studentId, 
+                date, 
+                type: type === 'CREDIT' ? 'PAYMENT' : 'ADJUSTMENT_DEBIT', 
+                description, 
+                amount: finalAmount, 
+                paymentMethod: paymentMethod || 'transfer' 
+            });
+            
+            transaction.set(txRef, { data: transactions });
+            transaction.set(studentsRef, { data: students });
+            
+            const syncRef = doc(db, 'db_core_v2_secure_9a8b7c6d5e4f3g2h1', '_sync');
+            const newSyncId = Date.now().toString() + '_' + Math.random().toString(36).substring(2);
+            transaction.set(syncRef, { syncId: newSyncId, lastUpdatedAt: Date.now() });
+        });
+        
+        cachedData = null;
+        fetchPromise = null;
+        
+        return applySmartWindowFilter(await getSplitData());
+    } finally {
+        releaseLock();
+    }
+}
+
 export default async function handler(req: any, res: any) {
     const authPayload = await getAuthPayload(req);
     if (!authPayload) {
@@ -477,8 +622,16 @@ export default async function handler(req: any, res: any) {
             }
         } else {
             try {
-                const responseData = await executeOperationInternal(operation);
-                return res.status(200).json(responseData);
+                if (operation.op === 'updateAttendance') {
+                    const responseData = await executeAttendanceTransaction(operation.payload);
+                    return res.status(200).json(responseData);
+                } else if (operation.op === 'addAdjustment') {
+                    const responseData = await executeTuitionTransaction(operation.payload);
+                    return res.status(200).json(responseData);
+                } else {
+                    const responseData = await executeOperationInternal(operation);
+                    return res.status(200).json(responseData);
+                }
             } catch (error) {
                 console.error('Operation Error:', error);
                 const errorMessage = error instanceof Error ? error.message : 'Unknown operation error';

@@ -227,20 +227,9 @@ class DataRepository @Inject constructor(
     suspend fun recordAttendance(classId: String, studentId: String, dateStr: String, status: String) = withContext(Dispatchers.IO) {
         val currentData = _appData.value ?: return@withContext
         
-        // Create new record
         val recordId = java.util.UUID.randomUUID().toString()
         val newRecord = AttendanceRecord(id = recordId, classId = classId, studentId = studentId, date = dateStr, status = status)
         
-        // Update list (remove existing for same day/class/student)
-        val updatedAttendance = currentData.attendance.filter { 
-            !(it.classId == classId && it.studentId == studentId && it.date == dateStr) 
-        }.toMutableList()
-        updatedAttendance.add(newRecord)
-        
-        // Update local StateFlow immediately
-        _appData.value = currentData.copy(attendance = updatedAttendance)
-        
-        // Calculate shard key (e.g. attendance_2024_07_12)
         val parts = dateStr.split("-")
         val shardKey = if (parts.size >= 3) {
             "attendance_${parts[0]}_${parts[1]}_${parts[2]}"
@@ -248,34 +237,49 @@ class DataRepository @Inject constructor(
             "attendance"
         }
         
-        // Get all records belonging to this shard
-        val shardRecords = updatedAttendance.filter {
-            val p = it.date.split("-")
-            if (p.size >= 3) "attendance_${p[0]}_${p[1]}_${p[2]}" == shardKey else "attendance" == shardKey
-        }
-        
-        // Save to Local Room DB
-        val shardJson = gson.toJson(shardRecords)
-        shardDao.insertShards(listOf(ShardEntity(id = shardKey, data = shardJson)))
-        
-        // Push to Firestore (entire shard + update _sync)
         try {
-            val batch = firestore.batch()
-            
             val shardRef = firestore.collection(COLLECTION_NAME).document(shardKey)
-            batch.set(shardRef, mapOf("data" to shardRecords))
-            
             val syncRef = firestore.collection(COLLECTION_NAME).document("_sync")
-            val syncId = "${System.currentTimeMillis()}_${java.util.UUID.randomUUID().toString().substring(0, 8)}"
-            batch.set(syncRef, mapOf(
-                "syncId" to syncId, 
-                "lastUpdatedAt" to System.currentTimeMillis()
-            ))
             
-            batch.commit().await()
+            val updatedShardRecords = firestore.runTransaction { transaction ->
+                val snapshot = transaction.get(shardRef)
+                
+                val existingRecords = if (snapshot.exists()) {
+                    val dataList = snapshot.get("data") as? List<Map<String, Any>> ?: emptyList()
+                    val json = gson.toJson(dataList)
+                    parseList<AttendanceRecord>(json).toMutableList()
+                } else {
+                    mutableListOf<AttendanceRecord>()
+                }
+                
+                val filtered = existingRecords.filter { 
+                    !(it.classId == classId && it.studentId == studentId && it.date == dateStr) 
+                }.toMutableList()
+                filtered.add(newRecord)
+                
+                transaction.set(shardRef, mapOf("data" to filtered))
+                
+                val syncId = "${System.currentTimeMillis()}_${java.util.UUID.randomUUID().toString().substring(0, 8)}"
+                transaction.set(syncRef, mapOf(
+                    "syncId" to syncId, 
+                    "lastUpdatedAt" to System.currentTimeMillis()
+                ))
+                
+                filtered
+            }.await()
+            
+            // Update local state and Room only on success
+            val updatedAttendance = currentData.attendance.filter {
+                val p = it.date.split("-")
+                val k = if (p.size >= 3) "attendance_${p[0]}_${p[1]}_${p[2]}" else "attendance"
+                k != shardKey
+            }.toMutableList()
+            updatedAttendance.addAll(updatedShardRecords)
+            
+            _appData.value = currentData.copy(attendance = updatedAttendance)
+            shardDao.insertShards(listOf(ShardEntity(id = shardKey, data = gson.toJson(updatedShardRecords))))
         } catch (e: Exception) {
             e.printStackTrace()
-            // In a production app we would handle sync queueing here
         }
     }
 
@@ -285,46 +289,68 @@ class DataRepository @Inject constructor(
         val recordId = java.util.UUID.randomUUID().toString()
         val newTx = Transaction(id = recordId, amount = amount, date = dateStr, description = description, type = type)
         
-        val updatedTx = currentData.transactions.toMutableList()
-        updatedTx.add(newTx)
-        
-        // Also update student balance locally
-        val updatedStudents = currentData.students.map {
-            if (it.id == studentId) {
-                // If type is PAYMENT (credit), balance increases
-                val balanceChange = if (type == "PAYMENT") amount else -amount
-                it.copy(balance = it.balance + balanceChange)
-            } else it
-        }.toMutableList()
-
-        _appData.value = currentData.copy(transactions = updatedTx, students = updatedStudents)
-        
-        // Shard transactions
         val parts = dateStr.split("-")
         val txShardKey = if (parts.size >= 3) "transactions_${parts[0]}_${parts[1]}_${parts[2]}" else "transactions"
         
-        val txShardRecords = updatedTx.filter {
-            val p = it.date.split("-")
-            if (p.size >= 3) "transactions_${p[0]}_${p[1]}_${p[2]}" == txShardKey else "transactions" == txShardKey
-        }
-        
-        shardDao.insertShards(listOf(
-            ShardEntity(id = txShardKey, data = gson.toJson(txShardRecords)),
-            ShardEntity(id = "students", data = gson.toJson(updatedStudents))
-        ))
-        
         try {
-            val batch = firestore.batch()
-            batch.set(firestore.collection(COLLECTION_NAME).document(txShardKey), mapOf("data" to txShardRecords))
-            batch.set(firestore.collection(COLLECTION_NAME).document("students"), mapOf("data" to updatedStudents))
+            val txShardRef = firestore.collection(COLLECTION_NAME).document(txShardKey)
+            val studentsRef = firestore.collection(COLLECTION_NAME).document("students")
+            val syncRef = firestore.collection(COLLECTION_NAME).document("_sync")
             
-            val syncId = "${System.currentTimeMillis()}_${java.util.UUID.randomUUID().toString().substring(0, 8)}"
-            batch.set(firestore.collection(COLLECTION_NAME).document("_sync"), mapOf(
-                "syncId" to syncId, 
-                "lastUpdatedAt" to System.currentTimeMillis()
+            // Result pair: Pair<UpdatedTransactions, UpdatedStudents>
+            val (updatedTxShard, updatedStudentsShard) = firestore.runTransaction { transaction ->
+                val txSnapshot = transaction.get(txShardRef)
+                val studentsSnapshot = transaction.get(studentsRef)
+                
+                val existingTx = if (txSnapshot.exists()) {
+                    val dataList = txSnapshot.get("data") as? List<Map<String, Any>> ?: emptyList()
+                    parseList<Transaction>(gson.toJson(dataList)).toMutableList()
+                } else {
+                    mutableListOf<Transaction>()
+                }
+                
+                val existingStudents = if (studentsSnapshot.exists()) {
+                    val dataList = studentsSnapshot.get("data") as? List<Map<String, Any>> ?: emptyList()
+                    parseList<Student>(gson.toJson(dataList)).toMutableList()
+                } else {
+                    mutableListOf<Student>()
+                }
+                
+                existingTx.add(newTx)
+                
+                val updatedStudentsList = existingStudents.map {
+                    if (it.id == studentId) {
+                        val balanceChange = if (type == "PAYMENT") amount else -amount
+                        it.copy(balance = it.balance + balanceChange)
+                    } else it
+                }
+                
+                transaction.set(txShardRef, mapOf("data" to existingTx))
+                transaction.set(studentsRef, mapOf("data" to updatedStudentsList))
+                
+                val syncId = "${System.currentTimeMillis()}_${java.util.UUID.randomUUID().toString().substring(0, 8)}"
+                transaction.set(syncRef, mapOf(
+                    "syncId" to syncId, 
+                    "lastUpdatedAt" to System.currentTimeMillis()
+                ))
+                
+                Pair(existingTx, updatedStudentsList)
+            }.await()
+            
+            // Update local state and Room only on success
+            val newAllTransactions = currentData.transactions.filter {
+                val p = it.date.split("-")
+                val k = if (p.size >= 3) "transactions_${p[0]}_${p[1]}_${p[2]}" else "transactions"
+                k != txShardKey
+            }.toMutableList()
+            newAllTransactions.addAll(updatedTxShard)
+            
+            _appData.value = currentData.copy(transactions = newAllTransactions, students = updatedStudentsShard)
+            
+            shardDao.insertShards(listOf(
+                ShardEntity(id = txShardKey, data = gson.toJson(updatedTxShard)),
+                ShardEntity(id = "students", data = gson.toJson(updatedStudentsShard))
             ))
-            
-            batch.commit().await()
         } catch (e: Exception) {
             e.printStackTrace()
         }
