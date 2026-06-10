@@ -69,7 +69,8 @@ data class AttendanceRecord(
     val classId: String = "",
     val studentId: String = "",
     val date: String = "",
-    val status: String = ""
+    val status: String = "",
+    val note: String = ""
 )
 
 data class Announcement(
