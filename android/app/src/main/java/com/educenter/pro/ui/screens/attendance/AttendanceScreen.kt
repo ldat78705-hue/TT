@@ -1,6 +1,8 @@
 package com.educenter.pro.ui.screens.attendance
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,7 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AttendanceScreen(
     viewModel: AttendanceViewModel = hiltViewModel()
@@ -92,7 +94,6 @@ fun AttendanceScreen(
                 } else {
                     Text("Thao tác nhanh:", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
                     Spacer(modifier = Modifier.height(4.dp))
-                    @OptIn(ExperimentalLayoutApi::class)
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -120,7 +121,6 @@ fun AttendanceScreen(
                                 Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
                                     Text(student.name, style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
                                     Spacer(modifier = Modifier.height(8.dp))
-                                    @OptIn(ExperimentalLayoutApi::class)
                                     FlowRow(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
