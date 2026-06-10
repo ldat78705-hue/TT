@@ -69,9 +69,22 @@ fun DashboardScreen(
                     modifier = Modifier.weight(1f),
                     gradientColors = listOf(Color(0xFF4facfe), Color(0xFF00f2fe))
                 )
+                DashboardCard(
+                    title = "Lớp học",
+                    value = uiState.totalClasses.toString(),
+                    icon = Icons.Default.Class,
+                    modifier = Modifier.weight(1f),
+                    gradientColors = listOf(Color(0xFFf093fb), Color(0xFFf5576c))
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
                 val currencyFormatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
                 DashboardCard(
-                    title = "Doanh thu",
+                    title = "Doanh thu (tháng)",
                     value = currencyFormatter.format(uiState.monthlyRevenue),
                     icon = Icons.Default.MonetizationOn,
                     modifier = Modifier.weight(1f),

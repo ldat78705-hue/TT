@@ -1,6 +1,7 @@
 package com.educenter.pro.ui.screens.students
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -26,6 +27,9 @@ fun StudentsScreen(
     viewModel: StudentsViewModel = hiltViewModel()
 ) {
     val students by viewModel.filteredStudents.collectAsState()
+    val transactions by viewModel.transactions.collectAsState()
+    val attendanceRecords by viewModel.attendanceRecords.collectAsState()
+    val classes by viewModel.classes.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val currentUserRole by viewModel.currentUserRole.collectAsState()
     
@@ -35,8 +39,10 @@ fun StudentsScreen(
     var showAddDialog by remember { mutableStateOf(false) }
     var selectedStudentForFee by remember { mutableStateOf<Student?>(null) }
     var feeAmountText by remember { mutableStateOf("") }
+    var selectedPaymentMethod by remember { mutableStateOf("Tiền mặt") }
     
     var selectedStudentForEdit by remember { mutableStateOf<Student?>(null) }
+    var selectedStudentForDetails by remember { mutableStateOf<Student?>(null) }
 
     Scaffold(
         topBar = {
@@ -71,6 +77,7 @@ fun StudentsScreen(
                         student = student,
                         canManage = canManage,
                         canCollectFee = canCollectFee,
+                        onClick = { selectedStudentForDetails = it },
                         onPayFeeClick = { selectedStudentForFee = it },
                         onEditClick = { selectedStudentForEdit = it },
                         onDeleteClick = { viewModel.deleteStudent(it.id) }
@@ -107,7 +114,7 @@ fun StudentsScreen(
         if (selectedStudentForFee != null) {
             AlertDialog(
                 onDismissRequest = { selectedStudentForFee = null },
-                title = { Text("Thu học phí") },
+                title = { Text("Nộp học phí") },
                 text = {
                     Column {
                         Text("Học viên: ${selectedStudentForFee?.name}")
@@ -119,6 +126,21 @@ fun StudentsScreen(
                             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
                             singleLine = true
                         )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Hình thức nộp", style = MaterialTheme.typography.labelMedium)
+                        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                            RadioButton(
+                                selected = selectedPaymentMethod == "Tiền mặt",
+                                onClick = { selectedPaymentMethod = "Tiền mặt" }
+                            )
+                            Text("Tiền mặt")
+                            Spacer(modifier = Modifier.width(16.dp))
+                            RadioButton(
+                                selected = selectedPaymentMethod == "Chuyển khoản",
+                                onClick = { selectedPaymentMethod = "Chuyển khoản" }
+                            )
+                            Text("Chuyển khoản")
+                        }
                     }
                 },
                 confirmButton = {
@@ -126,11 +148,13 @@ fun StudentsScreen(
                         val amount = feeAmountText.toDoubleOrNull()
                         if (amount != null && amount > 0) {
                             selectedStudentForFee?.let {
-                                viewModel.collectFee(it.id, amount)
+                                val method = if (selectedPaymentMethod == "Tiền mặt") "cash" else "transfer"
+                                viewModel.collectFee(it.id, amount, method)
                             }
                         }
                         selectedStudentForFee = null
                         feeAmountText = ""
+                        selectedPaymentMethod = "Tiền mặt"
                     }) {
                         Text("Xác nhận")
                     }
@@ -140,6 +164,19 @@ fun StudentsScreen(
                         Text("Hủy")
                     }
                 }
+            )
+        }
+
+        if (selectedStudentForDetails != null) {
+            val studentTx = transactions.filter { it.studentId == selectedStudentForDetails!!.id }
+            val studentAtt = attendanceRecords.filter { it.studentId == selectedStudentForDetails!!.id }
+            
+            StudentDetailDialog(
+                student = selectedStudentForDetails!!,
+                transactions = studentTx,
+                attendanceRecords = studentAtt,
+                classes = classes,
+                onDismiss = { selectedStudentForDetails = null }
             )
         }
     }
@@ -183,6 +220,7 @@ fun StudentCard(
     student: Student,
     canManage: Boolean,
     canCollectFee: Boolean,
+    onClick: (Student) -> Unit,
     onPayFeeClick: (Student) -> Unit,
     onEditClick: (Student) -> Unit,
     onDeleteClick: (Student) -> Unit
@@ -191,7 +229,7 @@ fun StudentCard(
     val balanceColor = if (student.balance < 0) Color(0xFFEF4444) else Color(0xFF10B981)
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable { onClick(student) },
         shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -240,10 +278,90 @@ fun StudentCard(
                         modifier = Modifier.height(40.dp),
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp)
                     ) {
-                        Text("Thu tiền", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                        Text("Nộp tiền", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+fun StudentDetailDialog(
+    student: Student,
+    transactions: List<com.educenter.pro.data.model.Transaction>,
+    attendanceRecords: List<com.educenter.pro.data.model.AttendanceRecord>,
+    classes: List<com.educenter.pro.data.model.ClassModel>,
+    onDismiss: () -> Unit
+) {
+    val currencyFormatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
+    var selectedTab by remember { mutableIntStateOf(0) }
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier.fillMaxHeight(0.9f).fillMaxWidth(0.95f),
+        title = { Text("Chi tiết Học viên") },
+        text = {
+            Column(modifier = Modifier.fillMaxSize()) {
+                Text(student.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text("SĐT: ${student.phone} | PH: ${student.parentName}")
+                Text("Số dư: ${currencyFormatter.format(student.balance)}", fontWeight = FontWeight.Bold, color = if(student.balance < 0) Color.Red else Color(0xFF10B981))
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                TabRow(selectedTabIndex = selectedTab) {
+                    Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("Lịch sử Nộp tiền") })
+                    Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("Điểm danh") })
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                if (selectedTab == 0) {
+                    if (transactions.isEmpty()) {
+                        Text("Chưa có giao dịch nào.", modifier = Modifier.padding(16.dp))
+                    } else {
+                        LazyColumn {
+                            items(transactions.sortedByDescending { it.date }) { tx ->
+                                Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                                    Column(modifier = Modifier.padding(8.dp)) {
+                                        Text("${tx.date} - ${tx.description}", fontWeight = FontWeight.Bold)
+                                        Text("Số tiền: ${currencyFormatter.format(tx.amount)}", color = if(tx.amount > 0) Color(0xFF10B981) else Color.Red)
+                                        if (!tx.paymentMethod.isNullOrEmpty()) {
+                                            Text("Hình thức: ${if(tx.paymentMethod == "cash") "Tiền mặt" else "Chuyển khoản"}")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    if (attendanceRecords.isEmpty()) {
+                        Text("Chưa có lịch sử điểm danh.", modifier = Modifier.padding(16.dp))
+                    } else {
+                        LazyColumn {
+                            items(attendanceRecords.sortedByDescending { it.date }) { att ->
+                                val clsName = classes.find { it.id == att.classId }?.name ?: "Lớp đã xóa"
+                                Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                                    Row(modifier = Modifier.padding(8.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                        Column {
+                                            Text(att.date, fontWeight = FontWeight.Bold)
+                                            Text(clsName, style = MaterialTheme.typography.bodySmall)
+                                        }
+                                        Text(
+                                            text = if(att.status == "PRESENT") "Có mặt" else if(att.status == "ABSENT") "Vắng" else att.status,
+                                            color = if(att.status == "PRESENT") Color(0xFF10B981) else Color.Red,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Đóng") }
+        }
+    )
 }

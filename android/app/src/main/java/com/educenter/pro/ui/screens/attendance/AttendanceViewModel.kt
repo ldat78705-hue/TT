@@ -28,6 +28,31 @@ class AttendanceViewModel @Inject constructor(
     private val _selectedDate = MutableStateFlow(LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE))
     val selectedDate: StateFlow<String> = _selectedDate.asStateFlow()
 
+    val scheduledClasses: StateFlow<List<ClassModel>> = combine(
+        classes,
+        _selectedDate
+    ) { clsList, dateStr ->
+        try {
+            val date = LocalDate.parse(dateStr, DateTimeFormatter.ISO_LOCAL_DATE)
+            val dayOfWeek = date.dayOfWeek
+            val dayName = when (dayOfWeek) {
+                java.time.DayOfWeek.MONDAY -> "Monday"
+                java.time.DayOfWeek.TUESDAY -> "Tuesday"
+                java.time.DayOfWeek.WEDNESDAY -> "Wednesday"
+                java.time.DayOfWeek.THURSDAY -> "Thursday"
+                java.time.DayOfWeek.FRIDAY -> "Friday"
+                java.time.DayOfWeek.SATURDAY -> "Saturday"
+                java.time.DayOfWeek.SUNDAY -> "Sunday"
+                else -> ""
+            }
+            clsList.filter { c ->
+                c.schedule.any { it.dayOfWeek == dayName }
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
     val studentsInClass: StateFlow<List<Student>> = combine(
         dataRepository.appData,
         _selectedClassId

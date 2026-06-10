@@ -33,6 +33,18 @@ class StudentsViewModel @Inject constructor(
         }
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
+    val transactions = dataRepository.appData
+        .map { it?.transactions ?: emptyList() }
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    val attendanceRecords = dataRepository.appData
+        .map { it?.attendance ?: emptyList() }
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    val classes = dataRepository.appData
+        .map { it?.classes ?: emptyList() }
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
     init {
         viewModelScope.launch {
             dataRepository.appData.collect { appData ->
@@ -81,11 +93,11 @@ class StudentsViewModel @Inject constructor(
         }
     }
 
-    fun collectFee(studentId: String, amount: Double) {
+    fun collectFee(studentId: String, amount: Double, paymentMethod: String) {
         val todayStr = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
-        val description = "Thu học phí qua App"
+        val description = "Nộp học phí qua App"
         viewModelScope.launch {
-            dataRepository.recordTransaction(studentId, amount, description, todayStr, "PAYMENT")
+            dataRepository.recordTransaction(studentId, amount, description, todayStr, "PAYMENT", paymentMethod)
         }
     }
 }

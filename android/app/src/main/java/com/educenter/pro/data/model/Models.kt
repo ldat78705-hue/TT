@@ -54,7 +54,8 @@ data class Transaction(
     val amount: Double = 0.0,
     val date: String = "",
     val description: String = "",
-    val type: String = ""
+    val type: String = "",
+    val paymentMethod: String? = null
 )
 
 data class AttendanceRecord(

@@ -49,8 +49,11 @@ class DashboardViewModel @Inject constructor(
                         .sortedByDescending { it.createdAt }
                         .take(5)
 
+                    val totalClasses = appData.classes.size
+
                     _uiState.value = DashboardUiState(
                         totalStudents = activeStudents,
+                        totalClasses = totalClasses,
                         monthlyRevenue = currentMonthRevenue,
                         todayClasses = todayClasses,
                         announcements = recentAnnouncements,
@@ -64,6 +67,7 @@ class DashboardViewModel @Inject constructor(
 
 data class DashboardUiState(
     val totalStudents: Int = 0,
+    val totalClasses: Int = 0,
     val monthlyRevenue: Double = 0.0,
     val todayClasses: List<ClassModel> = emptyList(),
     val announcements: List<com.educenter.pro.data.model.Announcement> = emptyList(),

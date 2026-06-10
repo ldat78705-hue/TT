@@ -107,10 +107,10 @@ class DataRepository @Inject constructor(
         } catch (e: Exception) { e.printStackTrace() }
     }
 
-    suspend fun recordTransaction(studentId: String, amount: Double, description: String, dateStr: String, type: String) = withContext(Dispatchers.IO) {
+    suspend fun recordTransaction(studentId: String, amount: Double, description: String, dateStr: String, type: String, paymentMethod: String? = null) = withContext(Dispatchers.IO) {
         try {
             val op = OperationPayload("addAdjustment", mapOf(
-                "studentId" to studentId, "amount" to amount, "date" to dateStr, "description" to description, "type" to type
+                "studentId" to studentId, "amount" to amount, "date" to dateStr, "description" to description, "type" to type, "paymentMethod" to paymentMethod
             ))
             val updatedData = apiService.executeOperation(op)
             _appData.value = updatedData
