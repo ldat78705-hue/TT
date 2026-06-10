@@ -31,11 +31,18 @@ const SHARDED = ['attendance', 'invoices', 'transactions', 'income', 'expenses',
 
 function getShardKey(item: any, collectionName: string): string {
     try {
-        if (['attendance', 'transactions', 'income', 'expenses'].includes(collectionName)) {
+        if (['transactions', 'income', 'expenses'].includes(collectionName)) {
             if (item.date) {
-                // Shard by DAY for high-volume collections to support 500+ students
-                const match = item.date.match(/^(\d{4})-(\d{2})-(\d{2})/);
-                if (match) return `${collectionName}_${match[1]}_${match[2]}_${match[3]}`;
+                // Shard by MONTH for financial records
+                const match = item.date.match(/^(\d{4})-(\d{2})/);
+                if (match) return `${collectionName}_${match[1]}_${match[2]}`;
+            }
+        } else if (collectionName === 'attendance') {
+            if (item.date) {
+                // Shard by MONTH + CLASS for attendance
+                const match = item.date.match(/^(\d{4})-(\d{2})/);
+                const classId = item.classId || 'unknown';
+                if (match) return `attendance_${match[1]}_${match[2]}_${classId}`;
             }
         } else if (['invoices', 'payrolls'].includes(collectionName)) {
             if (collectionName === 'payrolls' && item.year && item.month) {

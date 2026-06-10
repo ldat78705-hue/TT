@@ -133,6 +133,7 @@ export const addAnnouncement = (payload: Omit<Announcement, 'id'>) => patchData(
 export const deleteAnnouncement = (id: string) => patchData({ op: 'deleteAnnouncement', payload: { id } });
 
 export const clearCollections = (collectionKeys: ('students' | 'teachers' | 'staff' | 'classes')[]) => patchData({ op: 'clearCollections', payload: collectionKeys });
+export const compactData = () => patchData({ op: 'compactData', payload: {} });
 
 export async function backupData(): Promise<Omit<AppData, 'loading'>> {
     return loadInitialData();

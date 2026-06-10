@@ -86,6 +86,7 @@ interface DataContextType {
     deleteAttendanceForDate: (payload: { classId: string, date: string }) => Promise<void>;
     updateUserPassword: (payload: { userId: string; role: UserRole; newPassword: string; currentPassword?: string }) => Promise<void>;
     clearCollections: (collectionKeys: ('students' | 'teachers' | 'staff' | 'classes')[]) => Promise<void>;
+    compactData: () => Promise<void>;
     deleteAttendanceByMonth: (payload: { month: number; year: number; }) => Promise<void>;
     clearAllTransactions: () => Promise<void>;
 }
@@ -236,6 +237,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     updateUserPassword: handleStateUpdateOperation(api.updateUserPassword, 'updateUserPassword'),
     clearCollections: handleStateUpdateOperation(api.clearCollections, 'clearCollections'),
+    compactData: handleStateUpdateOperation(api.compactData, 'compactData'),
     
     backupData: api.backupData,
     restoreData: handleStateUpdateOperation<Omit<AppData, 'loading'>>(api.restoreData),

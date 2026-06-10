@@ -81,6 +81,13 @@ export function applyOperation(
     };
 
     switch (op) {
+        // SYSTEM OPERATIONS
+        case 'compactData': {
+            // No-op. The actual compaction happens during sharding in data.ts
+            // because getShardKey has been updated to use monthly chunks.
+            break;
+        }
+        
         // STUDENT OPERATIONS
         case 'addStudent': {
             const { student, classIds } = payload;
