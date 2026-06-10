@@ -49,6 +49,15 @@ class ClassesViewModel @Inject constructor(
         }
     }
 
+    // Teacher names for the selected class
+    val selectedClassTeacherNames: StateFlow<List<String>> = combine(
+        dataRepository.appData,
+        _selectedClass
+    ) { appData, cls ->
+        if (appData == null || cls == null) emptyList()
+        else appData.teachers.filter { it.id in cls.teacherIds }.map { it.name }
+    }.stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Lazily, emptyList())
+
     fun markAttendance(studentId: String, status: String) {
         val classId = _selectedClass.value?.id ?: return
         val todayStr = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())

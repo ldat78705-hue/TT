@@ -33,6 +33,7 @@ fun ClassesScreen(
     val selectedClass by viewModel.selectedClass.collectAsState()
     val students by viewModel.selectedClassStudents.collectAsState()
     val availableStudents by viewModel.availableStudentsForClass.collectAsState()
+    val teacherNames by viewModel.selectedClassTeacherNames.collectAsState()
 
     var showAddClassDialog by remember { mutableStateOf(false) }
     var showAddStudentDialog by remember { mutableStateOf(false) }
@@ -68,7 +69,7 @@ fun ClassesScreen(
         ) { padding ->
             LazyColumn(modifier = Modifier.padding(padding).fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 // Schedule info
-                if (selectedClass != null && selectedClass!!.schedule.isNotEmpty()) {
+                if (selectedClass != null && (selectedClass!!.schedule.isNotEmpty() || teacherNames.isNotEmpty() || selectedClass!!.fee.amount > 0)) {
                     item {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
@@ -77,10 +78,12 @@ fun ClassesScreen(
                             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
-                                Text("📅 Lịch học", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF3B82F6))
-                                Spacer(modifier = Modifier.height(8.dp))
-                                selectedClass!!.schedule.forEach { sch ->
-                                    Text("${sch.dayOfWeek}: ${sch.startTime} - ${sch.endTime}", fontSize = 14.sp, color = Color(0xFF475569))
+                                if (selectedClass!!.schedule.isNotEmpty()) {
+                                    Text("📅 Lịch học", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF3B82F6))
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    selectedClass!!.schedule.forEach { sch ->
+                                        Text("${sch.dayOfWeek}: ${sch.startTime} - ${sch.endTime}", fontSize = 14.sp, color = Color(0xFF475569))
+                                    }
                                 }
                                 if (selectedClass!!.fee.amount > 0) {
                                     Spacer(modifier = Modifier.height(8.dp))
@@ -92,6 +95,10 @@ fun ClassesScreen(
                                     }
                                     val feeFormatter = java.text.NumberFormat.getCurrencyInstance(java.util.Locale("vi", "VN"))
                                     Text("💰 Học phí: ${feeFormatter.format(selectedClass!!.fee.amount)} / $feeLabel", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF10B981))
+                                }
+                                if (teacherNames.isNotEmpty()) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text("👨‍🏫 GV: ${teacherNames.joinToString(", ")}", fontSize = 14.sp, color = Color(0xFF8B5CF6), fontWeight = FontWeight.SemiBold)
                                 }
                             }
                         }
