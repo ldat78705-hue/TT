@@ -106,7 +106,8 @@ class ReportsViewModel @Inject constructor(
                 // Revenue
                 val tuitionCollected = appData.transactions
                     .filter { t ->
-                        val inPeriod = t.date >= start && t.date <= end
+                        val td = t.date.take(10)
+                        val inPeriod = td >= start && td <= end
                         val isPayment = t.type == "PAYMENT" || t.type == "ADJUSTMENT_CREDIT"
                         val inClass = filteredStudentIds?.contains(t.studentId) ?: true
                         inPeriod && isPayment && t.amount > 0 && inClass
@@ -114,7 +115,7 @@ class ReportsViewModel @Inject constructor(
                     .sumOf { it.amount }
 
                 val totalExpenses = appData.transactions
-                    .filter { it.date >= start && it.date <= end && it.amount < 0 }
+                    .filter { val td = it.date.take(10); td >= start && td <= end && it.amount < 0 }
                     .sumOf { -it.amount }
 
                 val totalRevenue = tuitionCollected
@@ -127,19 +128,24 @@ class ReportsViewModel @Inject constructor(
 
                 // New students
                 val newStudents = appData.students.count { s ->
-                    s.createdAt >= start && s.createdAt <= end &&
+                    val created = s.createdAt.take(10)
+                    created >= start && created <= end &&
                     (filteredStudentIds?.contains(s.id) ?: true)
                 }
 
                 val inactiveStudents = appData.students.count { s ->
                     s.status.name == "INACTIVE" &&
-                    (s.statusChangedAt ?: "") >= start && (s.statusChangedAt ?: "") <= end &&
+                    run {
+                        val changed = (s.statusChangedAt ?: "").take(10)
+                        changed >= start && changed <= end
+                    } &&
                     (filteredStudentIds?.contains(s.id) ?: true)
                 }
 
                 // Attendance stats
                 val periodAttendance = appData.attendance.filter { a ->
-                    a.date >= start && a.date <= end &&
+                    val d = a.date.take(10)
+                    d >= start && d <= end &&
                     (if (classFilter != "all") a.classId == classFilter else true)
                 }
                 val totalSessions = periodAttendance.size
