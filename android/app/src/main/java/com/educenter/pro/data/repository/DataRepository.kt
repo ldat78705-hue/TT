@@ -4,6 +4,7 @@ import com.educenter.pro.data.local.ShardDao
 import com.educenter.pro.data.local.ShardEntity
 import com.educenter.pro.data.model.AppData
 import com.educenter.pro.data.model.AttendanceRecord
+import com.educenter.pro.data.model.Announcement
 import com.educenter.pro.data.model.ClassModel
 import com.educenter.pro.data.model.Settings
 import com.educenter.pro.data.model.Student
@@ -66,18 +67,9 @@ class DataRepository @Inject constructor(
             _currentUserRole.value = com.educenter.pro.data.model.UserRole.VIEWER
             return
         }
-        if (email == data.settings?.adminEmail) {
-            _currentUserRole.value = com.educenter.pro.data.model.UserRole.ADMIN
-            return
-        }
         val staffMember = data.staff.find { it.email == email }
         if (staffMember != null) {
             _currentUserRole.value = staffMember.role
-            return
-        }
-        val teacher = data.teachers.find { it.email == email }
-        if (teacher != null) {
-            _currentUserRole.value = com.educenter.pro.data.model.UserRole.TEACHER
             return
         }
         _currentUserRole.value = com.educenter.pro.data.model.UserRole.VIEWER

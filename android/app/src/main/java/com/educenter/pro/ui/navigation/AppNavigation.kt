@@ -16,6 +16,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.AccountCircle
 import com.educenter.pro.ui.screens.dashboard.DashboardScreen
 import com.educenter.pro.ui.screens.login.LoginScreen
 import com.educenter.pro.ui.screens.splash.SplashScreen
