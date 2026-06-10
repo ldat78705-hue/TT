@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.educenter.pro.data.local.AppDatabase
 import com.educenter.pro.data.local.ShardDao
+import com.educenter.pro.data.local.PendingOperationDao
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.gson.Gson
@@ -37,6 +38,11 @@ object AppModule {
     @Provides
     fun provideShardDao(database: AppDatabase): ShardDao {
         return database.shardDao()
+    }
+
+    @Provides
+    fun providePendingOperationDao(database: AppDatabase): PendingOperationDao {
+        return database.pendingOperationDao()
     }
 
     @Provides

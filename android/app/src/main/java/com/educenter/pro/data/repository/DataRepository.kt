@@ -1,6 +1,8 @@
 package com.educenter.pro.data.repository
 
 import android.content.SharedPreferences
+import com.educenter.pro.data.local.PendingOperationDao
+import com.educenter.pro.data.local.PendingOperationEntity
 import com.educenter.pro.data.local.ShardDao
 import com.educenter.pro.data.local.ShardEntity
 import com.educenter.pro.data.model.AppData
@@ -26,11 +28,15 @@ import javax.inject.Singleton
 class DataRepository @Inject constructor(
     private val apiService: ApiService,
     private val shardDao: ShardDao,
+    private val pendingOpDao: PendingOperationDao,
     private val gson: Gson,
     private val prefs: SharedPreferences
 ) {
     private val _appData = MutableStateFlow<AppData?>(null)
     val appData: StateFlow<AppData?> = _appData.asStateFlow()
+
+    private val _pendingOpsCount = MutableStateFlow(0)
+    val pendingOpsCount: StateFlow<Int> = _pendingOpsCount.asStateFlow()
 
     private val _currentUserRole = MutableStateFlow<com.educenter.pro.data.model.UserRole>(com.educenter.pro.data.model.UserRole.VIEWER)
     val currentUserRole: StateFlow<com.educenter.pro.data.model.UserRole> = _currentUserRole.asStateFlow()
@@ -86,6 +92,9 @@ class DataRepository @Inject constructor(
 
     suspend fun syncData() = withContext(Dispatchers.IO) {
         try {
+            // First, try to sync any pending offline operations
+            syncPendingOperations()
+            
             val data = apiService.getAppData()
             _appData.value = data
             val json = gson.toJson(data)
@@ -105,6 +114,7 @@ class DataRepository @Inject constructor(
                 _appData.value = AppData()
             }
         }
+        _pendingOpsCount.value = pendingOpDao.getPendingCount()
     }
 
     private suspend fun saveAndCache(updatedData: AppData) {
@@ -115,27 +125,56 @@ class DataRepository @Inject constructor(
     // ============ ATTENDANCE ============
 
     // BATCH save - mirrors Web's updateAttendance (1 API call for all students)
+    // Supports OFFLINE mode: queues operation if network fails
     suspend fun recordAttendanceBatch(
         classId: String,
         date: String,
         entries: Map<String, Map<String, String>> // studentId -> {status, note}
     ) = withContext(Dispatchers.IO) {
+        val records = entries.map { (studentId, data) ->
+            mapOf(
+                "classId" to classId,
+                "studentId" to studentId,
+                "date" to date,
+                "status" to (data["status"] ?: "UNMARKED"),
+                "note" to (data["note"] ?: "")
+            )
+        }
         try {
-            val records = entries.map { (studentId, data) ->
-                mapOf(
-                    "classId" to classId,
-                    "studentId" to studentId,
-                    "date" to date,
-                    "status" to (data["status"] ?: "UNMARKED"),
-                    "note" to (data["note"] ?: "")
-                )
-            }
             val op = OperationPayload("updateAttendance", records)
             val updatedData = apiService.executeOperation(op)
             saveAndCache(updatedData)
         } catch (e: Exception) {
-            e.printStackTrace()
-            throw e
+            // OFFLINE FALLBACK: Queue the operation for later sync
+            val payloadJson = gson.toJson(mapOf("op" to "updateAttendance", "payload" to records))
+            pendingOpDao.insert(PendingOperationEntity(
+                operationName = "updateAttendance",
+                payload = payloadJson
+            ))
+            _pendingOpsCount.value = pendingOpDao.getPendingCount()
+
+            // Optimistic local update: update cached attendance data
+            val currentData = _appData.value
+            if (currentData != null) {
+                val updatedAttendance = currentData.attendance.toMutableList()
+                // Remove existing records for this class/date
+                updatedAttendance.removeAll { it.classId == classId && it.date == date }
+                // Add new records
+                records.forEach { r ->
+                    updatedAttendance.add(com.educenter.pro.data.model.AttendanceRecord(
+                        id = "PENDING-${System.currentTimeMillis()}-${r["studentId"]}",
+                        classId = classId,
+                        studentId = r["studentId"] ?: "",
+                        date = date,
+                        status = r["status"] ?: "UNMARKED",
+                        note = r["note"] ?: ""
+                    ))
+                }
+                val updatedData = currentData.copy(attendance = updatedAttendance)
+                _appData.value = updatedData
+                shardDao.insertShards(listOf(ShardEntity(id = "app_data", data = gson.toJson(updatedData))))
+            }
+            // Don't throw - silently queued
         }
     }
 
@@ -296,5 +335,49 @@ class DataRepository @Inject constructor(
             val updatedData = apiService.executeOperation(OperationPayload("addAdjustment", payload))
             saveAndCache(updatedData)
         } catch (e: Exception) { e.printStackTrace(); throw e }
+    }
+
+    // ============ OFFLINE SYNC ============
+
+    suspend fun refreshPendingCount() = withContext(Dispatchers.IO) {
+        _pendingOpsCount.value = pendingOpDao.getPendingCount()
+    }
+
+    /**
+     * Replay all pending offline operations to the server.
+     * Called automatically when network becomes available.
+     * Returns number of successfully synced operations.
+     */
+    suspend fun syncPendingOperations(): Int = withContext(Dispatchers.IO) {
+        val pending = pendingOpDao.getPending()
+        if (pending.isEmpty()) return@withContext 0
+
+        var successCount = 0
+        for (op in pending) {
+            try {
+                pendingOpDao.updateStatus(op.id, "SYNCING")
+
+                // Parse the stored JSON payload
+                val parsed = gson.fromJson(op.payload, Map::class.java) as Map<String, Any>
+                val opName = parsed["op"] as? String ?: op.operationName
+                val payload = parsed["payload"]
+
+                val operationPayload = OperationPayload(opName, payload)
+                val updatedData = apiService.executeOperation(operationPayload)
+                saveAndCache(updatedData)
+
+                // Success - remove from queue
+                pendingOpDao.delete(op.id)
+                successCount++
+            } catch (e: Exception) {
+                e.printStackTrace()
+                // Failed - mark as FAILED but keep in queue for retry
+                pendingOpDao.updateStatus(op.id, "PENDING")
+                break // Stop trying if one fails (likely still offline)
+            }
+        }
+
+        _pendingOpsCount.value = pendingOpDao.getPendingCount()
+        return@withContext successCount
     }
 }

@@ -1,5 +1,6 @@
 package com.educenter.pro.ui.screens.attendance
 
+import android.content.Intent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -60,6 +61,8 @@ fun AttendanceScreen(
     val monthlyCounts by viewModel.monthlyAttendanceCounts.collectAsState()
     val isSaving by viewModel.isSaving.collectAsState()
     val saveSuccess by viewModel.saveSuccess.collectAsState()
+    val pendingOpsCount by viewModel.pendingOpsCount.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     val selectedClassName = classes.find { it.id == selectedClassId }?.name ?: ""
 
@@ -175,7 +178,18 @@ fun AttendanceScreen(
                         SaveButtonBar(
                             isSaving = isSaving,
                             saveSuccess = saveSuccess,
-                            onSave = { viewModel.saveAttendance() }
+                            pendingCount = pendingOpsCount,
+                            onSave = { viewModel.saveAttendance() },
+                            onShare = {
+                                val report = viewModel.buildAbsenceReport()
+                                if (report != null) {
+                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(Intent.EXTRA_TEXT, report)
+                                    }
+                                    context.startActivity(Intent.createChooser(shareIntent, "Gửi thông báo vắng qua..."))
+                                }
+                            }
                         )
                     }
                 }
@@ -575,7 +589,9 @@ private fun StatusButton(
 private fun SaveButtonBar(
     isSaving: Boolean,
     saveSuccess: Boolean?,
-    onSave: () -> Unit
+    pendingCount: Int,
+    onSave: () -> Unit,
+    onShare: () -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -585,28 +601,56 @@ private fun SaveButtonBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Success/error indicator
-            if (saveSuccess != null) {
-                Row(
-                    modifier = Modifier.weight(1f),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (saveSuccess == true) {
-                        Icon(Icons.Default.Check, contentDescription = null, tint = GreenPresent, modifier = Modifier.size(20.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Đã lưu thành công!", color = GreenPresent, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                    } else {
-                        Icon(Icons.Default.Close, contentDescription = null, tint = RedAbsent, modifier = Modifier.size(20.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Lỗi khi lưu!", color = RedAbsent, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+            // Success/error/pending indicator
+            Column(modifier = Modifier.weight(1f)) {
+                if (saveSuccess != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (saveSuccess == true) {
+                            Icon(Icons.Default.Check, contentDescription = null, tint = GreenPresent, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Đã lưu!", color = GreenPresent, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                        } else {
+                            Icon(Icons.Default.Close, contentDescription = null, tint = RedAbsent, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Lỗi!", color = RedAbsent, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                        }
                     }
                 }
-            } else {
-                Spacer(modifier = Modifier.weight(1f))
+                if (pendingCount > 0) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFF59E0B))
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            "$pendingCount chờ đồng bộ",
+                            fontSize = 11.sp,
+                            color = Color(0xFFF59E0B),
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            }
+
+            // Share button
+            if (saveSuccess == true) {
+                OutlinedButton(
+                    onClick = onShare,
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryBlue)
+                ) {
+                    Text("📤", fontSize = 14.sp)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Gửi TB", fontSize = 12.sp, color = PrimaryBlue, fontWeight = FontWeight.SemiBold)
+                }
             }
 
             // Save button
@@ -615,7 +659,7 @@ private fun SaveButtonBar(
                 enabled = !isSaving,
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
+                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
             ) {
                 if (isSaving) {
@@ -624,12 +668,12 @@ private fun SaveButtonBar(
                         color = Color.White,
                         strokeWidth = 2.dp
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Đang lưu...", fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Đang lưu...", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                 } else {
-                    Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Lưu điểm danh", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Lưu điểm danh", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                 }
             }
         }
