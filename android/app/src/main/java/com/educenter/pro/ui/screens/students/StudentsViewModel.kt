@@ -116,7 +116,7 @@ class StudentsViewModel @Inject constructor(
         val todayStr = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
         val description = "Nộp học phí qua App"
         viewModelScope.launch {
-            dataRepository.recordTransaction(studentId, amount, description, todayStr, "PAYMENT", paymentMethod)
+            dataRepository.recordTransaction(studentId, amount, description, todayStr, "CREDIT", paymentMethod)
         }
     }
 
