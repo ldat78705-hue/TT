@@ -1,10 +1,3 @@
-buildscript {
-    ext {
-        compose_version = '1.5.1'
-        room_version = '2.6.1'
-        hilt_version = '2.48'
-    }
-}
 
 plugins {
     id("com.android.application") version "8.2.2" apply false
