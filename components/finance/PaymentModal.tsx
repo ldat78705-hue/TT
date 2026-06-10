@@ -6,6 +6,7 @@ import { CurrencyInput } from '../common/CurrencyInput';
 import { Student } from '../../types';
 import { useData } from '../../hooks/useDataContext';
 import { useToast } from '../../hooks/useToast';
+import { useAuth } from '../../hooks/useAuth';
 import { ICONS } from '../../constants';
 
 interface PaymentModalProps {
@@ -19,6 +20,8 @@ import { getVietnamTime } from '../../utils/date';
 export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, student }) => {
     const { state, addAdjustment } = useData();
     const { toast } = useToast();
+    const { user } = useAuth();
+    const recorderName = user?.name || 'Không rõ';
 
     const [amount, setAmount] = useState(0);
     const [date, setDate] = useState(getVietnamTime().substring(0, 16));
@@ -55,7 +58,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, stu
                 studentId: student.id,
                 amount: amount,
                 date: finalDate,
-                description: `Thanh toán học phí trực tiếp`,
+                description: `Thanh toán HP - ghi nhận bởi ${recorderName} (Web)`,
                 type: 'CREDIT',
                 paymentMethod: paymentMethod,
             });
