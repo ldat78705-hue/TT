@@ -237,7 +237,18 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     updateUserPassword: handleStateUpdateOperation(api.updateUserPassword, 'updateUserPassword'),
     clearCollections: handleStateUpdateOperation(api.clearCollections, 'clearCollections'),
-    compactData: handleStateUpdateOperation(api.compactData, 'compactData'),
+    compactData: async () => {
+        if (isSubmitting) return;
+        setIsSubmitting(true);
+        try {
+            const newState = await api.compactData();
+            setState({ ...newState, loading: false });
+        } catch (err: any) {
+            throw err;
+        } finally {
+            setIsSubmitting(false);
+        }
+    },
     
     backupData: api.backupData,
     restoreData: handleStateUpdateOperation<Omit<AppData, 'loading'>>(api.restoreData),
