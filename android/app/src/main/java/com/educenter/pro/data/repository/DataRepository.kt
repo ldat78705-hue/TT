@@ -98,8 +98,8 @@ class DataRepository @Inject constructor(
 
     suspend fun recordAttendance(classId: String, studentId: String, dateStr: String, status: String) = withContext(Dispatchers.IO) {
         try {
-            val op = OperationPayload("updateAttendance", listOf(
-                mapOf("classId" to classId, "studentId" to studentId, "date" to dateStr, "status" to status)
+            val op = OperationPayload("updateSingleAttendance", mapOf(
+                "classId" to classId, "studentId" to studentId, "date" to dateStr, "status" to status
             ))
             val updatedData = apiService.executeOperation(op)
             _appData.value = updatedData

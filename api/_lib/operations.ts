@@ -327,6 +327,25 @@ export function applyOperation(
             });
             break;
         }
+        case 'updateSingleAttendance': {
+            const { classId, studentId, date, status } = payload;
+            const existingIndex = data.attendance.findIndex(a => a.classId === classId && a.date === date && a.studentId === studentId);
+            if (existingIndex >= 0) {
+                data.attendance[existingIndex].status = status;
+            } else {
+                const cls = data.classes.find(c => c.id === classId);
+                const currentTeacherIds = cls ? cls.teacherIds : [];
+                data.attendance.push({
+                    id: generateUniqueId('ATT'),
+                    classId,
+                    studentId,
+                    date,
+                    status,
+                    teacherIds: currentTeacherIds
+                });
+            }
+            break;
+        }
         case 'deleteAttendanceForDate': {
             const { classId, date } = payload;
             data.attendance = data.attendance.filter(a => !(a.classId === classId && a.date === date));
