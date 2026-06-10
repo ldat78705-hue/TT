@@ -104,7 +104,10 @@ class DataRepository @Inject constructor(
             val updatedData = apiService.executeOperation(op)
             _appData.value = updatedData
             shardDao.insertShards(listOf(ShardEntity(id = "app_data", data = gson.toJson(updatedData))))
-        } catch (e: Exception) { e.printStackTrace() }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw e
+        }
     }
 
     suspend fun recordTransaction(studentId: String, amount: Double, description: String, dateStr: String, type: String, paymentMethod: String? = null) = withContext(Dispatchers.IO) {

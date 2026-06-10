@@ -44,13 +44,19 @@ data class ClassSchedule(
     val endTime: String = ""
 )
 
+data class ClassFee(
+    val type: String = "PER_SESSION",
+    val amount: Double = 0.0
+)
+
 data class ClassModel(
     val id: String = "",
     val name: String = "",
     val teacherIds: List<String> = emptyList(),
     val studentIds: List<String> = emptyList(),
     val schedule: List<ClassSchedule> = emptyList(),
-    val subject: String = ""
+    val subject: String = "",
+    val fee: ClassFee = ClassFee()
 )
 
 data class Transaction(

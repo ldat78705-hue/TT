@@ -402,9 +402,23 @@ fun StudentDetailDialog(
                                             Text(att.date, fontWeight = FontWeight.Bold)
                                             Text(clsName, style = MaterialTheme.typography.bodySmall)
                                         }
+                                        val statusText = when (att.status) {
+                                            "PRESENT" -> "Có mặt"
+                                            "LATE" -> "Trễ"
+                                            "ABSENT" -> "Có phép"
+                                            "UNEXCUSED_ABSENT" -> "Không phép"
+                                            else -> att.status
+                                        }
+                                        val statusColor = when (att.status) {
+                                            "PRESENT" -> Color(0xFF10B981)
+                                            "LATE" -> Color(0xFFF59E0B)
+                                            "ABSENT" -> Color(0xFF0EA5E9)
+                                            "UNEXCUSED_ABSENT" -> Color(0xFFEF4444)
+                                            else -> Color.Gray
+                                        }
                                         Text(
-                                            text = if(att.status == "PRESENT") "Có mặt" else if(att.status == "ABSENT") "Vắng" else att.status,
-                                            color = if(att.status == "PRESENT") Color(0xFF10B981) else Color.Red,
+                                            text = statusText,
+                                            color = statusColor,
                                             fontWeight = FontWeight.Bold
                                         )
                                     }
