@@ -64,41 +64,69 @@ fun ClassesScreen(
                 )
             }
         ) { padding ->
-            Column(modifier = Modifier.padding(padding).fillMaxSize()) {
-                Text(
-                    "Danh sách Học viên",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(16.dp)
-                )
+            LazyColumn(modifier = Modifier.padding(padding).fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                // Schedule info
+                if (selectedClass != null && selectedClass!!.schedule.isNotEmpty()) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text("📅 Lịch học", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF3B82F6))
+                                Spacer(modifier = Modifier.height(8.dp))
+                                selectedClass!!.schedule.forEach { sch ->
+                                    Text("${sch.dayOfWeek}: ${sch.startTime} - ${sch.endTime}", fontSize = 14.sp, color = Color(0xFF475569))
+                                }
+                                if (selectedClass!!.fee.amount > 0) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    val feeLabel = when (selectedClass!!.fee.type) {
+                                        "PER_SESSION" -> "Theo buổi"
+                                        "MONTHLY" -> "Theo tháng"
+                                        "PER_COURSE" -> "Theo khóa"
+                                        else -> selectedClass!!.fee.type
+                                    }
+                                    val feeFormatter = java.text.NumberFormat.getCurrencyInstance(java.util.Locale("vi", "VN"))
+                                    Text("💰 Học phí: ${feeFormatter.format(selectedClass!!.fee.amount)} / $feeLabel", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF10B981))
+                                }
+                            }
+                        }
+                    }
+                }
+                item {
+                    Text(
+                        "Danh sách Học viên (${students.size})",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
                 if (students.isEmpty()) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Lớp này chưa có học viên. Nhấn + để thêm.", color = Color.Gray)
+                    item {
+                        Box(modifier = Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
+                            Text("Lớp này chưa có học viên. Nhấn + để thêm.", color = Color.Gray)
+                        }
                     }
                 } else {
-                    LazyColumn(
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(students) { student ->
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    items(students) { student ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Row(
-                                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(student.name, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                                        Spacer(modifier = Modifier.height(2.dp))
-                                        Text(student.phone, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    }
-                                    IconButton(onClick = { studentToRemove = student }) {
-                                        Icon(Icons.Default.RemoveCircle, contentDescription = "Xóa khỏi lớp", tint = MaterialTheme.colorScheme.error)
-                                    }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(student.name, fontWeight = FontWeight.Bold, color = Color(0xFF3B82F6))
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(student.phone, style = MaterialTheme.typography.bodySmall, color = Color(0xFF94A3B8))
+                                }
+                                IconButton(onClick = { studentToRemove = student }) {
+                                    Icon(Icons.Default.RemoveCircle, contentDescription = "Xóa khỏi lớp", tint = Color(0xFFEF4444))
                                 }
                             }
                         }
