@@ -254,11 +254,23 @@ class DataRepository @Inject constructor(
 
     // ============ ANNOUNCEMENTS ============
 
-    suspend fun saveAnnouncements(newAnnouncements: List<com.educenter.pro.data.model.Announcement>) = withContext(Dispatchers.IO) {
+    suspend fun addAnnouncement(title: String, content: String, createdBy: String) = withContext(Dispatchers.IO) {
         try {
-            val op = OperationPayload("executeCustom", mapOf("action" to "replaceAnnouncements", "data" to newAnnouncements))
-            val updatedData = apiService.executeOperation(op)
+            val payload = mapOf(
+                "title" to title,
+                "content" to content,
+                "createdBy" to createdBy,
+                "targetAudience" to "ALL"
+            )
+            val updatedData = apiService.executeOperation(OperationPayload("addAnnouncement", payload))
             saveAndCache(updatedData)
-        } catch (e: Exception) { e.printStackTrace() }
+        } catch (e: Exception) { e.printStackTrace(); throw e }
+    }
+
+    suspend fun deleteAnnouncement(announcementId: String) = withContext(Dispatchers.IO) {
+        try {
+            val updatedData = apiService.executeOperation(OperationPayload("deleteAnnouncement", mapOf("id" to announcementId)))
+            saveAndCache(updatedData)
+        } catch (e: Exception) { e.printStackTrace(); throw e }
     }
 }

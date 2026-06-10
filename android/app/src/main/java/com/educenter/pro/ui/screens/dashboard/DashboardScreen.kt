@@ -42,6 +42,10 @@ private val PurpleAccent = Color(0xFF8B5CF6)
 
 @Composable
 fun DashboardScreen(
+    onNavigateToClasses: () -> Unit = {},
+    onNavigateToTeachers: () -> Unit = {},
+    onNavigateToFinance: () -> Unit = {},
+    onNavigateToAnnouncements: () -> Unit = {},
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -70,6 +74,43 @@ fun DashboardScreen(
                 fontWeight = FontWeight.ExtraBold,
                 color = Color(0xFF1E293B)
             )
+        }
+
+        // === QUICK ACCESS GRID ===
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                QuickAccessButton(
+                    label = "Lớp học",
+                    icon = Icons.Default.Class,
+                    color = Color(0xFF8B5CF6),
+                    onClick = onNavigateToClasses,
+                    modifier = Modifier.weight(1f)
+                )
+                QuickAccessButton(
+                    label = "Giáo viên",
+                    icon = Icons.Default.Person,
+                    color = Color(0xFF3B82F6),
+                    onClick = onNavigateToTeachers,
+                    modifier = Modifier.weight(1f)
+                )
+                QuickAccessButton(
+                    label = "Tài chính",
+                    icon = Icons.Default.MonetizationOn,
+                    color = Color(0xFF10B981),
+                    onClick = onNavigateToFinance,
+                    modifier = Modifier.weight(1f)
+                )
+                QuickAccessButton(
+                    label = "Thông báo",
+                    icon = Icons.Default.Campaign,
+                    color = Color(0xFFF59E0B),
+                    onClick = onNavigateToAnnouncements,
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
 
         // === STAT CARDS ROW 1 ===
@@ -442,3 +483,35 @@ fun StatCard(
         }
     }
 }
+
+@Composable
+private fun QuickAccessButton(
+    label: String,
+    icon: ImageVector,
+    color: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        onClick = onClick
+    ) {
+        Column(
+            modifier = Modifier.padding(vertical = 12.dp).fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier.size(36.dp).clip(CircleShape).background(color.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
+            }
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(label, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF475569), maxLines = 1)
+        }
+    }
+}
+

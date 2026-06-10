@@ -18,6 +18,10 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Checklist
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.Campaign
 import com.educenter.pro.ui.screens.dashboard.DashboardScreen
 import com.educenter.pro.ui.screens.login.LoginScreen
 import com.educenter.pro.ui.screens.splash.SplashScreen
@@ -26,8 +30,14 @@ import com.educenter.pro.ui.screens.students.StudentsScreen
 import com.educenter.pro.ui.screens.profile.ProfileScreen
 import com.educenter.pro.ui.screens.teachers.TeachersScreen
 import com.educenter.pro.ui.screens.attendance.AttendanceScreen
+import com.educenter.pro.ui.screens.reports.ReportsScreen
+import com.educenter.pro.ui.screens.finance.FinanceScreen
+import com.educenter.pro.ui.screens.announcements.AnnouncementsScreen
 
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.hilt.navigation.compose.hiltViewModel
 
 sealed class Screen(val route: String, val title: String? = null, val icon: androidx.compose.ui.graphics.vector.ImageVector? = null) {
@@ -40,9 +50,14 @@ sealed class Screen(val route: String, val title: String? = null, val icon: andr
     object Profile : Screen("profile", "Cá nhân", Icons.Filled.AccountCircle)
     object Transactions : Screen("transactions", "Sổ Quỹ")
     object Attendance : Screen("attendance", "Điểm danh", Icons.Filled.Checklist)
+    object Reports : Screen("reports", "Báo cáo", Icons.Filled.Assessment)
+    object Finance : Screen("finance", "Tài chính", Icons.Filled.Payments)
+    object Announcements : Screen("announcements", "Thông báo", Icons.Filled.Campaign)
+    object More : Screen("more", "Thêm", Icons.Filled.MoreHoriz)
 }
 
-val bottomNavItems = listOf(Screen.Home, Screen.Students, Screen.Attendance, Screen.Profile)
+// Bottom nav: 5 items max for good UX
+val bottomNavItems = listOf(Screen.Home, Screen.Students, Screen.Attendance, Screen.Reports, Screen.Profile)
 
 @Composable
 fun AppNavigation() {
@@ -52,7 +67,7 @@ fun AppNavigation() {
 
     val visibleNavItems = bottomNavItems.filter { screen ->
         if (currentUserRole == com.educenter.pro.data.model.UserRole.ACCOUNTANT) {
-            screen == Screen.Students || screen == Screen.Profile
+            screen == Screen.Students || screen == Screen.Profile || screen == Screen.Reports
         } else {
             true
         }
@@ -62,9 +77,10 @@ fun AppNavigation() {
         bottomBar = {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination
-            
-            // Only show bottom bar on main screens
-            val showBottomBar = visibleNavItems.any { it.route == currentDestination?.route }
+
+            // Show bottom bar on main screens + new screens
+            val mainRoutes = setOf(Screen.Home.route, Screen.Students.route, Screen.Attendance.route, Screen.Profile.route, Screen.Reports.route, Screen.Finance.route, Screen.Announcements.route, Screen.Classes.route, Screen.Teachers.route)
+            val showBottomBar = mainRoutes.contains(currentDestination?.route)
 
             if (showBottomBar) {
                 NavigationBar {
@@ -119,7 +135,12 @@ fun AppNavigation() {
                 )
             }
             composable(Screen.Home.route) {
-                DashboardScreen()
+                DashboardScreen(
+                    onNavigateToClasses = { navController.navigate(Screen.Classes.route) },
+                    onNavigateToTeachers = { navController.navigate(Screen.Teachers.route) },
+                    onNavigateToFinance = { navController.navigate(Screen.Finance.route) },
+                    onNavigateToAnnouncements = { navController.navigate(Screen.Announcements.route) }
+                )
             }
             composable(Screen.Classes.route) {
                 ClassesScreen()
@@ -149,6 +170,15 @@ fun AppNavigation() {
             }
             composable(Screen.Attendance.route) {
                 AttendanceScreen()
+            }
+            composable(Screen.Reports.route) {
+                ReportsScreen()
+            }
+            composable(Screen.Finance.route) {
+                FinanceScreen()
+            }
+            composable(Screen.Announcements.route) {
+                AnnouncementsScreen()
             }
         }
     }

@@ -1,0 +1,77 @@
+package com.educenter.pro.ui.screens.finance
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.educenter.pro.data.model.Student
+import com.educenter.pro.data.model.Transaction
+import com.educenter.pro.data.repository.DataRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+data class DebtStudent(val student: Student, val debt: Double)
+
+data class FinanceUiState(
+    val cashRevenue: Double = 0.0,
+    val totalExpenses: Double = 0.0,
+    val cashFlow: Double = 0.0,
+    val totalReceivables: Double = 0.0,
+    val totalCredit: Double = 0.0,
+    val debtStudents: List<DebtStudent> = emptyList(),
+    val recentTransactions: List<Transaction> = emptyList(),
+    val isLoading: Boolean = true
+)
+
+@HiltViewModel
+class FinanceViewModel @Inject constructor(
+    private val dataRepository: DataRepository
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow(FinanceUiState())
+    val uiState: StateFlow<FinanceUiState> = _uiState.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            dataRepository.appData.collect { appData ->
+                if (appData == null) return@collect
+
+                val cashRevenue = appData.transactions
+                    .filter { it.amount > 0 }
+                    .sumOf { it.amount }
+
+                val totalExpenses = appData.transactions
+                    .filter { it.amount < 0 }
+                    .sumOf { -it.amount }
+
+                val totalReceivables = appData.students
+                    .filter { it.balance < 0 }
+                    .sumOf { -it.balance }
+
+                val totalCredit = appData.students
+                    .filter { it.balance > 0 }
+                    .sumOf { it.balance }
+
+                val debtStudents = appData.students
+                    .filter { it.balance < 0 && it.status.name == "ACTIVE" }
+                    .sortedBy { it.balance }
+                    .map { DebtStudent(it, -it.balance) }
+
+                val recentTransactions = appData.transactions
+                    .sortedByDescending { it.date }
+                    .take(20)
+
+                _uiState.value = FinanceUiState(
+                    cashRevenue = cashRevenue,
+                    totalExpenses = totalExpenses,
+                    cashFlow = cashRevenue - totalExpenses,
+                    totalReceivables = totalReceivables,
+                    totalCredit = totalCredit,
+                    debtStudents = debtStudents,
+                    recentTransactions = recentTransactions,
+                    isLoading = false
+                )
+            }
+        }
+    }
+}

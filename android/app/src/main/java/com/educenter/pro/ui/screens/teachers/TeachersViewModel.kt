@@ -29,13 +29,17 @@ class TeachersViewModel @Inject constructor(
     }
 
     fun addTeacher(name: String, phone: String, subject: String) {
-        val current = _teachers.value.toMutableList()
-        current.add(Teacher(
+        addTeacher(Teacher(
             id = java.util.UUID.randomUUID().toString(),
             name = name,
             phone = phone,
             subject = subject
         ))
+    }
+
+    fun addTeacher(teacher: Teacher) {
+        val current = _teachers.value.toMutableList()
+        current.add(teacher)
         viewModelScope.launch { dataRepository.saveTeachers(current) }
     }
 
