@@ -8,8 +8,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Cancel
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.RemoveCircle
 import androidx.compose.material3.*
@@ -19,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.educenter.pro.data.model.ClassModel
 import com.educenter.pro.data.model.Student
@@ -35,13 +34,23 @@ fun ClassesScreen(
 
     var showAddClassDialog by remember { mutableStateOf(false) }
     var showAddStudentDialog by remember { mutableStateOf(false) }
+    var studentToRemove by remember { mutableStateOf<Student?>(null) }
 
     if (selectedClass != null) {
         BackHandler { viewModel.clearSelection() }
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text(selectedClass?.name ?: "") },
+                    title = { 
+                        Column {
+                            Text(selectedClass?.name ?: "")
+                            Text(
+                                "${selectedClass?.subject ?: ""} • ${students.size} học viên",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    },
                     navigationIcon = {
                         IconButton(onClick = { viewModel.clearSelection() }) {
                             Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -57,23 +66,66 @@ fun ClassesScreen(
         ) { padding ->
             Column(modifier = Modifier.padding(padding).fillMaxSize()) {
                 Text(
-                    "Điểm danh & Quản lý",
+                    "Danh sách Học viên",
                     style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(16.dp)
                 )
-                LazyColumn(
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(students) { student ->
-                        StudentAttendanceRow(
-                            student = student,
-                            onMark = { status -> viewModel.markAttendance(student.id, status) },
-                            onRemove = { viewModel.removeStudentFromClass(student.id) }
-                        )
+                if (students.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Lớp này chưa có học viên. Nhấn + để thêm.", color = Color.Gray)
+                    }
+                } else {
+                    LazyColumn(
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(students) { student ->
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(student.name, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(student.phone, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                    IconButton(onClick = { studentToRemove = student }) {
+                                        Icon(Icons.Default.RemoveCircle, contentDescription = "Xóa khỏi lớp", tint = MaterialTheme.colorScheme.error)
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
+        }
+
+        // Confirm remove student from class
+        if (studentToRemove != null) {
+            AlertDialog(
+                onDismissRequest = { studentToRemove = null },
+                title = { Text("Xác nhận") },
+                text = { Text("Xóa \"${studentToRemove?.name}\" khỏi lớp \"${selectedClass?.name}\"?") },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            studentToRemove?.let { viewModel.removeStudentFromClass(it.id) }
+                            studentToRemove = null
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444))
+                    ) { Text("Xóa") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { studentToRemove = null }) { Text("Hủy") }
+                }
+            )
         }
 
         if (showAddStudentDialog) {
@@ -129,6 +181,31 @@ fun ClassesScreen(
                                 Text("Môn: ${classModel.subject}", style = MaterialTheme.typography.bodyMedium)
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text("Sĩ số: ${classModel.studentIds.size} học sinh", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+                                // Show schedule
+                                if (classModel.schedule.isNotEmpty()) {
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    val dayMap = mapOf("Monday" to "T2", "Tuesday" to "T3", "Wednesday" to "T4", "Thursday" to "T5", "Friday" to "T6", "Saturday" to "T7", "Sunday" to "CN")
+                                    val schedText = classModel.schedule.joinToString(" | ") { 
+                                        "${dayMap[it.dayOfWeek] ?: it.dayOfWeek}: ${it.startTime}-${it.endTime}" 
+                                    }
+                                    Text(schedText, style = MaterialTheme.typography.bodySmall, color = Color(0xFF64748B), fontSize = 11.sp)
+                                }
+                                // Show fee
+                                if (classModel.fee.amount > 0) {
+                                    val feeTypeText = when (classModel.fee.type) {
+                                        "PER_SESSION" -> "buổi"
+                                        "MONTHLY" -> "tháng"
+                                        "PER_COURSE" -> "khóa"
+                                        else -> ""
+                                    }
+                                    Text(
+                                        "Học phí: ${java.text.NumberFormat.getCurrencyInstance(java.util.Locale("vi", "VN")).format(classModel.fee.amount)}/$feeTypeText",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color(0xFF10B981),
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 12.sp
+                                    )
+                                }
                             }
                         }
                     }
@@ -136,63 +213,120 @@ fun ClassesScreen(
             }
         }
 
+        // === ADD CLASS DIALOG ===
         if (showAddClassDialog) {
-            var className by remember { mutableStateOf("") }
-            var subject by remember { mutableStateOf("") }
-            AlertDialog(
-                onDismissRequest = { showAddClassDialog = false },
-                title = { Text("Thêm Lớp Mới") },
-                text = {
-                    Column {
-                        OutlinedTextField(value = className, onValueChange = { className = it }, label = { Text("Tên lớp") })
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(value = subject, onValueChange = { subject = it }, label = { Text("Môn học") })
-                    }
-                },
-                confirmButton = {
-                    Button(onClick = {
-                        if (className.isNotBlank() && subject.isNotBlank()) {
-                            viewModel.addClass(className, subject)
-                            showAddClassDialog = false
-                        }
-                    }) { Text("Lưu") }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showAddClassDialog = false }) { Text("Hủy") }
+            AddClassDialog(
+                onDismiss = { showAddClassDialog = false },
+                onSave = { name, subject, schedule, feeType, feeAmount ->
+                    viewModel.addClass(name, subject, schedule, feeType, feeAmount)
+                    showAddClassDialog = false
                 }
             )
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StudentAttendanceRow(student: Student, onMark: (String) -> Unit, onRemove: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(student.name, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(student.phone, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+fun AddClassDialog(
+    onDismiss: () -> Unit,
+    onSave: (String, String, List<Map<String, String>>, String, Double) -> Unit
+) {
+    var className by remember { mutableStateOf("") }
+    var subject by remember { mutableStateOf("") }
+    var feeAmountText by remember { mutableStateOf("") }
+    var selectedFeeType by remember { mutableStateOf("PER_SESSION") }
+    
+    // Schedule entries
+    val allDays = listOf("Monday" to "T2", "Tuesday" to "T3", "Wednesday" to "T4", "Thursday" to "T5", "Friday" to "T6", "Saturday" to "T7", "Sunday" to "CN")
+    var selectedDays by remember { mutableStateOf(setOf<String>()) }
+    var startTime by remember { mutableStateOf("18:00") }
+    var endTime by remember { mutableStateOf("19:30") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Thêm Lớp Mới") },
+        text = {
+            LazyColumn {
+                item { OutlinedTextField(value = className, onValueChange = { className = it }, label = { Text("Tên lớp *") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
+                item { Spacer(modifier = Modifier.height(8.dp)) }
+                item { OutlinedTextField(value = subject, onValueChange = { subject = it }, label = { Text("Môn học *") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
+                item { Spacer(modifier = Modifier.height(12.dp)) }
+                
+                // Schedule
+                item { Text("Lịch học:", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall) }
+                item { Spacer(modifier = Modifier.height(4.dp)) }
+                item {
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        allDays.forEach { (dayEn, dayVn) ->
+                            FilterChip(
+                                selected = selectedDays.contains(dayEn),
+                                onClick = {
+                                    selectedDays = if (selectedDays.contains(dayEn)) {
+                                        selectedDays - dayEn
+                                    } else {
+                                        selectedDays + dayEn
+                                    }
+                                },
+                                label = { Text(dayVn, fontSize = 11.sp) },
+                                modifier = Modifier.height(32.dp)
+                            )
+                        }
+                    }
+                }
+                item { Spacer(modifier = Modifier.height(8.dp)) }
+                item {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = startTime, onValueChange = { startTime = it },
+                            label = { Text("Bắt đầu") }, singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                        OutlinedTextField(
+                            value = endTime, onValueChange = { endTime = it },
+                            label = { Text("Kết thúc") }, singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+                item { Spacer(modifier = Modifier.height(12.dp)) }
+                
+                // Fee
+                item { Text("Học phí:", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall) }
+                item { Spacer(modifier = Modifier.height(4.dp)) }
+                item {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        listOf("PER_SESSION" to "Theo buổi", "MONTHLY" to "Theo tháng", "PER_COURSE" to "Theo khóa").forEach { (type, label) ->
+                            RadioButton(selected = selectedFeeType == type, onClick = { selectedFeeType = type })
+                            Text(label, fontSize = 12.sp)
+                            Spacer(modifier = Modifier.width(4.dp))
+                        }
+                    }
+                }
+                item { Spacer(modifier = Modifier.height(4.dp)) }
+                item {
+                    OutlinedTextField(
+                        value = feeAmountText, onValueChange = { feeAmountText = it },
+                        label = { Text("Số tiền (VNĐ)") }, singleLine = true,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                IconButton(onClick = { onMark("PRESENT") }) {
-                    Icon(Icons.Default.CheckCircle, contentDescription = "Có mặt", tint = Color(0xFF4CAF50))
+        },
+        confirmButton = {
+            Button(onClick = {
+                if (className.isNotBlank() && subject.isNotBlank()) {
+                    val schedule = selectedDays.map { day ->
+                        mapOf("dayOfWeek" to day, "startTime" to startTime, "endTime" to endTime)
+                    }
+                    val feeAmount = feeAmountText.toDoubleOrNull() ?: 0.0
+                    onSave(className, subject, schedule, selectedFeeType, feeAmount)
                 }
-                IconButton(onClick = { onMark("ABSENT") }) {
-                    Icon(Icons.Default.Cancel, contentDescription = "Vắng mặt", tint = Color(0xFFF44336))
-                }
-                IconButton(onClick = onRemove) {
-                    Icon(Icons.Default.RemoveCircle, contentDescription = "Xóa khỏi lớp", tint = MaterialTheme.colorScheme.error)
-                }
-            }
+            }) { Text("Lưu") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Hủy") }
         }
-    }
+    )
 }

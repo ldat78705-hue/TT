@@ -242,6 +242,53 @@ fun DashboardScreen(
                 }
             }
         }
+        // === TOP LATE ===
+        if (uiState.topLate.isNotEmpty()) {
+            item {
+                SectionHeader(
+                    icon = Icons.Default.Person,
+                    title = "Đi muộn nhiều nhất (30 ngày)",
+                    color = Color(0xFFF97316)
+                )
+            }
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        uiState.topLate.forEachIndexed { index, item ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier.size(28.dp).clip(CircleShape)
+                                        .background(if (index == 0) Color(0xFFF97316) else Color(0xFF94A3B8)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("${index + 1}", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(item.student.name, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                                Box(
+                                    modifier = Modifier.clip(RoundedCornerShape(8.dp))
+                                        .background(OrangeAccent.copy(alpha = 0.1f))
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Text("${item.absentCount} buổi", color = OrangeAccent, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                }
+                            }
+                            if (index < uiState.topLate.lastIndex) {
+                                HorizontalDivider(color = Color(0xFFF1F5F9))
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         // === TODAY'S CLASSES ===
         item {

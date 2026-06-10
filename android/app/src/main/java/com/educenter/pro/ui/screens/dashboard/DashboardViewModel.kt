@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
@@ -35,6 +36,7 @@ class DashboardViewModel @Inject constructor(
             dataRepository.appData.collect { appData ->
                 if (appData != null) {
                     val activeStudents = appData.students.count { it.status.name == "ACTIVE" }
+                    val activeStudentIds = appData.students.filter { it.status.name == "ACTIVE" }.map { it.id }.toSet()
                     
                     // Current month revenue
                     val currentMonthPrefix = SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(Date())
@@ -47,20 +49,41 @@ class DashboardViewModel @Inject constructor(
                         .filter { it.balance < 0 && it.status.name == "ACTIVE" }
                         .sumOf { -it.balance }
 
-                    // Top debtors (students with most negative balance)
+                    // Top debtors
                     val topDebtors = appData.students
                         .filter { it.balance < 0 }
                         .sortedBy { it.balance }
                         .take(5)
                         .map { StudentDebt(it, -it.balance) }
 
-                    // Top absent students (UNEXCUSED_ABSENT count in current month)
+                    // 30 days ago threshold (matches Web logic)
+                    val cal = Calendar.getInstance()
+                    cal.add(Calendar.DAY_OF_MONTH, -30)
+                    val thirtyDaysAgo = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(cal.time)
+
+                    // Top absent students (ABSENT + UNEXCUSED_ABSENT in last 30 days - matches Web)
                     val topAbsent = appData.students
+                        .filter { activeStudentIds.contains(it.id) }
                         .map { student ->
                             val count = appData.attendance.count { a ->
                                 a.studentId == student.id &&
-                                a.date.startsWith(currentMonthPrefix) &&
-                                a.status == "UNEXCUSED_ABSENT"
+                                a.date >= thirtyDaysAgo &&
+                                (a.status == "ABSENT" || a.status == "UNEXCUSED_ABSENT")
+                            }
+                            StudentAbsent(student, count)
+                        }
+                        .filter { it.absentCount > 0 }
+                        .sortedByDescending { it.absentCount }
+                        .take(5)
+
+                    // Top late students (LATE in last 30 days - matches Web)
+                    val topLate = appData.students
+                        .filter { activeStudentIds.contains(it.id) }
+                        .map { student ->
+                            val count = appData.attendance.count { a ->
+                                a.studentId == student.id &&
+                                a.date >= thirtyDaysAgo &&
+                                a.status == "LATE"
                             }
                             StudentAbsent(student, count)
                         }
@@ -87,6 +110,7 @@ class DashboardViewModel @Inject constructor(
                         totalUncollected = totalUncollected,
                         topDebtors = topDebtors,
                         topAbsent = topAbsent,
+                        topLate = topLate,
                         todayClasses = todayClasses,
                         announcements = recentAnnouncements,
                         isLoading = false
@@ -105,6 +129,7 @@ data class DashboardUiState(
     val totalUncollected: Double = 0.0,
     val topDebtors: List<StudentDebt> = emptyList(),
     val topAbsent: List<StudentAbsent> = emptyList(),
+    val topLate: List<StudentAbsent> = emptyList(),
     val todayClasses: List<ClassModel> = emptyList(),
     val announcements: List<com.educenter.pro.data.model.Announcement> = emptyList(),
     val isLoading: Boolean = true

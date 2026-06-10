@@ -6,11 +6,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -19,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.educenter.pro.data.model.Student
+import com.educenter.pro.data.model.ClassModel
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -44,6 +47,7 @@ fun StudentsScreen(
     
     var selectedStudentForEdit by remember { mutableStateOf<Student?>(null) }
     var selectedStudentForDetails by remember { mutableStateOf<Student?>(null) }
+    var studentToDelete by remember { mutableStateOf<Student?>(null) }
 
     Scaffold(
         topBar = {
@@ -51,13 +55,17 @@ fun StudentsScreen(
         },
         floatingActionButton = {
             if (canManage) {
-                FloatingActionButton(onClick = { showAddDialog = true }) {
-                    Icon(Icons.Default.Add, contentDescription = "Thêm học viên")
+                FloatingActionButton(
+                    onClick = { showAddDialog = true },
+                    containerColor = Color(0xFF3B82F6)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Thêm học viên", tint = Color.White)
                 }
             }
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+            // Search bar with clear button
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = viewModel::onSearchQueryChange,
@@ -66,7 +74,15 @@ fun StudentsScreen(
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 placeholder = { Text("Tìm tên hoặc số điện thoại...") },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                singleLine = true
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { viewModel.onSearchQueryChange("") }) {
+                            Icon(Icons.Default.Clear, contentDescription = "Xóa tìm kiếm")
+                        }
+                    }
+                },
+                singleLine = true,
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
             )
 
             LazyColumn(
@@ -83,41 +99,70 @@ fun StudentsScreen(
                         onClick = { selectedStudentForDetails = it },
                         onPayFeeClick = { selectedStudentForFee = it },
                         onEditClick = { selectedStudentForEdit = it },
-                        onDeleteClick = { viewModel.deleteStudent(it.id) }
+                        onDeleteClick = { studentToDelete = it }
                     )
                 }
             }
         }
 
+        // === DELETE CONFIRMATION ===
+        if (studentToDelete != null) {
+            AlertDialog(
+                onDismissRequest = { studentToDelete = null },
+                title = { Text("Xác nhận xóa") },
+                text = { Text("Bạn có chắc chắn muốn xóa học viên \"${studentToDelete?.name}\"? Thao tác này không thể hoàn tác.") },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            studentToDelete?.let { viewModel.deleteStudent(it.id) }
+                            studentToDelete = null
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444))
+                    ) { Text("Xóa") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { studentToDelete = null }) { Text("Hủy") }
+                }
+            )
+        }
+
+        // === ADD DIALOG ===
         if (showAddDialog) {
             AddOrEditStudentDialog(
                 student = null,
+                allClasses = classes,
+                currentClassIds = emptyList(),
                 onDismiss = { showAddDialog = false },
-                onSave = { name, phone, parentName, email, address, gender, dob, discount, status ->
-                    viewModel.addStudent(name, phone, parentName, email, address, gender, dob, discount, status)
+                onSave = { name, phone, parentName, email, address, gender, dob, discount, status, classIds ->
+                    viewModel.addStudent(name, phone, parentName, email, address, gender, dob, discount, status, classIds)
                     showAddDialog = false
                 }
             )
         }
 
+        // === EDIT DIALOG ===
         if (selectedStudentForEdit != null) {
+            val editClassIds = viewModel.getStudentClassIds(selectedStudentForEdit!!.id)
             AddOrEditStudentDialog(
                 student = selectedStudentForEdit,
+                allClasses = classes,
+                currentClassIds = editClassIds,
                 onDismiss = { selectedStudentForEdit = null },
-                onSave = { name, phone, parentName, email, address, gender, dob, discount, status ->
+                onSave = { name, phone, parentName, email, address, gender, dob, discount, status, classIds ->
                     selectedStudentForEdit?.let {
                         val updated = it.copy(
                             name = name, phone = phone, parentName = parentName,
                             email = email, address = address, gender = gender,
                             dob = dob, discountPercentage = discount, status = status
                         )
-                        viewModel.updateStudent(updated)
+                        viewModel.updateStudent(updated, classIds)
                     }
                     selectedStudentForEdit = null
                 }
             )
         }
 
+        // === FEE DIALOG ===
         if (selectedStudentForFee != null) {
             AlertDialog(
                 onDismissRequest = { selectedStudentForFee = null },
@@ -135,7 +180,7 @@ fun StudentsScreen(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text("Hình thức nộp", style = MaterialTheme.typography.labelMedium)
-                        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(
                                 selected = selectedPaymentMethod == "Tiền mặt",
                                 onClick = { selectedPaymentMethod = "Tiền mặt" }
@@ -174,6 +219,7 @@ fun StudentsScreen(
             )
         }
 
+        // === DETAIL DIALOG ===
         if (selectedStudentForDetails != null) {
             val studentTx = transactions.filter { it.studentId == selectedStudentForDetails!!.id }
             val studentAtt = attendanceRecords.filter { it.studentId == selectedStudentForDetails!!.id }
@@ -192,8 +238,10 @@ fun StudentsScreen(
 @Composable
 fun AddOrEditStudentDialog(
     student: Student?,
+    allClasses: List<ClassModel>,
+    currentClassIds: List<String>,
     onDismiss: () -> Unit,
-    onSave: (String, String, String, String, String, String, String, Double, com.educenter.pro.data.model.PersonStatus) -> Unit
+    onSave: (String, String, String, String, String, String, String, Double, com.educenter.pro.data.model.PersonStatus, List<String>) -> Unit
 ) {
     var name by remember { mutableStateOf(student?.name ?: "") }
     var phone by remember { mutableStateOf(student?.phone ?: "") }
@@ -204,13 +252,14 @@ fun AddOrEditStudentDialog(
     var dob by remember { mutableStateOf(student?.dob ?: "") }
     var discountText by remember { mutableStateOf(student?.discountPercentage?.toString() ?: "0") }
     var isActive by remember { mutableStateOf(student?.status == com.educenter.pro.data.model.PersonStatus.ACTIVE) }
+    var selectedClassIds by remember { mutableStateOf(currentClassIds.toMutableList()) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (student == null) "Thêm Học viên" else "Sửa Học viên") },
         text = {
             LazyColumn {
-                item { OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Họ Tên") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
+                item { OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Họ Tên *") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
                 item { Spacer(modifier = Modifier.height(8.dp)) }
                 item { OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Số điện thoại") }, singleLine = true, keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Phone), modifier = Modifier.fillMaxWidth()) }
                 item { Spacer(modifier = Modifier.height(8.dp)) }
@@ -223,7 +272,7 @@ fun AddOrEditStudentDialog(
                 item { OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Địa chỉ") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
                 item { Spacer(modifier = Modifier.height(8.dp)) }
                 item {
-                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("Giới tính: ", style = MaterialTheme.typography.bodyMedium)
                         Spacer(modifier = Modifier.width(8.dp))
                         listOf("Nam", "Nữ", "Khác").forEach { g ->
@@ -237,9 +286,45 @@ fun AddOrEditStudentDialog(
                 item { OutlinedTextField(value = discountText, onValueChange = { discountText = it }, label = { Text("% Giảm học phí") }, singleLine = true, keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth()) }
                 item { Spacer(modifier = Modifier.height(8.dp)) }
                 item {
-                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = isActive, onCheckedChange = { isActive = it })
                         Text("Đang theo học (ACTIVE)")
+                    }
+                }
+                // === CLASS SELECTION ===
+                if (allClasses.isNotEmpty()) {
+                    item {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text("Lớp học:", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+                    items(allClasses) { cls ->
+                        val isSelected = selectedClassIds.contains(cls.id)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    selectedClassIds = if (isSelected) {
+                                        selectedClassIds.toMutableList().also { it.remove(cls.id) }
+                                    } else {
+                                        selectedClassIds.toMutableList().also { it.add(cls.id) }
+                                    }
+                                }
+                                .padding(vertical = 4.dp)
+                        ) {
+                            Checkbox(
+                                checked = isSelected,
+                                onCheckedChange = {
+                                    selectedClassIds = if (isSelected) {
+                                        selectedClassIds.toMutableList().also { it.remove(cls.id) }
+                                    } else {
+                                        selectedClassIds.toMutableList().also { it.add(cls.id) }
+                                    }
+                                }
+                            )
+                            Text("${cls.name} (${cls.subject})", style = MaterialTheme.typography.bodyMedium)
+                        }
                     }
                 }
             }
@@ -249,7 +334,7 @@ fun AddOrEditStudentDialog(
                 if (name.isNotBlank()) {
                     val discount = discountText.toDoubleOrNull() ?: 0.0
                     val status = if (isActive) com.educenter.pro.data.model.PersonStatus.ACTIVE else com.educenter.pro.data.model.PersonStatus.INACTIVE
-                    onSave(name, phone, parentName, email, address, gender, dob, discount, status)
+                    onSave(name, phone, parentName, email, address, gender, dob, discount, status, selectedClassIds)
                 }
             }) {
                 Text("Lưu")
@@ -264,7 +349,7 @@ fun AddOrEditStudentDialog(
 @Composable
 fun StudentCard(
     student: Student,
-    studentClasses: List<com.educenter.pro.data.model.ClassModel>,
+    studentClasses: List<ClassModel>,
     canManage: Boolean,
     canCollectFee: Boolean,
     onClick: (Student) -> Unit,
@@ -295,7 +380,7 @@ fun StudentCard(
                         Spacer(modifier = Modifier.height(6.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             studentClasses.take(3).forEach { cls ->
-                                androidx.compose.material3.Surface(
+                                Surface(
                                     color = Color(0xFF3B82F6).copy(alpha = 0.1f),
                                     shape = androidx.compose.foundation.shape.RoundedCornerShape(6.dp)
                                 ) {
@@ -315,8 +400,8 @@ fun StudentCard(
                         }
                     }
                 }
-                Column(horizontalAlignment = androidx.compose.ui.Alignment.End) {
-                    androidx.compose.material3.Surface(
+                Column(horizontalAlignment = Alignment.End) {
+                    Surface(
                         color = if (student.status.name == "ACTIVE") Color(0xFF10B981).copy(alpha = 0.1f) else Color(0xFF94A3B8).copy(alpha = 0.1f),
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
                     ) {
@@ -369,11 +454,11 @@ fun StudentDetailDialog(
     student: Student,
     transactions: List<com.educenter.pro.data.model.Transaction>,
     attendanceRecords: List<com.educenter.pro.data.model.AttendanceRecord>,
-    classes: List<com.educenter.pro.data.model.ClassModel>,
+    classes: List<ClassModel>,
     onDismiss: () -> Unit
 ) {
     val currencyFormatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
-    var selectedTab by remember { mutableIntStateOf(0) }
+    var selectedTab by remember { mutableStateOf(0) }
     
     val studentClasses = classes.filter { it.studentIds.contains(student.id) }
     
@@ -393,14 +478,14 @@ fun StudentDetailDialog(
                     Spacer(modifier = Modifier.height(8.dp))
                     Text("Lớp đang học:", fontWeight = FontWeight.Bold)
                     studentClasses.forEach { cls ->
-                        Text("- ${cls.name}")
+                        Text("- ${cls.name} (${cls.subject})")
                     }
                 }
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 TabRow(selectedTabIndex = selectedTab) {
-                    Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("Lịch sử Nộp tiền") })
+                    Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("Nộp tiền") })
                     Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("Điểm danh") })
                 }
                 

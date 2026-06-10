@@ -192,7 +192,7 @@ class AttendanceViewModel @Inject constructor(
         }
     }
 
-    // Save all attendance at once - single batch to API (like Web's handleSubmit)
+    // Save all attendance at once - single batch API call (mirrors Web's updateAttendance)
     fun saveAttendance() {
         val classId = _selectedClassId.value ?: return
         val date = _selectedDate.value
@@ -201,15 +201,36 @@ class AttendanceViewModel @Inject constructor(
         viewModelScope.launch {
             _isSaving.value = true
             try {
-                // Send each marked student to API
-                for ((studentId, entry) in entries) {
-                    if (entry.status != "UNMARKED") {
-                        dataRepository.recordAttendance(classId, studentId, date, entry.status)
+                // Filter out UNMARKED students, build batch payload
+                val markedEntries = entries
+                    .filter { it.value.status != "UNMARKED" }
+                    .mapValues { (_, entry) ->
+                        mapOf("status" to entry.status, "note" to entry.note)
                     }
+                
+                if (markedEntries.isNotEmpty()) {
+                    dataRepository.recordAttendanceBatch(classId, date, markedEntries)
                 }
                 _saveSuccess.value = true
             } catch (e: Exception) {
                 e.printStackTrace()
+                _saveSuccess.value = false
+            } finally {
+                _isSaving.value = false
+            }
+        }
+    }
+
+    // Delete attendance for current class/date
+    fun deleteAttendance() {
+        val classId = _selectedClassId.value ?: return
+        val date = _selectedDate.value
+        viewModelScope.launch {
+            _isSaving.value = true
+            try {
+                dataRepository.deleteAttendanceForDate(classId, date)
+                _saveSuccess.value = true
+            } catch (e: Exception) {
                 _saveSuccess.value = false
             } finally {
                 _isSaving.value = false

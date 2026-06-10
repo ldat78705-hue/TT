@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -24,6 +25,7 @@ fun TeachersScreen(
     val teachers by viewModel.teachers.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     var selectedForEdit by remember { mutableStateOf<Teacher?>(null) }
+    var teacherToDelete by remember { mutableStateOf<Teacher?>(null) }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Giáo viên") }) },
@@ -60,13 +62,34 @@ fun TeachersScreen(
                             IconButton(onClick = { selectedForEdit = teacher }) {
                                 Icon(Icons.Default.Edit, contentDescription = "Sửa", tint = MaterialTheme.colorScheme.primary)
                             }
-                            IconButton(onClick = { viewModel.deleteTeacher(teacher.id) }) {
+                            IconButton(onClick = { teacherToDelete = teacher }) {
                                 Icon(Icons.Default.Delete, contentDescription = "Xóa", tint = MaterialTheme.colorScheme.error)
                             }
                         }
                     }
                 }
             }
+        }
+
+        // Delete confirmation
+        if (teacherToDelete != null) {
+            AlertDialog(
+                onDismissRequest = { teacherToDelete = null },
+                title = { Text("Xác nhận xóa") },
+                text = { Text("Bạn có chắc chắn muốn xóa giáo viên \"${teacherToDelete?.name}\"?") },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            teacherToDelete?.let { viewModel.deleteTeacher(it.id) }
+                            teacherToDelete = null
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                    ) { Text("Xóa") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { teacherToDelete = null }) { Text("Hủy") }
+                }
+            )
         }
 
         if (showAddDialog) {

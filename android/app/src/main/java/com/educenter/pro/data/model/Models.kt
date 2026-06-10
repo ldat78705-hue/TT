@@ -26,7 +26,12 @@ data class Student(
     val balance: Double = 0.0,
     val discountPercentage: Double = 0.0,
     val dob: String = "",
-    val password: String? = null
+    val password: String? = null,
+    // Fields preserved from server - not editable in App UI but must be kept
+    val createdAt: String = "",
+    val statusChangedAt: String? = null,
+    val statusHistory: List<Map<String, String>>? = null,
+    val billedCourses: List<String>? = null
 )
 
 data class Teacher(
@@ -35,7 +40,19 @@ data class Teacher(
     val phone: String = "",
     val subject: String = "",
     val password: String = "",
-    val role: UserRole = UserRole.TEACHER
+    val role: UserRole = UserRole.TEACHER,
+    // Additional fields matching Web schema
+    val dob: String = "",
+    val qualification: String = "",
+    val email: String = "",
+    val address: String = "",
+    val gender: String = "Khác",
+    val status: PersonStatus = PersonStatus.ACTIVE,
+    val salaryType: String = "PER_SESSION",
+    val rate: Double = 0.0,
+    val createdAt: String = "",
+    val statusChangedAt: String? = null,
+    val statusHistory: List<Map<String, String>>? = null
 )
 
 data class ClassSchedule(

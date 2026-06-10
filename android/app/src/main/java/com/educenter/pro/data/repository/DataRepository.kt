@@ -48,6 +48,10 @@ class DataRepository @Inject constructor(
         return prefs.getString("user_token", null) != null
     }
 
+    fun getLoggedInUserName(): String {
+        return prefs.getString("user_name", null) ?: prefs.getString("user_email", null) ?: ""
+    }
+
     suspend fun loginLocal(identifier: String, passwordRaw: String): Boolean {
         try {
             val response = apiService.login(LoginRequest(identifier, passwordRaw))
@@ -56,6 +60,7 @@ class DataRepository @Inject constructor(
                 prefs.edit()
                     .putString("user_token", response.token)
                     .putString("user_role", roleStr)
+                    .putString("user_email", identifier)
                     .apply()
                 _currentUserRole.value = com.educenter.pro.data.model.UserRole.valueOf(roleStr)
                 return true
@@ -96,19 +101,65 @@ class DataRepository @Inject constructor(
         }
     }
 
+    private suspend fun saveAndCache(updatedData: AppData) {
+        _appData.value = updatedData
+        shardDao.insertShards(listOf(ShardEntity(id = "app_data", data = gson.toJson(updatedData))))
+    }
+
+    // ============ ATTENDANCE ============
+
+    // BATCH save - mirrors Web's updateAttendance (1 API call for all students)
+    suspend fun recordAttendanceBatch(
+        classId: String,
+        date: String,
+        entries: Map<String, Map<String, String>> // studentId -> {status, note}
+    ) = withContext(Dispatchers.IO) {
+        try {
+            val records = entries.map { (studentId, data) ->
+                mapOf(
+                    "classId" to classId,
+                    "studentId" to studentId,
+                    "date" to date,
+                    "status" to (data["status"] ?: "UNMARKED"),
+                    "note" to (data["note"] ?: "")
+                )
+            }
+            val op = OperationPayload("updateAttendance", records)
+            val updatedData = apiService.executeOperation(op)
+            saveAndCache(updatedData)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw e
+        }
+    }
+
+    // Single attendance (kept for backward compat)
     suspend fun recordAttendance(classId: String, studentId: String, dateStr: String, status: String) = withContext(Dispatchers.IO) {
         try {
             val op = OperationPayload("updateSingleAttendance", mapOf(
                 "classId" to classId, "studentId" to studentId, "date" to dateStr, "status" to status
             ))
             val updatedData = apiService.executeOperation(op)
-            _appData.value = updatedData
-            shardDao.insertShards(listOf(ShardEntity(id = "app_data", data = gson.toJson(updatedData))))
+            saveAndCache(updatedData)
         } catch (e: Exception) {
             e.printStackTrace()
             throw e
         }
     }
+
+    // Delete attendance for a date
+    suspend fun deleteAttendanceForDate(classId: String, date: String) = withContext(Dispatchers.IO) {
+        try {
+            val op = OperationPayload("deleteAttendanceForDate", mapOf("classId" to classId, "date" to date))
+            val updatedData = apiService.executeOperation(op)
+            saveAndCache(updatedData)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw e
+        }
+    }
+
+    // ============ TRANSACTIONS ============
 
     suspend fun recordTransaction(studentId: String, amount: Double, description: String, dateStr: String, type: String, paymentMethod: String? = null) = withContext(Dispatchers.IO) {
         try {
@@ -116,11 +167,39 @@ class DataRepository @Inject constructor(
                 "studentId" to studentId, "amount" to amount, "date" to dateStr, "description" to description, "type" to type, "paymentMethod" to paymentMethod
             ))
             val updatedData = apiService.executeOperation(op)
-            _appData.value = updatedData
-            shardDao.insertShards(listOf(ShardEntity(id = "app_data", data = gson.toJson(updatedData))))
+            saveAndCache(updatedData)
         } catch (e: Exception) { e.printStackTrace() }
     }
 
+    // ============ STUDENTS ============
+
+    suspend fun addStudent(student: Student, classIds: List<String>) = withContext(Dispatchers.IO) {
+        try {
+            val op = OperationPayload("addStudent", mapOf("student" to student, "classIds" to classIds))
+            val updatedData = apiService.executeOperation(op)
+            saveAndCache(updatedData)
+        } catch (e: Exception) { e.printStackTrace() }
+    }
+
+    suspend fun updateStudent(originalId: String, updatedStudent: Student, classIds: List<String>) = withContext(Dispatchers.IO) {
+        try {
+            val op = OperationPayload("updateStudent", mapOf(
+                "originalId" to originalId, "updatedStudent" to updatedStudent, "classIds" to classIds
+            ))
+            val updatedData = apiService.executeOperation(op)
+            saveAndCache(updatedData)
+        } catch (e: Exception) { e.printStackTrace() }
+    }
+
+    suspend fun deleteStudent(studentId: String) = withContext(Dispatchers.IO) {
+        try {
+            val op = OperationPayload("deleteStudent", mapOf("studentId" to studentId))
+            val updatedData = apiService.executeOperation(op)
+            saveAndCache(updatedData)
+        } catch (e: Exception) { e.printStackTrace() }
+    }
+
+    // Legacy bulk save (kept for compat)
     suspend fun saveStudents(newStudents: List<Student>) = withContext(Dispatchers.IO) {
         val current = _appData.value?.students ?: emptyList()
         val added = newStudents.filter { n -> current.none { it.id == n.id } }
@@ -136,6 +215,8 @@ class DataRepository @Inject constructor(
             if(latest != null) shardDao.insertShards(listOf(ShardEntity(id = "app_data", data = gson.toJson(latest))))
         } catch (e: Exception) { e.printStackTrace() }
     }
+
+    // ============ TEACHERS ============
 
     suspend fun saveTeachers(newTeachers: List<Teacher>) = withContext(Dispatchers.IO) {
         val current = _appData.value?.teachers ?: emptyList()
@@ -153,6 +234,8 @@ class DataRepository @Inject constructor(
         } catch (e: Exception) { e.printStackTrace() }
     }
 
+    // ============ CLASSES ============
+
     suspend fun saveClasses(newClasses: List<ClassModel>) = withContext(Dispatchers.IO) {
         val current = _appData.value?.classes ?: emptyList()
         val added = newClasses.filter { n -> current.none { it.id == n.id } }
@@ -169,13 +252,13 @@ class DataRepository @Inject constructor(
         } catch (e: Exception) { e.printStackTrace() }
     }
 
-    suspend fun saveAnnouncements(newAnnouncements: List<Announcement>) = withContext(Dispatchers.IO) {
+    // ============ ANNOUNCEMENTS ============
+
+    suspend fun saveAnnouncements(newAnnouncements: List<com.educenter.pro.data.model.Announcement>) = withContext(Dispatchers.IO) {
         try {
-            // For announcements, we can just replace them entirely via a new operation or mock it locally if API doesn't support
             val op = OperationPayload("executeCustom", mapOf("action" to "replaceAnnouncements", "data" to newAnnouncements))
             val updatedData = apiService.executeOperation(op)
-            _appData.value = updatedData
-            shardDao.insertShards(listOf(ShardEntity(id = "app_data", data = gson.toJson(updatedData))))
+            saveAndCache(updatedData)
         } catch (e: Exception) { e.printStackTrace() }
     }
 }

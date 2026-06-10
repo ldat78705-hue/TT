@@ -57,15 +57,23 @@ class ClassesViewModel @Inject constructor(
         }
     }
 
-    fun addClass(name: String, subject: String) {
+    fun addClass(name: String, subject: String, schedule: List<Map<String, String>>, feeType: String, feeAmount: Double) {
         val currentClasses = _classes.value.toMutableList()
+        val scheduleModels = schedule.map {
+            com.educenter.pro.data.model.ClassSchedule(
+                dayOfWeek = it["dayOfWeek"] ?: "",
+                startTime = it["startTime"] ?: "",
+                endTime = it["endTime"] ?: ""
+            )
+        }
         val newClass = ClassModel(
             id = java.util.UUID.randomUUID().toString(),
             name = name,
             subject = subject,
             studentIds = emptyList(),
             teacherIds = emptyList(),
-            schedule = emptyList()
+            schedule = scheduleModels,
+            fee = com.educenter.pro.data.model.ClassFee(type = feeType, amount = feeAmount)
         )
         currentClasses.add(newClass)
         viewModelScope.launch {

@@ -3,6 +3,7 @@ package com.educenter.pro.ui.screens.students
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.educenter.pro.data.model.Student
+import com.educenter.pro.data.model.PersonStatus
 import com.educenter.pro.data.repository.DataRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -35,9 +36,9 @@ class StudentsViewModel @Inject constructor(
                 val parts = student.name.trim().split("\\s+".toRegex())
                 val lastName = parts.lastOrNull()?.lowercase() ?: ""
                 when {
-                    lastName.startsWith(lowerQuery) -> 0  // Last name starts with query = top priority
-                    student.name.lowercase().startsWith(lowerQuery) -> 1  // Full name starts with query
-                    else -> 2  // Contains query somewhere
+                    lastName.startsWith(lowerQuery) -> 0
+                    student.name.lowercase().startsWith(lowerQuery) -> 1
+                    else -> 2
                 }
             }.thenBy { it.name })
         }
@@ -78,9 +79,9 @@ class StudentsViewModel @Inject constructor(
         gender: String,
         dob: String,
         discountPercentage: Double,
-        status: com.educenter.pro.data.model.PersonStatus
+        status: PersonStatus,
+        classIds: List<String>
     ) {
-        val currentStudents = _allStudents.value.toMutableList()
         val newStudent = Student(
             id = java.util.UUID.randomUUID().toString(),
             name = name,
@@ -94,27 +95,20 @@ class StudentsViewModel @Inject constructor(
             status = status,
             balance = 0.0
         )
-        currentStudents.add(newStudent)
         viewModelScope.launch {
-            dataRepository.saveStudents(currentStudents)
+            dataRepository.addStudent(newStudent, classIds)
         }
     }
 
-    fun updateStudent(updatedStudent: Student) {
-        val currentStudents = _allStudents.value.toMutableList()
-        val index = currentStudents.indexOfFirst { it.id == updatedStudent.id }
-        if (index != -1) {
-            currentStudents[index] = updatedStudent
-            viewModelScope.launch {
-                dataRepository.saveStudents(currentStudents)
-            }
+    fun updateStudent(updatedStudent: Student, classIds: List<String>) {
+        viewModelScope.launch {
+            dataRepository.updateStudent(updatedStudent.id, updatedStudent, classIds)
         }
     }
 
     fun deleteStudent(studentId: String) {
-        val currentStudents = _allStudents.value.filter { it.id != studentId }
         viewModelScope.launch {
-            dataRepository.saveStudents(currentStudents)
+            dataRepository.deleteStudent(studentId)
         }
     }
 
@@ -124,5 +118,10 @@ class StudentsViewModel @Inject constructor(
         viewModelScope.launch {
             dataRepository.recordTransaction(studentId, amount, description, todayStr, "PAYMENT", paymentMethod)
         }
+    }
+
+    // Get classIds for a student
+    fun getStudentClassIds(studentId: String): List<String> {
+        return classes.value.filter { it.studentIds.contains(studentId) }.map { it.id }
     }
 }
