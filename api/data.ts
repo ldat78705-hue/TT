@@ -482,7 +482,7 @@ export async function executeTuitionTransaction(payload: any) {
 export default async function handler(req: any, res: any) {
     const authPayload = await getAuthPayload(req);
     if (!authPayload) {
-        return res.status(401).send('Unauthorized: Invalid or missing Token');
+        return res.status(401).json({ success: false, error: 'Không có quyền truy cập: Chỉ quản trị viên mới được thao tác' });
     }
 
     if (req.method === 'GET') {
@@ -494,8 +494,8 @@ export default async function handler(req: any, res: any) {
             return res.status(200).json(responseData);
         } catch (error) {
             console.error('Firestore GET Error:', error);
-            const errorMessage = error instanceof Error ? error.message : 'Unknown Firestore error';
-            return res.status(500).send(`Lỗi Máy chủ: Không thể lấy dữ liệu từ Firestore. Chi tiết: ${errorMessage}`);
+            const errorMessage = error instanceof Error ? error.message : 'Lỗi thao tác không xác định';
+            return res.status(500).json({ success: false, error: errorMessage });
         }
     }
 
@@ -507,7 +507,7 @@ export default async function handler(req: any, res: any) {
         }
 
         if (role === UserRole.VIEWER) {
-            return res.status(403).send('Forbidden: You do not have permission to modify data');
+            return res.status(403).send('Từ chối: Bạn không có quyền sửa đổi dữ liệu');
         }
         if (role === UserRole.ACCOUNTANT) {
             const allowedOps = [
@@ -517,26 +517,26 @@ export default async function handler(req: any, res: any) {
                 'updateInvoiceStatus', 'updateUserPassword'
             ];
             if (!allowedOps.includes(operation.op)) {
-                 return res.status(403).send('Forbidden: Accountant can only modify financial data');
+                 return res.status(403).send('Từ chối: Kế toán chỉ được thay đổi dữ liệu tài chính');
             }
         }
         if (role === UserRole.PARENT) {
             if (operation.op !== 'updateUserPassword' || operation.payload?.userId !== authPayload.userId) {
-                return res.status(403).send('Forbidden: You do not have permission to modify data');
+                return res.status(403).send('Từ chối: Bạn không có quyền sửa đổi dữ liệu');
             }
         }
 
         if (operation.op === 'updateUserPassword') {
             const targetRole = operation.payload?.role;
             if (targetRole === UserRole.ADMIN && role !== UserRole.ADMIN) {
-                return res.status(403).send('Forbidden: Only Admin can change Admin password');
+                return res.status(403).send('Từ chối: Chỉ quản trị viên mới được đổi mật khẩu Quản trị viên');
             }
             if (role !== UserRole.ADMIN && role !== UserRole.MANAGER) {
                 if (!operation.payload?.currentPassword) {
-                    return res.status(403).send('Forbidden: currentPassword is required');
+                    return res.status(403).send('Từ chối: Yêu cầu mật khẩu hiện tại');
                 }
                 if (operation.payload.userId !== authPayload.userId) {
-                    return res.status(403).send('Forbidden: You can only change your own password');
+                    return res.status(403).send('Từ chối: Bạn chỉ có thể thay đổi mật khẩu của chính mình');
                 }
             }
             if (operation.payload.newPassword) {
@@ -575,7 +575,7 @@ export default async function handler(req: any, res: any) {
             try {
                 await authenticateServer();
                 if (role !== UserRole.ADMIN) {
-                    throw new Error('Forbidden: Only admins can restore data');
+                    throw new Error('Từ chối: Chỉ quản trị viên mới có thể khôi phục dữ liệu');
                 }
                 const restoredDataFromFile = operation.payload as Omit<AppData, 'loading'>;
                 const restoredShards = shardAppData(restoredDataFromFile);
@@ -612,8 +612,8 @@ export default async function handler(req: any, res: any) {
                 return res.status(200).json(restoredDataFromFile);
             } catch (error) {
                 console.error('Operation Error:', error);
-                const errorMessage = error instanceof Error ? error.message : 'Unknown operation error';
-                if (errorMessage.startsWith('Forbidden:')) {
+                const errorMessage = error instanceof Error ? error.message : 'Lỗi thao tác không xác định';
+                if (errorMessage.startsWith('Từ chối:') || errorMessage.startsWith('Forbidden:')) {
                     return res.status(403).send(errorMessage);
                 }
                 return res.status(400).send(`Thao tác thất bại: ${errorMessage}`);
@@ -634,8 +634,8 @@ export default async function handler(req: any, res: any) {
                 }
             } catch (error) {
                 console.error('Operation Error:', error);
-                const errorMessage = error instanceof Error ? error.message : 'Unknown operation error';
-                if (errorMessage.startsWith('Forbidden:')) {
+                const errorMessage = error instanceof Error ? error.message : 'Lỗi thao tác không xác định';
+                if (errorMessage.startsWith('Từ chối:') || errorMessage.startsWith('Forbidden:')) {
                     return res.status(403).send(errorMessage);
                 }
                 return res.status(400).send(`Thao tác thất bại: ${errorMessage}`);

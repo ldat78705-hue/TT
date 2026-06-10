@@ -48,7 +48,7 @@ export default async function handler(req: any, res: any) {
         const { identifier, password } = body;
 
         if (!identifier || !password) {
-            return res.status(400).json({ error: 'Missing credentials' });
+            return res.status(400).json({ error: 'Thiếu thông tin đăng nhập' });
         }
 
         const data = await getAuthData();
@@ -114,10 +114,10 @@ export default async function handler(req: any, res: any) {
             return res.status(200).json({ token, user: safeUser, role });
         }
 
-        return res.status(401).json({ error: 'Invalid credentials' });
+        return res.status(401).json({ error: 'Thông tin đăng nhập không hợp lệ' });
 
     } catch (error) {
         console.error('Auth Error:', error);
-        return res.status(500).json({ error: 'Internal Server Error' });
+        return res.status(500).json({ error: 'Lỗi máy chủ nội bộ' });
     }
 }

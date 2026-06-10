@@ -306,14 +306,23 @@ export const StudentsScreen: React.FC = () => {
 
         if (!searchQuery.trim()) return studentsToFilter;
         
-        const normalizedQuery = removeAccents(searchQuery.toLowerCase().trim());
+        const lowerQuery = searchQuery.toLowerCase().trim();
+        const normalizedQuery = removeAccents(lowerQuery);
         const queryWords = normalizedQuery.split(/\s+/).filter(Boolean);
         
         return studentsToFilter.filter(s => {
             const normalizedName = removeAccents(s.name.toLowerCase());
             const phoneMatch = (s.phone || '').includes(searchQuery.trim());
-            const nameMatch = queryWords.every(word => normalizedName.includes(word));
+            const idMatch = s.id.toLowerCase().includes(lowerQuery);
             
+            const nameParts = normalizedName.split(/\s+/);
+            const lastName = nameParts[nameParts.length - 1] || '';
+            let nameScore = 0;
+            if (queryWords.length === 1 && lastName === queryWords[0]) nameScore = 5;
+            else if (queryWords.length === 1 && lastName.startsWith(queryWords[0])) nameScore = 4;
+            else if (queryWords.every(w => normalizedName.includes(w))) nameScore = 3;
+            else if (normalizedName.includes(normalizedQuery)) nameScore = 2;
+
             // Check class names
             const studentClasses = state.classes.filter(c => c.studentIds.includes(s.id));
             const classMatch = studentClasses.some(c => {
@@ -321,7 +330,7 @@ export const StudentsScreen: React.FC = () => {
                 return queryWords.every(word => normalizedClassName.includes(word));
             });
 
-            return phoneMatch || nameMatch || classMatch;
+            return nameScore > 0 || phoneMatch || idMatch || classMatch;
         });
     }, [state.students, state.classes, searchQuery, classFilter]);
     
