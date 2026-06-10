@@ -56,6 +56,8 @@ class DataRepository @Inject constructor(
                     newShards.add(ShardEntity(id = document.id, data = jsonStr))
                 }
             }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
