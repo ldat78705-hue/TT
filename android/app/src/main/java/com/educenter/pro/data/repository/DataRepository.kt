@@ -1,6 +1,9 @@
 package com.educenter.pro.data.repository
 
-import com.educenter.pro.data.local.ShardDao
+import android.content.Context
+import android.content.SharedPreferences
+import java.security.MessageDigest
+import dagger.hilt.android.qualifiers.ApplicationContextimport com.educenter.pro.data.local.ShardDao
 import com.educenter.pro.data.local.ShardEntity
 import com.educenter.pro.data.model.AppData
 import com.educenter.pro.data.model.AttendanceRecord
@@ -24,10 +27,13 @@ import javax.inject.Singleton
 
 @Singleton
 class DataRepository @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val firestore: FirebaseFirestore,
     private val shardDao: ShardDao,
     private val gson: Gson
 ) {
+    private val prefs: SharedPreferences = context.getSharedPreferences("educenter_prefs", Context.MODE_PRIVATE)
+
     private val _appData = MutableStateFlow<AppData?>(null)
     val appData: StateFlow<AppData?> = _appData.asStateFlow()
 
@@ -37,15 +43,105 @@ class DataRepository @Inject constructor(
     private val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
 
     init {
-        auth.addAuthStateListener {
-            updateUserRole(it.currentUser?.email, _appData.value)
+        // Load role from SharedPreferences
+        val savedRole = prefs.getString("user_role", null)
+        if (savedRole != null) {
+            try {
+                _currentUserRole.value = com.educenter.pro.data.model.UserRole.valueOf(savedRole)
+            } catch (e: Exception) {}
         }
+    }
+    
+    fun isUserLoggedIn(): Boolean {
+        return prefs.getString("user_id", null) != null
+    }
+
+    private fun md5(input: String): String {
+        val md = MessageDigest.getInstance("MD5")
+        return md.digest(input.toByteArray()).joinToString("") { "%02x".format(it) }
+    }
+
+    suspend fun loginLocal(identifier: String, passwordRaw: String): Boolean {
+        val data = _appData.value ?: return false
+        val upperIdentifier = identifier.uppercase()
+        val hashedPw = md5(passwordRaw)
+
+        var foundRole: com.educenter.pro.data.model.UserRole? = null
+        var foundId: String? = null
+
+        // 1. Admin
+        if (upperIdentifier == "ADMIN" || upperIdentifier == "ADMIN_USER") {
+            val adminPassword = data.settings?.adminPassword ?: "123456"
+            if (passwordRaw == adminPassword || hashedPw == adminPassword) {
+                foundRole = com.educenter.pro.data.model.UserRole.ADMIN
+                foundId = "ADMIN_USER"
+            }
+        }
+        // 2. Viewer
+        else if (upperIdentifier == "VIEWER" || upperIdentifier == "VIEWER_USER") {
+            if (data.settings?.viewerAccountActive != false && (passwordRaw == "viewer123" || hashedPw == "viewer123")) {
+                foundRole = com.educenter.pro.data.model.UserRole.VIEWER
+                foundId = "VIEWER_USER"
+            }
+        }
+        // 3. Teacher
+        else if (data.teachers.any { it.id.uppercase() == upperIdentifier }) {
+            val teacher = data.teachers.first { it.id.uppercase() == upperIdentifier }
+            if (teacher.password == passwordRaw || teacher.password == hashedPw) {
+                foundRole = teacher.role
+                foundId = teacher.id
+            }
+        }
+        // 4. Staff
+        else if (data.staff.any { it.id.uppercase() == upperIdentifier }) {
+            val staffMember = data.staff.first { it.id.uppercase() == upperIdentifier }
+            if (staffMember.password == passwordRaw || staffMember.password == hashedPw) {
+                foundRole = staffMember.role
+                foundId = staffMember.id
+            }
+        }
+        // 5. Student
+        else if (data.students.any { it.id.uppercase() == upperIdentifier }) {
+            val student = data.students.first { it.id.uppercase() == upperIdentifier }
+            val dobPassword = student.dob.split("-").reversed().joinToString("")
+            val correctPassword = if (!student.password.isNullOrEmpty()) student.password else dobPassword
+            if (passwordRaw == correctPassword || hashedPw == correctPassword) {
+                foundRole = com.educenter.pro.data.model.UserRole.PARENT
+                foundId = student.id
+            }
+        }
+
+        if (foundRole != null && foundId != null) {
+            _currentUserRole.value = foundRole
+            prefs.edit().putString("user_id", foundId).putString("user_role", foundRole.name).apply()
+            return true
+        }
+        return false
+    }
+
+    fun logout() {
+        prefs.edit().clear().apply()
+        _currentUserRole.value = com.educenter.pro.data.model.UserRole.VIEWER
     }
 
     private val COLLECTION_NAME = "db_core_v2_secure_9a8b7c6d5e4f3g2h1"
 
     suspend fun syncData() = withContext(Dispatchers.IO) {
         try {
+            // Authenticate as server admin to get read/write access
+            if (auth.currentUser?.email != "server_admin@educenter.local") {
+                try {
+                    auth.signInWithEmailAndPassword("server_admin@educenter.local", "EduCenter_Secure_Server_Pwd_2026!").await()
+                } catch (e: Exception) {
+                    // Try to create if not found (like web server Auth)
+                    try {
+                        auth.createUserWithEmailAndPassword("server_admin@educenter.local", "EduCenter_Secure_Server_Pwd_2026!").await()
+                    } catch (e2: Exception) {
+                        e2.printStackTrace()
+                    }
+                }
+            }
+
             kotlinx.coroutines.withTimeout(10000L) {
                 val snapshot = firestore.collection(COLLECTION_NAME).get().await()
                 val newShards = mutableListOf<ShardEntity>()
@@ -76,16 +172,7 @@ class DataRepository @Inject constructor(
     }
 
     private fun updateUserRole(email: String?, data: AppData?) {
-        if (email == null || data == null) {
-            _currentUserRole.value = com.educenter.pro.data.model.UserRole.VIEWER
-            return
-        }
-        val staffMember = data.staff.find { it.email == email }
-        if (staffMember != null) {
-            _currentUserRole.value = staffMember.role
-            return
-        }
-        _currentUserRole.value = com.educenter.pro.data.model.UserRole.VIEWER
+        // Obsolete
     }
 
     private fun rebuildAppDataFromLocal(shards: List<ShardEntity>) {

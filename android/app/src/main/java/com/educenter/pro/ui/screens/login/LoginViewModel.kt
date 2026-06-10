@@ -2,7 +2,7 @@ package com.educenter.pro.ui.screens.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.auth.FirebaseAuth
+import com.educenter.pro.data.repository.DataRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,7 +13,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val auth: FirebaseAuth
+    private val dataRepository: DataRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -39,8 +39,15 @@ class LoginViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
-                auth.signInWithEmailAndPassword(email, password).await()
-                _uiState.value = _uiState.value.copy(isLoading = false, isSuccess = true)
+                val success = dataRepository.loginLocal(email, password)
+                if (success) {
+                    _uiState.value = _uiState.value.copy(isLoading = false, isSuccess = true)
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = "Tài khoản hoặc mật khẩu không đúng"
+                    )
+                }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,

@@ -17,7 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.google.firebase.auth.FirebaseAuth
+
 import kotlinx.coroutines.delay
 
 @Composable
@@ -32,8 +32,7 @@ fun SplashScreen(
     LaunchedEffect(isReady) {
         if (isReady) {
             delay(1500) // Show splash for a bit
-            val user = FirebaseAuth.getInstance().currentUser
-            if (user != null) {
+            if (viewModel.isUserLoggedIn()) {
                 onNavigateToHome()
             } else {
                 onNavigateToLogin()

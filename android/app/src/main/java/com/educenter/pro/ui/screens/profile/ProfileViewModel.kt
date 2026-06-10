@@ -3,7 +3,7 @@ package com.educenter.pro.ui.screens.profile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.educenter.pro.data.repository.DataRepository
-import com.google.firebase.auth.FirebaseAuth
+import com.educenter.pro.data.repository.DataRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,11 +13,11 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val auth: FirebaseAuth,
     private val dataRepository: DataRepository
 ) : ViewModel() {
 
-    private val _userEmail = MutableStateFlow(auth.currentUser?.email ?: "")
+    // TODO: Expose logged-in user info from DataRepository if needed
+    private val _userEmail = MutableStateFlow("")
     val userEmail = _userEmail.asStateFlow()
 
     private val _isSyncing = MutableStateFlow(false)
@@ -29,7 +29,7 @@ class ProfileViewModel @Inject constructor(
     val currentUserRole = dataRepository.currentUserRole
 
     fun logout() {
-        auth.signOut()
+        dataRepository.logout()
         _isLoggedOut.value = true
     }
 
