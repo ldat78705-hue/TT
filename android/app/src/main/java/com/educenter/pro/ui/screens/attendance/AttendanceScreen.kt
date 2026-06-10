@@ -11,6 +11,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 
@@ -35,7 +37,7 @@ fun AttendanceScreen(
                 navigationIcon = {
                     if (selectedClassId != null) {
                         IconButton(onClick = { viewModel.selectClass("") }) { // "" acts as null
-                            Icon(androidx.compose.material.icons.Icons.Default.ArrowBack, contentDescription = "Trở về")
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Trở về")
                         }
                     }
                 }

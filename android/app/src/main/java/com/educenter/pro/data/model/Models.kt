@@ -55,6 +55,8 @@ data class ClassModel(
 
 data class Transaction(
     val id: String = "",
+    val studentId: String? = null,
+    val classId: String? = null,
     val amount: Double = 0.0,
     val date: String = "",
     val description: String = "",
