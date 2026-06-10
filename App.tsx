@@ -196,14 +196,14 @@ const AppRoutes: React.FC = () => {
                         <AppLayout />
                     </ProtectedRoute>
                 }>
-                    <Route path={ROUTES.DASHBOARD} element={<DashboardScreen />} />
-                    <Route path={ROUTES.CLASSES} element={<ClassesScreen />} />
-                    <Route path={ROUTES.CLASS_DETAIL} element={<ClassDetailScreen />} />
+                    <Route path={ROUTES.DASHBOARD} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.TEACHER, UserRole.VIEWER]}><DashboardScreen /></ProtectedRoute>} />
+                    <Route path={ROUTES.CLASSES} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.TEACHER, UserRole.VIEWER]}><ClassesScreen /></ProtectedRoute>} />
+                    <Route path={ROUTES.CLASS_DETAIL} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.TEACHER, UserRole.VIEWER]}><ClassDetailScreen /></ProtectedRoute>} />
                     <Route path={ROUTES.ATTENDANCE_DETAIL} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.TEACHER, UserRole.VIEWER]}><AttendanceScreen /></ProtectedRoute>} />
 
                     {/* Role-protected routes */}
-                    <Route path={ROUTES.STUDENTS} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.VIEWER]}><StudentsScreen /></ProtectedRoute>} />
-                    <Route path={ROUTES.STUDENT_DETAIL} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.VIEWER]}><StudentDetailScreen /></ProtectedRoute>} />
+                    <Route path={ROUTES.STUDENTS} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT, UserRole.VIEWER]}><StudentsScreen /></ProtectedRoute>} />
+                    <Route path={ROUTES.STUDENT_DETAIL} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT, UserRole.VIEWER]}><StudentDetailScreen /></ProtectedRoute>} />
                     <Route path={ROUTES.TEACHERS} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.VIEWER]}><TeachersScreen /></ProtectedRoute>} />
                     <Route path={ROUTES.TEACHER_DETAIL} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.VIEWER]}><TeacherDetailScreen /></ProtectedRoute>} />
                     <Route path={ROUTES.STAFF} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.VIEWER]}><StaffScreen /></ProtectedRoute>} />

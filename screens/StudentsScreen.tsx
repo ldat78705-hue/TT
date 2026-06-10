@@ -687,22 +687,26 @@ export const StudentsScreen: React.FC = () => {
                             </div>
                         </div>
 
-                        {canManage && (
+                        {(canManage || student.balance < 0) && (
                             <div className="mt-3 border-t border-gray-100 dark:border-gray-700 pt-3 flex justify-end items-center space-x-1">
                                 {student.balance < 0 && (
                                     <button onClick={() => setPaymentModalState({ isOpen: true, student: student })} className="p-2 rounded-full text-green-600 hover:bg-green-100 dark:hover:bg-green-900/50" title="Ghi nhận thanh toán">
-                                        {React.cloneElement(ICONS.finance, {width: 20, height: 20})}
+                                        {React.cloneElement(ICONS.finance as React.ReactElement, {width: 20, height: 20})}
                                     </button>
                                 )}
-                                <button onClick={() => setResetPasswordModalState({ isOpen: true, student: student })} className="p-2 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700" title="Đặt lại mật khẩu">
-                                    {React.cloneElement(ICONS.key, {width: 20, height: 20})}
-                                </button>
-                                <button onClick={() => handleOpenModal(student)} className="p-2 rounded-full text-indigo-600 hover:bg-indigo-100 dark:hover:bg-indigo-900/50" title="Sửa">
-                                    {ICONS.edit}
-                                </button>
-                                <button onClick={() => handleDeleteClick(student)} className="p-2 rounded-full text-red-600 hover:bg-red-100 dark:hover:bg-red-900/50" title="Xóa">
-                                    {ICONS.delete}
-                                </button>
+                                {canManage && (
+                                    <>
+                                        <button onClick={() => setResetPasswordModalState({ isOpen: true, student: student })} className="p-2 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700" title="Đặt lại mật khẩu">
+                                            {React.cloneElement(ICONS.key as React.ReactElement, {width: 20, height: 20})}
+                                        </button>
+                                        <button onClick={() => handleOpenModal(student)} className="p-2 rounded-full text-indigo-600 hover:bg-indigo-100 dark:hover:bg-indigo-900/50" title="Sửa">
+                                            {ICONS.edit}
+                                        </button>
+                                        <button onClick={() => handleDeleteClick(student)} className="p-2 rounded-full text-red-600 hover:bg-red-100 dark:hover:bg-red-900/50" title="Xóa">
+                                            {ICONS.delete}
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         )}
                     </div>

@@ -1,0 +1,55 @@
+package com.educenter.pro.ui.screens.teachers
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.educenter.pro.data.model.Teacher
+import com.educenter.pro.data.repository.DataRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class TeachersViewModel @Inject constructor(
+    private val dataRepository: DataRepository
+) : ViewModel() {
+
+    private val _teachers = MutableStateFlow<List<Teacher>>(emptyList())
+    val teachers = _teachers.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            dataRepository.appData.collect { appData ->
+                if (appData != null) {
+                    _teachers.value = appData.teachers
+                }
+            }
+        }
+    }
+
+    fun addTeacher(name: String, phone: String, subject: String) {
+        val current = _teachers.value.toMutableList()
+        current.add(Teacher(
+            id = java.util.UUID.randomUUID().toString(),
+            name = name,
+            phone = phone,
+            subject = subject
+        ))
+        viewModelScope.launch { dataRepository.saveTeachers(current) }
+    }
+
+    fun updateTeacher(teacher: Teacher) {
+        val current = _teachers.value.toMutableList()
+        val index = current.indexOfFirst { it.id == teacher.id }
+        if (index != -1) {
+            current[index] = teacher
+            viewModelScope.launch { dataRepository.saveTeachers(current) }
+        }
+    }
+
+    fun deleteTeacher(teacherId: String) {
+        val current = _teachers.value.filter { it.id != teacherId }
+        viewModelScope.launch { dataRepository.saveTeachers(current) }
+    }
+}

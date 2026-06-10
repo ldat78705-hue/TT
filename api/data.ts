@@ -364,6 +364,17 @@ export default async function handler(req: any, res: any) {
         if (role === UserRole.VIEWER) {
             return res.status(403).send('Forbidden: You do not have permission to modify data');
         }
+        if (role === UserRole.ACCOUNTANT) {
+            const allowedOps = [
+                'addIncome', 'updateIncome', 'deleteIncome', 
+                'addExpense', 'updateExpense', 'deleteExpense', 
+                'updateTransaction', 'addAdjustment', 'cancelInvoice', 
+                'updateInvoiceStatus', 'updateUserPassword'
+            ];
+            if (!allowedOps.includes(operation.op)) {
+                 return res.status(403).send('Forbidden: Accountant can only modify financial data');
+            }
+        }
         if (role === UserRole.PARENT) {
             if (operation.op !== 'updateUserPassword' || operation.payload?.userId !== authPayload.userId) {
                 return res.status(403).send('Forbidden: You do not have permission to modify data');
