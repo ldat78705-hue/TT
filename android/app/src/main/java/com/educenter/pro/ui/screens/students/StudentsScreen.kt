@@ -164,51 +164,114 @@ fun StudentsScreen(
 
         // === FEE DIALOG ===
         if (selectedStudentForFee != null) {
+            val fmt = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
+            // Auto-fill amount on selection
+            LaunchedEffect(selectedStudentForFee) {
+                if (selectedStudentForFee != null && selectedStudentForFee!!.balance < 0) {
+                    feeAmountText = (-selectedStudentForFee!!.balance).toLong().toString()
+                }
+            }
+
             AlertDialog(
                 onDismissRequest = { selectedStudentForFee = null },
-                title = { Text("Nộp học phí") },
-                text = {
+                title = {
                     Column {
-                        Text("Học viên: ${selectedStudentForFee?.name}")
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("💰 Thu học phí")
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            selectedStudentForFee?.name ?: "",
+                            fontSize = 14.sp,
+                            color = Color(0xFF3B82F6),
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        // Current balance
+                        Card(
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (selectedStudentForFee!!.balance < 0) Color(0xFFFEF2F2) else Color(0xFFF0FDF4)
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp).fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Số dư:", fontSize = 13.sp)
+                                Text(
+                                    fmt.format(selectedStudentForFee!!.balance),
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (selectedStudentForFee!!.balance < 0) Color(0xFFEF4444) else Color(0xFF10B981)
+                                )
+                            }
+                        }
+
                         OutlinedTextField(
                             value = feeAmountText,
-                            onValueChange = { feeAmountText = it },
+                            onValueChange = { feeAmountText = it.filter { c -> c.isDigit() } },
                             label = { Text("Số tiền (VNĐ)") },
                             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
-                            singleLine = true
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("Hình thức nộp", style = MaterialTheme.typography.labelMedium)
+
+                        Text("Hình thức nộp:", style = MaterialTheme.typography.labelMedium)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(
                                 selected = selectedPaymentMethod == "Tiền mặt",
                                 onClick = { selectedPaymentMethod = "Tiền mặt" }
                             )
-                            Text("Tiền mặt")
+                            Text("💵 Tiền mặt")
                             Spacer(modifier = Modifier.width(16.dp))
                             RadioButton(
                                 selected = selectedPaymentMethod == "Chuyển khoản",
                                 onClick = { selectedPaymentMethod = "Chuyển khoản" }
                             )
-                            Text("Chuyển khoản")
+                            Text("🏦 Chuyển khoản")
+                        }
+
+                        // Preview after payment
+                        val parsedAmount = feeAmountText.toDoubleOrNull() ?: 0.0
+                        if (parsedAmount > 0) {
+                            val newBalance = selectedStudentForFee!!.balance + parsedAmount
+                            Card(
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFFF0FDF4))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp).fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("Số dư sau:", fontSize = 13.sp)
+                                    Text(
+                                        fmt.format(newBalance),
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (newBalance < 0) Color(0xFFEF4444) else Color(0xFF10B981)
+                                    )
+                                }
+                            }
                         }
                     }
                 },
                 confirmButton = {
-                    Button(onClick = {
-                        val amount = feeAmountText.toDoubleOrNull()
-                        if (amount != null && amount > 0) {
-                            selectedStudentForFee?.let {
-                                val method = if (selectedPaymentMethod == "Tiền mặt") "cash" else "transfer"
-                                viewModel.collectFee(it.id, amount, method)
+                    Button(
+                        onClick = {
+                            val amount = feeAmountText.toDoubleOrNull()
+                            if (amount != null && amount > 0) {
+                                selectedStudentForFee?.let {
+                                    val method = if (selectedPaymentMethod == "Tiền mặt") "cash" else "transfer"
+                                    viewModel.collectFee(it.id, amount, method)
+                                }
                             }
-                        }
-                        selectedStudentForFee = null
-                        feeAmountText = ""
-                        selectedPaymentMethod = "Tiền mặt"
-                    }) {
-                        Text("Xác nhận")
+                            selectedStudentForFee = null
+                            feeAmountText = ""
+                            selectedPaymentMethod = "Tiền mặt"
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981))
+                    ) {
+                        Text("✅ Xác nhận Ghi sổ", fontWeight = FontWeight.Bold)
                     }
                 },
                 dismissButton = {

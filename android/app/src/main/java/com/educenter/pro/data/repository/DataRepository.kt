@@ -273,4 +273,28 @@ class DataRepository @Inject constructor(
             saveAndCache(updatedData)
         } catch (e: Exception) { e.printStackTrace(); throw e }
     }
+
+    // ============ PAYMENTS / ADJUSTMENTS ============
+
+    suspend fun addAdjustment(
+        studentId: String,
+        amount: Double,
+        date: String,
+        description: String,
+        type: String, // "CREDIT" or "DEBIT"
+        paymentMethod: String = "transfer"
+    ) = withContext(Dispatchers.IO) {
+        try {
+            val payload = mapOf(
+                "studentId" to studentId,
+                "amount" to amount,
+                "date" to date,
+                "description" to description,
+                "type" to type,
+                "paymentMethod" to paymentMethod
+            )
+            val updatedData = apiService.executeOperation(OperationPayload("addAdjustment", payload))
+            saveAndCache(updatedData)
+        } catch (e: Exception) { e.printStackTrace(); throw e }
+    }
 }

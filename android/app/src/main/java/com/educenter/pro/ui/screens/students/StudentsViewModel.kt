@@ -113,10 +113,11 @@ class StudentsViewModel @Inject constructor(
     }
 
     fun collectFee(studentId: String, amount: Double, paymentMethod: String) {
-        val todayStr = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
-        val description = "Nộp học phí qua App"
+        val dateStr = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
+        val userName = dataRepository.getLoggedInUserName()
+        val description = "Thanh toán HP - ghi nhận bởi $userName (App)"
         viewModelScope.launch {
-            dataRepository.recordTransaction(studentId, amount, description, todayStr, "CREDIT", paymentMethod)
+            dataRepository.recordTransaction(studentId, amount, description, dateStr, "CREDIT", paymentMethod)
         }
     }
 

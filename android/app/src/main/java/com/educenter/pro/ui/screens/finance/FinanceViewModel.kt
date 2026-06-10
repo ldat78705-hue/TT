@@ -74,4 +74,43 @@ class FinanceViewModel @Inject constructor(
             }
         }
     }
+
+    private val _paymentResult = MutableStateFlow<PaymentResult?>(null)
+    val paymentResult: StateFlow<PaymentResult?> = _paymentResult.asStateFlow()
+
+    fun clearPaymentResult() { _paymentResult.value = null }
+
+    fun collectFee(
+        studentId: String,
+        amount: Double,
+        paymentMethod: String, // "transfer" or "cash"
+        date: String
+    ) {
+        viewModelScope.launch {
+            _paymentResult.value = PaymentResult(isLoading = true)
+            try {
+                val userName = dataRepository.getLoggedInUserName()
+                val description = "Thanh toán HP - ghi nhận bởi $userName (App)"
+                dataRepository.addAdjustment(
+                    studentId = studentId,
+                    amount = amount,
+                    date = date,
+                    description = description,
+                    type = "CREDIT",
+                    paymentMethod = paymentMethod
+                )
+                _paymentResult.value = PaymentResult(isSuccess = true, message = "Ghi nhận thành công!")
+            } catch (e: Exception) {
+                _paymentResult.value = PaymentResult(isError = true, message = e.message ?: "Lỗi khi ghi nhận thanh toán")
+            }
+        }
+    }
 }
+
+data class PaymentResult(
+    val isLoading: Boolean = false,
+    val isSuccess: Boolean = false,
+    val isError: Boolean = false,
+    val message: String = ""
+)
+
