@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.educenter.pro.data.model.Student
 import java.text.NumberFormat
@@ -73,8 +74,10 @@ fun StudentsScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(students) { student ->
+                    val studentClasses = classes.filter { it.studentIds.contains(student.id) }
                     StudentCard(
                         student = student,
+                        studentClasses = studentClasses,
                         canManage = canManage,
                         canCollectFee = canCollectFee,
                         onClick = { selectedStudentForDetails = it },
@@ -261,6 +264,7 @@ fun AddOrEditStudentDialog(
 @Composable
 fun StudentCard(
     student: Student,
+    studentClasses: List<com.educenter.pro.data.model.ClassModel>,
     canManage: Boolean,
     canCollectFee: Boolean,
     onClick: (Student) -> Unit,
@@ -274,26 +278,56 @@ fun StudentCard(
     Card(
         modifier = Modifier.fillMaxWidth().clickable { onClick(student) },
         shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Column {
-                    Text(student.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(student.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = Color(0xFF1E293B))
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(student.phone, style = MaterialTheme.typography.bodyMedium)
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text("PH: ${student.parentName}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(student.phone, style = MaterialTheme.typography.bodyMedium, color = Color(0xFF64748B))
+                    if (student.parentName.isNotBlank()) {
+                        Text("PH: ${student.parentName}", style = MaterialTheme.typography.bodySmall, color = Color(0xFF94A3B8))
+                    }
+                    // Show classes
+                    if (studentClasses.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            studentClasses.take(3).forEach { cls ->
+                                androidx.compose.material3.Surface(
+                                    color = Color(0xFF3B82F6).copy(alpha = 0.1f),
+                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(6.dp)
+                                ) {
+                                    Text(
+                                        cls.name,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color(0xFF3B82F6),
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+                            if (studentClasses.size > 3) {
+                                Text("+${studentClasses.size - 3}", fontSize = 10.sp, color = Color(0xFF94A3B8))
+                            }
+                        }
+                    }
                 }
                 Column(horizontalAlignment = androidx.compose.ui.Alignment.End) {
-                    Text("Trạng thái", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = if (student.status.name == "ACTIVE") "Đang học" else "Nghỉ học",
-                        color = if (student.status.name == "ACTIVE") Color(0xFF10B981) else Color(0xFF94A3B8),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold
-                    )
+                    androidx.compose.material3.Surface(
+                        color = if (student.status.name == "ACTIVE") Color(0xFF10B981).copy(alpha = 0.1f) else Color(0xFF94A3B8).copy(alpha = 0.1f),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            text = if (student.status.name == "ACTIVE") "Đang học" else "Nghỉ học",
+                            color = if (student.status.name == "ACTIVE") Color(0xFF10B981) else Color(0xFF94A3B8),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = currencyFormatter.format(student.balance),
@@ -303,14 +337,14 @@ fun StudentCard(
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 if (canManage) {
                     IconButton(onClick = { onDeleteClick(student) }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Xóa", tint = MaterialTheme.colorScheme.error)
+                        Icon(Icons.Default.Delete, contentDescription = "Xóa", tint = Color(0xFFEF4444))
                     }
                     IconButton(onClick = { onEditClick(student) }) {
-                        Icon(Icons.Default.Edit, contentDescription = "Sửa", tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Default.Edit, contentDescription = "Sửa", tint = Color(0xFF3B82F6))
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                 }
@@ -318,8 +352,9 @@ fun StudentCard(
                     Button(
                         onClick = { onPayFeeClick(student) },
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                        modifier = Modifier.height(40.dp),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp)
+                        modifier = Modifier.height(38.dp),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6))
                     ) {
                         Text("Nộp tiền", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                     }

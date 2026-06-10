@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -12,6 +13,9 @@ import androidx.compose.material.icons.filled.Class
 import androidx.compose.material.icons.filled.EventNote
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.TrendingDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -21,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -29,11 +34,18 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import java.text.NumberFormat
 import java.util.Locale
 
+private val GreenAccent = Color(0xFF10B981)
+private val RedAccent = Color(0xFFEF4444)
+private val BlueAccent = Color(0xFF3B82F6)
+private val OrangeAccent = Color(0xFFF59E0B)
+private val PurpleAccent = Color(0xFF8B5CF6)
+
 @Composable
 fun DashboardScreen(
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val currencyFormatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
 
     if (uiState.isLoading) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -45,93 +57,213 @@ fun DashboardScreen(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(24.dp)
+            .background(Color(0xFFF8FAFC))
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(vertical = 16.dp)
     ) {
-        // --- OVERVIEW SECTION ---
+        // === HEADER ===
         item {
             Text(
                 "Tổng quan",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.ExtraBold,
-                color = MaterialTheme.colorScheme.onBackground
+                color = Color(0xFF1E293B)
             )
-            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // === STAT CARDS ROW 1 ===
+        item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                DashboardCard(
-                    title = "Tổng học sinh",
+                StatCard(
+                    title = "Học sinh",
                     value = uiState.totalStudents.toString(),
                     icon = Icons.Default.People,
-                    modifier = Modifier.weight(1f),
-                    gradientColors = listOf(Color(0xFF4facfe), Color(0xFF00f2fe))
+                    gradientColors = listOf(Color(0xFF4facfe), Color(0xFF00f2fe)),
+                    modifier = Modifier.weight(1f)
                 )
-                DashboardCard(
+                StatCard(
                     title = "Lớp học",
                     value = uiState.totalClasses.toString(),
                     icon = Icons.Default.Class,
-                    modifier = Modifier.weight(1f),
-                    gradientColors = listOf(Color(0xFFf093fb), Color(0xFFf5576c))
-                )
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                val currencyFormatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
-                DashboardCard(
-                    title = "Doanh thu (tháng)",
-                    value = currencyFormatter.format(uiState.monthlyRevenue),
-                    icon = Icons.Default.MonetizationOn,
-                    modifier = Modifier.weight(1f),
-                    gradientColors = listOf(Color(0xFF43e97b), Color(0xFF38f9d7))
+                    gradientColors = listOf(Color(0xFFf093fb), Color(0xFFf5576c)),
+                    modifier = Modifier.weight(1f)
                 )
             }
         }
 
-        // --- TODAY'S CLASSES SECTION ---
+        // === STAT CARDS ROW 2 ===
         item {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Default.EventNote,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(28.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                StatCard(
+                    title = "Thu tháng này",
+                    value = currencyFormatter.format(uiState.monthlyRevenue),
+                    icon = Icons.Default.MonetizationOn,
+                    gradientColors = listOf(Color(0xFF43e97b), Color(0xFF38f9d7)),
+                    modifier = Modifier.weight(1f)
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    "Lịch học hôm nay",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
+                StatCard(
+                    title = "Chưa thu",
+                    value = currencyFormatter.format(uiState.totalUncollected),
+                    icon = Icons.Default.Warning,
+                    gradientColors = listOf(Color(0xFFf97316), Color(0xFFfbbf24)),
+                    modifier = Modifier.weight(1f)
                 )
             }
+        }
+
+        // === TOP DEBTORS ===
+        if (uiState.topDebtors.isNotEmpty()) {
+            item {
+                SectionHeader(
+                    icon = Icons.Default.TrendingDown,
+                    title = "Nợ học phí nhiều nhất",
+                    color = RedAccent
+                )
+            }
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        uiState.topDebtors.forEachIndexed { index, item ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Rank badge
+                                Box(
+                                    modifier = Modifier
+                                        .size(28.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            when (index) {
+                                                0 -> RedAccent
+                                                1 -> OrangeAccent
+                                                else -> Color(0xFF94A3B8)
+                                            }
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("${index + 1}", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(item.student.name, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                                    Text(item.student.phone, fontSize = 12.sp, color = Color.Gray)
+                                }
+                                Text(
+                                    "-${currencyFormatter.format(item.debt)}",
+                                    color = RedAccent,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp
+                                )
+                            }
+                            if (index < uiState.topDebtors.lastIndex) {
+                                HorizontalDivider(color = Color(0xFFF1F5F9))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // === TOP ABSENT ===
+        if (uiState.topAbsent.isNotEmpty()) {
+            item {
+                SectionHeader(
+                    icon = Icons.Default.Person,
+                    title = "Nghỉ không phép nhiều nhất (tháng)",
+                    color = OrangeAccent
+                )
+            }
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        uiState.topAbsent.forEachIndexed { index, item ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(28.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            when (index) {
+                                                0 -> OrangeAccent
+                                                1 -> Color(0xFFFB923C)
+                                                else -> Color(0xFF94A3B8)
+                                            }
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("${index + 1}", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(item.student.name, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(RedAccent.copy(alpha = 0.1f))
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Text(
+                                        "${item.absentCount} buổi",
+                                        color = RedAccent,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp
+                                    )
+                                }
+                            }
+                            if (index < uiState.topAbsent.lastIndex) {
+                                HorizontalDivider(color = Color(0xFFF1F5F9))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // === TODAY'S CLASSES ===
+        item {
+            SectionHeader(
+                icon = Icons.Default.EventNote,
+                title = "Lịch học hôm nay",
+                color = BlueAccent
+            )
         }
 
         if (uiState.todayClasses.isEmpty()) {
             item {
                 Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                    shape = RoundedCornerShape(24.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(16.dp)
                 ) {
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(32.dp),
+                        modifier = Modifier.fillMaxWidth().padding(32.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            "Không có lịch học nào hôm nay 🎉",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Text("Không có lịch học nào hôm nay 🎉", color = Color.Gray)
                     }
                 }
             }
@@ -139,42 +271,31 @@ fun DashboardScreen(
             items(uiState.todayClasses) { classModel ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(50.dp)
+                                .size(48.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.primaryContainer),
+                                .background(BlueAccent.copy(alpha = 0.1f)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                Icons.Default.Class,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
+                            Icon(Icons.Default.Class, contentDescription = null, tint = BlueAccent)
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         Column {
+                            Text(classModel.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                            Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                classModel.name,
-                                fontWeight = FontWeight.Bold,
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                "Môn: ${classModel.subject} • Sĩ số: ${classModel.studentIds.size}",
+                                "Môn: ${classModel.subject} • ${classModel.studentIds.size} học viên",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = Color.Gray
                             )
                         }
                     }
@@ -182,111 +303,89 @@ fun DashboardScreen(
             }
         }
 
-        // --- ANNOUNCEMENTS SECTION ---
+        // === ANNOUNCEMENTS ===
         if (uiState.announcements.isNotEmpty()) {
             item {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.Campaign,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(28.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        "Bảng tin",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                }
+                SectionHeader(
+                    icon = Icons.Default.Campaign,
+                    title = "Bảng tin",
+                    color = PurpleAccent
+                )
             }
             items(uiState.announcements) { announcement ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)),
-                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F3FF)),
+                    shape = RoundedCornerShape(16.dp),
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
+                    Column(modifier = Modifier.padding(16.dp)) {
                         Text(
                             announcement.title,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                            style = MaterialTheme.typography.titleMedium
+                            style = MaterialTheme.typography.titleMedium,
+                            color = Color(0xFF4C1D95)
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             announcement.content,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f),
+                            color = Color(0xFF6B7280),
                             maxLines = 3,
                             overflow = TextOverflow.Ellipsis
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primary)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                "${announcement.createdBy} • ${announcement.createdAt.take(10)}",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
-                            )
-                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "${announcement.createdBy} • ${announcement.createdAt.take(10)}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color(0xFF9CA3AF)
+                        )
                     }
                 }
             }
         }
+
+        // Bottom padding
+        item { Spacer(modifier = Modifier.height(16.dp)) }
     }
 }
 
 @Composable
-fun DashboardCard(
+private fun SectionHeader(icon: ImageVector, title: String, color: Color) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(24.dp))
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
+    }
+}
+
+@Composable
+fun StatCard(
     title: String,
     value: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     modifier: Modifier = Modifier,
     gradientColors: List<Color>
 ) {
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(24.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Brush.linearGradient(colors = gradientColors))
-                .padding(20.dp)
+                .padding(16.dp)
         ) {
             Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        icon,
-                        contentDescription = null,
-                        tint = Color.White.copy(alpha = 0.8f),
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    title,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = Color.White.copy(alpha = 0.9f)
-                )
-                Spacer(modifier = Modifier.height(4.dp))
+                Icon(icon, contentDescription = null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(22.dp))
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(title, style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = 0.9f))
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     value,
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.ExtraBold,
                     color = Color.White,
                     maxLines = 1,

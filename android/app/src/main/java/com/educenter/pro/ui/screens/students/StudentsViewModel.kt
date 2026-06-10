@@ -25,11 +25,21 @@ class StudentsViewModel @Inject constructor(
         if (query.isBlank()) {
             students
         } else {
-            val lowerQuery = query.lowercase()
-            students.filter {
+            val lowerQuery = query.lowercase().trim()
+            val matched = students.filter {
                 it.name.lowercase().contains(lowerQuery) || 
                 it.phone.contains(lowerQuery)
             }
+            // Sort: prioritize students whose last name starts with query
+            matched.sortedWith(compareBy<Student> { student ->
+                val parts = student.name.trim().split("\\s+".toRegex())
+                val lastName = parts.lastOrNull()?.lowercase() ?: ""
+                when {
+                    lastName.startsWith(lowerQuery) -> 0  // Last name starts with query = top priority
+                    student.name.lowercase().startsWith(lowerQuery) -> 1  // Full name starts with query
+                    else -> 2  // Contains query somewhere
+                }
+            }.thenBy { it.name })
         }
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
