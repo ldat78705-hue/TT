@@ -3,7 +3,8 @@ package com.educenter.pro.data.repository
 import android.content.Context
 import android.content.SharedPreferences
 import java.security.MessageDigest
-import dagger.hilt.android.qualifiers.ApplicationContextimport com.educenter.pro.data.local.ShardDao
+import dagger.hilt.android.qualifiers.ApplicationContext
+import com.educenter.pro.data.local.ShardDao
 import com.educenter.pro.data.local.ShardEntity
 import com.educenter.pro.data.model.AppData
 import com.educenter.pro.data.model.AttendanceRecord
