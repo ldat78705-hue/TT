@@ -42,10 +42,11 @@ fun FinanceScreen(
     // Handle payment result
     LaunchedEffect(paymentResult) {
         if (paymentResult?.isSuccess == true || paymentResult?.isError == true) {
+            val wasSuccess = paymentResult?.isSuccess == true
             // Auto-clear after a delay
             kotlinx.coroutines.delay(2000)
             viewModel.clearPaymentResult()
-            if (paymentResult?.isSuccess == true) {
+            if (wasSuccess) {
                 paymentStudent = null
             }
         }

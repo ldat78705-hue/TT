@@ -38,6 +38,8 @@ class ReportsViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ReportsUiState())
     val uiState: StateFlow<ReportsUiState> = _uiState.asStateFlow()
 
+    private var recalcJob: kotlinx.coroutines.Job? = null
+
     val classes = dataRepository.appData
         .map { it?.classes ?: emptyList() }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
@@ -91,7 +93,8 @@ class ReportsViewModel @Inject constructor(
     }
 
     private fun recalculate() {
-        viewModelScope.launch {
+        recalcJob?.cancel()
+        recalcJob = viewModelScope.launch {
             dataRepository.appData.collect { appData ->
                 if (appData == null) return@collect
                 val state = _uiState.value

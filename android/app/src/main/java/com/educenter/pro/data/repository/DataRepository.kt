@@ -57,10 +57,16 @@ class DataRepository @Inject constructor(
             val response = apiService.login(LoginRequest(identifier, passwordRaw))
             if (response.token != null) {
                 val roleStr = response.role ?: "VIEWER"
+                // Extract user name from response user object (Map)
+                val userName = when (val user = response.user) {
+                    is Map<*, *> -> user["name"]?.toString() ?: identifier
+                    else -> identifier
+                }
                 prefs.edit()
                     .putString("user_token", response.token)
                     .putString("user_role", roleStr)
                     .putString("user_email", identifier)
+                    .putString("user_name", userName)
                     .apply()
                 _currentUserRole.value = com.educenter.pro.data.model.UserRole.valueOf(roleStr)
                 return true
@@ -162,13 +168,7 @@ class DataRepository @Inject constructor(
     // ============ TRANSACTIONS ============
 
     suspend fun recordTransaction(studentId: String, amount: Double, description: String, dateStr: String, type: String, paymentMethod: String? = null) = withContext(Dispatchers.IO) {
-        try {
-            val op = OperationPayload("addAdjustment", mapOf(
-                "studentId" to studentId, "amount" to amount, "date" to dateStr, "description" to description, "type" to type, "paymentMethod" to paymentMethod
-            ))
-            val updatedData = apiService.executeOperation(op)
-            saveAndCache(updatedData)
-        } catch (e: Exception) { e.printStackTrace() }
+        addAdjustment(studentId, amount, dateStr, description, type, paymentMethod ?: "transfer")
     }
 
     // ============ STUDENTS ============
