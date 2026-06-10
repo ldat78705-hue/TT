@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "173308560834",
+    "project_id": "gen-lang-client-0666827125",
+    "storage_bucket": "gen-lang-client-0666827125.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:173308560834:android:122563af1c502769bbc25b",
+        "android_client_info": {
+          "package_name": "com.educenter.pro"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDbijrhO_w0sEBlXVDvUCz6m4K9PjxRIjs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
