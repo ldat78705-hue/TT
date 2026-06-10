@@ -162,7 +162,7 @@ fun AddOrEditTeacherDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (teacher == null) "Thêm Giáo viên" else "Sửa Giáo viên") },
         text = {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            LazyColumn(modifier = Modifier.heightIn(max = 400.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 item { OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Họ tên *") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
                 item { OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Số điện thoại") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
                 item { OutlinedTextField(value = subject, onValueChange = { subject = it }, label = { Text("Môn dạy") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
