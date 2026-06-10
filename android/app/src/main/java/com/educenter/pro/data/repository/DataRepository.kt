@@ -46,20 +46,22 @@ class DataRepository @Inject constructor(
 
     suspend fun syncData() = withContext(Dispatchers.IO) {
         try {
-            val snapshot = firestore.collection(COLLECTION_NAME).get().await()
-            val newShards = mutableListOf<ShardEntity>()
-            
-            for (document in snapshot.documents) {
-                if (document.id == "_sync") continue
-                val dataMap = document.data?.get("data")
-                if (dataMap != null) {
-                    val jsonStr = gson.toJson(dataMap)
-                    newShards.add(ShardEntity(id = document.id, data = jsonStr))
+            kotlinx.coroutines.withTimeout(10000L) {
+                val snapshot = firestore.collection(COLLECTION_NAME).get().await()
+                val newShards = mutableListOf<ShardEntity>()
+                
+                for (document in snapshot.documents) {
+                    if (document.id == "_sync") continue
+                    val dataMap = document.data?.get("data")
+                    if (dataMap != null) {
+                        val jsonStr = gson.toJson(dataMap)
+                        newShards.add(ShardEntity(id = document.id, data = jsonStr))
+                    }
                 }
-            }
-            if (newShards.isNotEmpty()) {
-                shardDao.clearAll()
-                shardDao.insertShards(newShards)
+                if (newShards.isNotEmpty()) {
+                    shardDao.clearAll()
+                    shardDao.insertShards(newShards)
+                }
             }
         } catch (e: Exception) {
             e.printStackTrace()
