@@ -715,6 +715,7 @@ export const SettingsScreen: React.FC = () => {
                             Lưu trữ và phục hồi dữ liệu an toàn bằng tài khoản Google Drive cá nhân của bạn. Ứng dụng chỉ có quyền truy cập vào các tệp sao lưu do chính nó tạo ra.
                         </p>
                         {accessToken ? (
+                            <>
                             <div className="flex flex-col sm:flex-row gap-4">
                                 <Button onClick={handleBackupToDrive} isLoading={isBackupLoading} disabled={isViewer}>
                                     {ICONS.backup} Sao lưu lên Drive
@@ -737,6 +738,7 @@ export const SettingsScreen: React.FC = () => {
                                     <strong>⏰ Tự động sao lưu:</strong> Chưa có lần sao lưu tự động nào. Hệ thống sẽ tự động sao lưu khi bạn truy cập trang này.
                                 </div>
                             )}
+                            </>
                         ) : (
                             <Button onClick={handleAuthClick} className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700">
                                 {ICONS.drive} Kết nối Google Drive
