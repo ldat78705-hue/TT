@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -25,24 +26,16 @@ jobs:
       - name: Create local.properties
         run: echo "sdk.dir=$ANDROID_HOME" > android/local.properties
 
-      - name: Download Gradle Wrapper JAR
+      - name: Install Gradle 8.2
         run: |
-          mkdir -p android/gradle/wrapper
           curl -sL https://services.gradle.org/distributions/gradle-8.2-bin.zip -o /tmp/gradle.zip
-          unzip -q /tmp/gradle.zip -d /tmp/gradle
-          cp /tmp/gradle/gradle-8.2/lib/gradle-wrapper-*.jar android/gradle/wrapper/gradle-wrapper.jar 2>/dev/null || true
-          # If the above didn't work, download wrapper jar directly
-          if [ ! -f "android/gradle/wrapper/gradle-wrapper.jar" ]; then
-            curl -sL "https://github.com/gradle/gradle/raw/v8.2.0/gradle/wrapper/gradle-wrapper.jar" -o android/gradle/wrapper/gradle-wrapper.jar 2>/dev/null || true
-          fi
-          # Final fallback: generate wrapper using installed gradle
-          if [ ! -f "android/gradle/wrapper/gradle-wrapper.jar" ]; then
-            cd /tmp && curl -sL https://services.gradle.org/distributions/gradle-8.2-bin.zip -o gradle.zip && unzip -q gradle.zip
-            cd $GITHUB_WORKSPACE/android && /tmp/gradle-8.2/bin/gradle wrapper --gradle-version 8.2
-          fi
+          sudo unzip -q /tmp/gradle.zip -d /opt
+          sudo ln -sf /opt/gradle-8.2/bin/gradle /usr/local/bin/gradle
+          gradle --version
 
-      - name: Make gradlew executable
-        run: chmod +x android/gradlew
+      - name: Generate Gradle Wrapper
+        working-directory: android
+        run: gradle wrapper --gradle-version 8.2
 
       - name: Build Debug APK
         working-directory: android
@@ -53,7 +46,7 @@ jobs:
         run: ./gradlew assembleRelease --no-daemon --stacktrace
         continue-on-error: true
 
-      - name: Prepare APKs for release
+      - name: Prepare APKs
         run: |
           mkdir -p release-apks
           if [ -f "android/app/build/outputs/apk/debug/app-debug.apk" ]; then
@@ -62,6 +55,7 @@ jobs:
           if [ -f "android/app/build/outputs/apk/release/app-release-unsigned.apk" ]; then
             cp android/app/build/outputs/apk/release/app-release-unsigned.apk release-apks/EduCenterPro-${{ github.ref_name }}-release.apk
           fi
+          ls -la release-apks/
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
