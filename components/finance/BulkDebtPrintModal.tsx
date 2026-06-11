@@ -22,7 +22,7 @@ interface BulkDebtPrintModalProps {
 
 export const BulkDebtPrintModal: React.FC<BulkDebtPrintModalProps> = ({ isOpen, onClose, students }) => {
     const { state } = useData();
-    const { transactions, settings } = state;
+    const { transactions, settings, attendance, classes } = state;
     const { toast } = useToast();
     const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
     
@@ -193,6 +193,8 @@ export const BulkDebtPrintModal: React.FC<BulkDebtPrintModalProps> = ({ isOpen, 
                         student={studentToRender}
                         transactions={getStudentTransactions(studentToRender.id)}
                         settings={settings}
+                        attendance={attendance}
+                        classes={classes}
                     />
                 )}
             </div>
@@ -242,6 +244,8 @@ export const BulkDebtPrintModal: React.FC<BulkDebtPrintModalProps> = ({ isOpen, 
                                 student={studentToRender}
                                 transactions={getStudentTransactions(studentToRender.id)}
                                 settings={settings}
+                                attendance={attendance}
+                                classes={classes}
                             />
                         ) : (
                             <div className="h-64 flex items-center justify-center text-gray-500">
