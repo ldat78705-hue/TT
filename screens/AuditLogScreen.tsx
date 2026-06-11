@@ -52,24 +52,24 @@ export const AuditLogScreen: React.FC = () => {
     };
 
     return (
-        <div className="p-4 md:p-6 space-y-6">
+        <div className="space-y-4 md:space-y-6">
             <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">📝 Lịch sử thao tác</h1>
-                <p className="text-gray-500 dark:text-gray-400 mt-1">Theo dõi mọi thay đổi trên hệ thống (tối đa 500 bản ghi gần nhất)</p>
+                <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">📝 Lịch sử thao tác</h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Theo dõi mọi thay đổi trên hệ thống (tối đa 500 bản ghi gần nhất)</p>
             </div>
 
             {/* Filters */}
-            <div className="flex flex-wrap gap-3 items-center">
+            <div className="space-y-3">
                 <input
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                     placeholder="🔍 Tìm kiếm..."
-                    className="form-input flex-1 min-w-[200px] max-w-sm"
+                    className="form-input w-full"
                 />
-                <div className="flex gap-1 flex-wrap">
+                <div className="flex gap-1.5 flex-wrap">
                     {types.map(t => (
                         <button key={t} onClick={() => setFilterType(t)}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filterType === t ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200'}`}>
+                            className={`px-2.5 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-colors ${filterType === t ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200'}`}>
                             {t === 'all' ? 'Tất cả' : `${ACTION_ICONS[t] || '📌'} ${typeLabel(t)}`}
                         </button>
                     ))}
@@ -87,25 +87,26 @@ export const AuditLogScreen: React.FC = () => {
                 ) : (
                     <div className="divide-y dark:divide-gray-700">
                         {filteredLogs.map(log => (
-                            <div key={log.id} className="flex items-start gap-4 p-4 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
-                                <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-lg ${ACTION_COLORS[log.targetType] || 'bg-gray-100 text-gray-600'}`}>
+                            <div key={log.id} className="flex gap-3 p-3 md:p-4 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
+                                <div className={`flex-shrink-0 w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center text-base md:text-lg ${ACTION_COLORS[log.targetType] || 'bg-gray-100 text-gray-600'}`}>
                                     {ACTION_ICONS[log.targetType] || '📌'}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-gray-900 dark:text-white">{log.details}</p>
-                                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                                    <p className="text-sm font-medium text-gray-900 dark:text-white leading-snug">{log.details}</p>
+                                    <div className="flex flex-wrap items-center gap-1.5 mt-1">
                                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${ACTION_COLORS[log.targetType] || ''}`}>{typeLabel(log.targetType)}</span>
-                                        <span className="text-xs text-gray-400">bởi <strong>{log.userName}</strong></span>
+                                        <span className="text-xs text-gray-400">bởi <strong>{log.userName || 'Unknown'}</strong></span>
+                                        <span className="text-xs text-gray-400 md:hidden">• {formatTime(log.timestamp)}</span>
                                     </div>
                                 </div>
-                                <span className="text-xs text-gray-400 whitespace-nowrap flex-shrink-0">{formatTime(log.timestamp)}</span>
+                                <span className="text-xs text-gray-400 whitespace-nowrap flex-shrink-0 hidden md:block self-start pt-0.5">{formatTime(log.timestamp)}</span>
                             </div>
                         ))}
                     </div>
                 )}
             </div>
 
-            <p className="text-center text-xs text-gray-400">Hiển thị {filteredLogs.length} / {logs.length} bản ghi</p>
+            <p className="text-center text-xs text-gray-400 pb-4">Hiển thị {filteredLogs.length} / {logs.length} bản ghi</p>
         </div>
     );
 };

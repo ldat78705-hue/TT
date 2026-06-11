@@ -67,14 +67,14 @@ export const RoomsScreen: React.FC = () => {
     };
 
     return (
-        <div className="p-4 md:p-6 space-y-6">
+        <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">🏫 Quản lý Phòng học</h1>
-                    <p className="text-gray-500 dark:text-gray-400 mt-1">Quản lý phòng học và lịch sử dụng phòng</p>
+                    <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">🏫 Quản lý Phòng học</h1>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Quản lý phòng học và lịch sử dụng phòng</p>
                 </div>
-                <Button onClick={openAdd} className="!py-2.5">
+                <Button onClick={openAdd} className="!py-2.5 self-start sm:self-auto">
                     {React.cloneElement(ICONS.plus, { className: 'w-5 h-5 mr-1' })} Thêm phòng
                 </Button>
             </div>

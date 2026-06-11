@@ -105,7 +105,7 @@ export default async function handler(req: any, res: any) {
 
         if (user && role) {
             // Generate JWT
-            const token = await signToken({ userId: user.id, role });
+            const token = await signToken({ userId: user.id, role, name: user.name || user.username || user.id });
             
             // Remove sensitive info before sending back to client
             const safeUser = { ...user };

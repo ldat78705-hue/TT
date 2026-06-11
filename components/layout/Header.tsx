@@ -7,9 +7,11 @@ import { ICONS } from '../../constants';
 import { CenterSettings, UserRole } from '../../types';
 import { GlobalSearch } from '../common/GlobalSearch';
 import { ChangePasswordModal } from '../auth/ChangePasswordModal';
+import { Menu } from 'lucide-react';
 
 interface HeaderProps {
   pageTitle: string;
+  onMenuClick?: () => void;
 }
 
 const Clock: React.FC = () => {
@@ -36,7 +38,7 @@ const Clock: React.FC = () => {
 };
 
 
-export const Header: React.FC<HeaderProps> = ({ pageTitle }) => {
+export const Header: React.FC<HeaderProps> = ({ pageTitle, onMenuClick }) => {
   const { user, role, logout } = useAuth();
   const { state, updateSettings } = useData();
   const [isChangePasswordModalOpen, setChangePasswordModalOpen] = useState(false);
@@ -66,14 +68,24 @@ export const Header: React.FC<HeaderProps> = ({ pageTitle }) => {
 
   return (
     <>
-      <header className="sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-b border-slate-200/60 dark:border-slate-800/60 h-20 flex items-center justify-between px-6 flex-shrink-0 gap-4 print:hidden pt-safe">
+      <header className="sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-b border-slate-200/60 dark:border-slate-800/60 h-16 md:h-20 flex items-center justify-between px-3 md:px-6 flex-shrink-0 gap-2 md:gap-4 print:hidden pt-safe">
         {/* Left Section */}
         <div className="flex items-center gap-2 flex-shrink-0 min-w-0">
-          <h1 className="text-xl md:text-2xl font-bold text-slate-800 dark:text-white truncate tracking-tight">{pageTitle}</h1>
+          {/* Hamburger menu - visible on mobile, hidden on desktop */}
+          {onMenuClick && (
+            <button
+              onClick={onMenuClick}
+              className="md:hidden p-2 -ml-1 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              aria-label="Mở menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          )}
+          <h1 className="text-lg md:text-2xl font-bold text-slate-800 dark:text-white truncate tracking-tight">{pageTitle}</h1>
         </div>
         
         {/* Right Section */}
-        <div className="flex items-center space-x-3 md:space-x-6">
+        <div className="flex items-center space-x-2 md:space-x-6">
           <div className="hidden lg:block">
             <GlobalSearch />
           </div>
@@ -83,7 +95,7 @@ export const Header: React.FC<HeaderProps> = ({ pageTitle }) => {
           <div className="relative" ref={userMenuRef}>
             <button 
                 onClick={() => setIsUserMenuOpen(prev => !prev)} 
-                className="flex items-center gap-3 p-1.5 md:p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all active:scale-95"
+                className="flex items-center gap-2 md:gap-3 p-1.5 md:p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all active:scale-95"
             >
                  <div className="hidden sm:block text-right">
                     <p className="font-semibold text-sm text-slate-800 dark:text-white leading-tight">{user?.name}</p>

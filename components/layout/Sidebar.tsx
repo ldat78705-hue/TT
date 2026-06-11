@@ -83,10 +83,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       <aside 
         className={`fixed z-40 top-0 left-0 h-full w-72 flex-col flex-shrink-0 flex transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] md:relative md:translate-x-0 print:hidden ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'} bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl text-slate-800 dark:text-slate-200 border-r border-slate-200/60 dark:border-slate-800/60`}
       >
-        <div className="h-20 flex items-center justify-center px-6 text-center text-xl font-bold border-b border-slate-200/60 dark:border-slate-800/60 truncate pt-safe">
-          {state.settings.logoUrl ? <img src={state.settings.logoUrl} alt="Logo" className="h-10 w-auto" /> : <span className="text-primary text-2xl tracking-tight">{state.settings.name}</span>}
+        <div className="h-16 md:h-20 flex items-center justify-between px-4 md:px-6 text-center border-b border-slate-200/60 dark:border-slate-800/60 pt-safe flex-shrink-0">
+          <div className="flex-1 text-center">
+            {state.settings.logoUrl ? <img src={state.settings.logoUrl} alt="Logo" className="h-8 md:h-10 w-auto mx-auto" /> : <span className="text-primary text-lg md:text-2xl font-bold tracking-tight">{state.settings.name}</span>}
+          </div>
+          {/* Close button - mobile only */}
+          <button 
+            onClick={onClose} 
+            className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors -mr-1"
+            aria-label="Đóng menu"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
         </div>
-        <nav className="flex-1 p-4 overflow-y-auto pb-safe">
+        <nav className="flex-1 p-3 md:p-4 overflow-y-auto pb-safe">
           {navLinks.map(link => (
             <NavLink
               key={link.to}
