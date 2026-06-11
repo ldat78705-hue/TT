@@ -322,6 +322,54 @@ export const SettingsScreen: React.FC = () => {
             setIsBackupLoading(false);
         }
     };
+
+    // === AUTO-BACKUP: check monthly ===
+    const AUTO_BACKUP_KEY = 'educenter_last_auto_backup';
+    const AUTO_BACKUP_INTERVAL_DAYS = 30;
+
+    useEffect(() => {
+        if (!accessToken) return;
+        const lastBackup = localStorage.getItem(AUTO_BACKUP_KEY);
+        const lastDate = lastBackup ? new Date(lastBackup) : null;
+        const now = new Date();
+        const daysSince = lastDate ? Math.floor((now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)) : 999;
+        
+        if (daysSince >= AUTO_BACKUP_INTERVAL_DAYS) {
+            // Auto-backup in background
+            const doAutoBackup = async () => {
+                try {
+                    toast.info('🔄 Đang tự động sao lưu hàng tháng lên Google Drive...');
+                    const dataToBackup = await backupData();
+                    const fileContent = JSON.stringify(dataToBackup, null, 2);
+                    const blob = new Blob([fileContent], { type: 'application/json' });
+                    const fileName = `EduCenterPro_AutoBackup_${getVietnamTime()}.json`;
+
+                    const metadata = { name: fileName, mimeType: 'application/json', parents: ['root'] };
+                    const form = new FormData();
+                    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+                    form.append('file', blob);
+
+                    const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${accessToken}` },
+                        body: form,
+                    });
+
+                    if (response.ok) {
+                        localStorage.setItem(AUTO_BACKUP_KEY, now.toISOString());
+                        toast.success('✅ Tự động sao lưu hàng tháng thành công!');
+                    }
+                } catch (e) {
+                    console.error('Auto-backup failed:', e);
+                }
+            };
+            // Delay 5s after page load to not block UI
+            const timer = setTimeout(doAutoBackup, 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [accessToken]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const lastAutoBackupDate = localStorage.getItem(AUTO_BACKUP_KEY);
     
     const handleRestoreFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -678,6 +726,17 @@ export const SettingsScreen: React.FC = () => {
                                     {ICONS.close} Ngắt kết nối
                                 </Button>
                             </div>
+                            {lastAutoBackupDate && (
+                                <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/30 rounded-lg text-sm text-green-700 dark:text-green-300">
+                                    <strong>🔄 Tự động sao lưu:</strong> Lần cuối {new Date(lastAutoBackupDate).toLocaleString('vi-VN')} • 
+                                    Tiếp theo: {new Date(new Date(lastAutoBackupDate).getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('vi-VN')}
+                                </div>
+                            )}
+                            {!lastAutoBackupDate && (
+                                <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/30 rounded-lg text-sm text-yellow-700 dark:text-yellow-300">
+                                    <strong>⏰ Tự động sao lưu:</strong> Chưa có lần sao lưu tự động nào. Hệ thống sẽ tự động sao lưu khi bạn truy cập trang này.
+                                </div>
+                            )}
                         ) : (
                             <Button onClick={handleAuthClick} className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700">
                                 {ICONS.drive} Kết nối Google Drive
