@@ -362,9 +362,9 @@ class DataRepository @Inject constructor(
                 pendingOpDao.updateStatus(op.id, "SYNCING")
 
                 // Parse the stored JSON payload
-                val parsed = gson.fromJson(op.payload, Map::class.java) as Map<String, Any>
+                val parsed = gson.fromJson(op.payload, Map::class.java) as? Map<String, Any?> ?: emptyMap()
                 val opName = parsed["op"] as? String ?: op.operationName
-                val payload = parsed["payload"]
+                val payload: Any = parsed["payload"] ?: emptyList<Any>()
 
                 val operationPayload = OperationPayload(opName, payload)
                 val updatedData = apiService.executeOperation(operationPayload)
