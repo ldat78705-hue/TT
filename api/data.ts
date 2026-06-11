@@ -23,10 +23,10 @@ const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 const BASE_COLLECTIONS = [
     'students', 'teachers', 'staff', 'classes', 'attendance', 
     'invoices', 'progressReports', 'transactions', 'income', 
-    'expenses', 'payrolls', 'announcements', 'settings'
+    'expenses', 'payrolls', 'announcements', 'settings', 'auditLogs', 'rooms'
 ] as const;
 
-const NON_SHARDED = ['students', 'teachers', 'staff', 'classes', 'progressReports', 'announcements', 'settings'];
+const NON_SHARDED = ['students', 'teachers', 'staff', 'classes', 'progressReports', 'announcements', 'settings', 'auditLogs', 'rooms'];
 const SHARDED = ['attendance', 'invoices', 'transactions', 'income', 'expenses', 'payrolls'];
 
 function getShardKey(item: any, collectionName: string): string {
@@ -148,7 +148,8 @@ export async function getSplitData(forceRefresh = false): Promise<Omit<AppData, 
             const data: any = {
                 students: [], teachers: [], staff: [], classes: [], attendance: [],
                 invoices: [], progressReports: [], transactions: [], income: [],
-                expenses: [], payrolls: [], announcements: [], settings: defaultState.settings
+                expenses: [], payrolls: [], announcements: [], settings: defaultState.settings,
+                auditLogs: [], rooms: []
             };
             
             let hasData = false;
@@ -629,16 +630,27 @@ export default async function handler(req: any, res: any) {
             }
         } else {
             try {
+                let responseData: any;
                 if (operation.op === 'updateAttendance') {
-                    const responseData = await executeAttendanceTransaction(operation.payload);
-                    return res.status(200).json(responseData);
+                    responseData = await executeAttendanceTransaction(operation.payload);
                 } else if (operation.op === 'addAdjustment') {
-                    const responseData = await executeTuitionTransaction(operation.payload);
-                    return res.status(200).json(responseData);
+                    responseData = await executeTuitionTransaction(operation.payload);
                 } else {
-                    const responseData = await executeOperationInternal(operation);
-                    return res.status(200).json(responseData);
+                    responseData = await executeOperationInternal(operation);
                 }
+
+                // === AUDIT LOG ===
+                try {
+                    const userName = (authPayload as any).name || (authPayload as any).email || 'Unknown';
+                    const userId = (authPayload as any).userId || (authPayload as any).sub || '';
+                    const auditEntry = buildAuditEntry(operation.op, operation.payload, userId, userName);
+                    if (auditEntry) {
+                        // Fire-and-forget: don't block response for logging
+                        executeOperationInternal({ op: 'addAuditLog', payload: auditEntry }).catch(() => {});
+                    }
+                } catch (logErr) { /* silently ignore audit failures */ }
+
+                return res.status(200).json(responseData);
             } catch (error) {
                 console.error('Operation Error:', error);
                 const errorMessage = error instanceof Error ? error.message : 'Lỗi thao tác không xác định';
@@ -651,4 +663,44 @@ export default async function handler(req: any, res: any) {
     }
 
     return res.status(405).send('Method Not Allowed');
+}
+
+// === AUDIT LOG BUILDER ===
+function buildAuditEntry(op: string, payload: any, userId: string, userName: string) {
+    const OP_MAP: Record<string, { targetType: string; getDetails: (p: any) => { targetName: string; details: string } | null }> = {
+        addClass: { targetType: 'class', getDetails: (p) => ({ targetName: p.name || '', details: `Thêm lớp "${p.name}"` }) },
+        updateClass: { targetType: 'class', getDetails: (p) => ({ targetName: p.updatedClass?.name || p.originalId || '', details: `Cập nhật lớp "${p.updatedClass?.name || p.originalId}"` }) },
+        deleteClass: { targetType: 'class', getDetails: (p) => ({ targetName: p.classId || '', details: `Xóa lớp ${p.classId}` }) },
+        addStudent: { targetType: 'student', getDetails: (p) => ({ targetName: p.student?.name || p.name || '', details: `Thêm học viên "${p.student?.name || p.name}"` }) },
+        updateStudent: { targetType: 'student', getDetails: (p) => ({ targetName: p.updatedStudent?.name || '', details: `Cập nhật học viên "${p.updatedStudent?.name}"` }) },
+        deleteStudent: { targetType: 'student', getDetails: (p) => ({ targetName: p.studentId || '', details: `Xóa học viên ${p.studentId}` }) },
+        addTeacher: { targetType: 'teacher', getDetails: (p) => ({ targetName: p.teacher?.name || '', details: `Thêm giáo viên "${p.teacher?.name}"` }) },
+        updateTeacher: { targetType: 'teacher', getDetails: (p) => ({ targetName: p.updatedTeacher?.name || '', details: `Cập nhật giáo viên "${p.updatedTeacher?.name}"` }) },
+        updateAttendance: { targetType: 'attendance', getDetails: (p) => {
+            const records = Array.isArray(p) ? p : [];
+            const classId = records[0]?.classId || '';
+            const date = records[0]?.date || '';
+            return { targetName: `${classId}`, details: `Điểm danh lớp ${classId} ngày ${date} (${records.length} HS)` };
+        }},
+        addAdjustment: { targetType: 'finance', getDetails: (p) => ({ targetName: p.studentId || '', details: `Thanh toán ${p.amount}đ cho HS ${p.studentId}` }) },
+        addAnnouncement: { targetType: 'announcement', getDetails: (p) => ({ targetName: p.title || '', details: `Thêm thông báo "${p.title}"` }) },
+        deleteAnnouncement: { targetType: 'announcement', getDetails: (p) => ({ targetName: p.id || '', details: `Xóa thông báo ${p.id}` }) },
+        addRoom: { targetType: 'room', getDetails: (p) => ({ targetName: p.name || '', details: `Thêm phòng "${p.name}"` }) },
+        updateRoom: { targetType: 'room', getDetails: (p) => ({ targetName: p.name || p.id || '', details: `Cập nhật phòng "${p.name || p.id}"` }) },
+        deleteRoom: { targetType: 'room', getDetails: (p) => ({ targetName: p.roomId || p.id || '', details: `Xóa phòng ${p.roomId || p.id}` }) },
+        updateSettings: { targetType: 'settings', getDetails: () => ({ targetName: 'Cài đặt', details: 'Cập nhật cài đặt hệ thống' }) },
+        restoreData: { targetType: 'system', getDetails: () => ({ targetName: 'Hệ thống', details: 'Khôi phục dữ liệu từ bản sao lưu' }) },
+    };
+    const mapper = OP_MAP[op];
+    if (!mapper) return null;
+    const result = mapper.getDetails(payload);
+    if (!result) return null;
+    return {
+        userId, userName,
+        action: op,
+        targetType: mapper.targetType,
+        targetName: result.targetName,
+        details: result.details,
+        timestamp: new Date().toISOString()
+    };
 }

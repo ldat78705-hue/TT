@@ -1,4 +1,4 @@
-import type { AppData, CenterSettings, Student, Teacher, Staff, Class, AttendanceRecord, Invoice, ProgressReport, Income, Expense, Transaction, Payroll, Announcement } from '../../types.js';
+import type { AppData, CenterSettings, Student, Teacher, Staff, Class, AttendanceRecord, Invoice, ProgressReport, Income, Expense, Transaction, Payroll, Announcement, AuditLog, Room } from '../../types.js';
 
 const MOCK_STUDENTS: Student[] = [];
 const MOCK_TEACHERS: Teacher[] = [];
@@ -49,5 +49,7 @@ export function getMockDataState(): Omit<AppData, 'loading'> {
         payrolls: MOCK_PAYROLLS,
         announcements: MOCK_ANNOUNCEMENTS,
         settings: MOCK_SETTINGS,
+        auditLogs: [],
+        rooms: [],
     };
 }

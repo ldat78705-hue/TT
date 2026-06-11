@@ -79,6 +79,7 @@ export interface ClassSchedule {
   dayOfWeek: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
   startTime: string; // "HH:MM"
   endTime: string; // "HH:MM"
+  roomId?: string; // Optional room assignment
 }
 
 export interface Class {
@@ -240,6 +241,24 @@ export interface SearchResult {
   context?: string; // e.g., "Vật lý" or "Phụ huynh: Trần Văn Bốn"
 }
 
+export interface AuditLog {
+  id: string;
+  userId: string;
+  userName: string;
+  action: string;       // operation name e.g. "addClass", "updateStudent"
+  targetType: string;   // "student" | "class" | "attendance" | "finance" | ...
+  targetName: string;   // Name of the affected object
+  details: string;      // Human-readable description
+  timestamp: string;    // ISO datetime
+}
+
+export interface Room {
+  id: string;
+  name: string;         // "Phòng 1", "Phòng A2"
+  capacity: number;
+  description: string;
+}
+
 export interface AppData {
   students: Student[];
   teachers: Teacher[];
@@ -254,4 +273,6 @@ export interface AppData {
   settings: CenterSettings;
   payrolls: Payroll[];
   announcements: Announcement[];
+  auditLogs: AuditLog[];
+  rooms: Room[];
 }

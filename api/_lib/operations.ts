@@ -913,6 +913,42 @@ export function applyOperation(
             break;
         }
 
+        // === AUDIT LOG ===
+        case 'addAuditLog': {
+            if (!data.auditLogs) data.auditLogs = [];
+            data.auditLogs.unshift({ ...payload, id: generateUniqueId('LOG') });
+            // Keep only last 500 entries
+            if (data.auditLogs.length > 500) data.auditLogs = data.auditLogs.slice(0, 500);
+            break;
+        }
+
+        // === ROOMS ===
+        case 'addRoom': {
+            if (!data.rooms) data.rooms = [];
+            data.rooms.push({ ...payload, id: generateUniqueId('ROOM') });
+            break;
+        }
+        case 'updateRoom': {
+            if (!data.rooms) data.rooms = [];
+            const roomIdx = data.rooms.findIndex((r: any) => r.id === payload.id);
+            if (roomIdx !== -1) {
+                data.rooms[roomIdx] = { ...data.rooms[roomIdx], ...payload };
+            }
+            break;
+        }
+        case 'deleteRoom': {
+            if (!data.rooms) data.rooms = [];
+            const roomId = payload.roomId || payload.id;
+            data.rooms = data.rooms.filter((r: any) => r.id !== roomId);
+            // Remove roomId references from class schedules
+            data.classes.forEach(cls => {
+                cls.schedule.forEach((s: any) => {
+                    if (s.roomId === roomId) delete s.roomId;
+                });
+            });
+            break;
+        }
+
         default:
             throw new Error(`Thao tác không xác định: ${op}`);
     }

@@ -53,6 +53,8 @@ export const ROUTES = {
   REPORTS: '/reports',
   SETTINGS: '/settings',
   ANNOUNCEMENTS: '/announcements',
+  ROOMS: '/rooms',
+  AUDIT_LOG: '/audit-log',
   PARENT_DASHBOARD: '/portal/dashboard',
   PARENT_REPORTS: '/portal/reports',
   PARENT_FINANCE: '/portal/finance',
