@@ -142,7 +142,8 @@ fun AttendanceScreen(
                             // Quick actions header
                             item {
                                 QuickActionsCard(
-                                    onBulkChange = { viewModel.setAllStatus(it) }
+                                    onBulkChange = { viewModel.setAllStatus(it) },
+                                    onReset = { viewModel.setAllStatus("UNMARKED") }
                                 )
                             }
 
@@ -179,7 +180,9 @@ fun AttendanceScreen(
                             isSaving = isSaving,
                             saveSuccess = saveSuccess,
                             pendingCount = pendingOpsCount,
+                            hasMarkedStudents = attendanceMap.any { it.value.status != "UNMARKED" },
                             onSave = { viewModel.saveAttendance() },
+                            onDelete = { viewModel.deleteAttendance() },
                             onShare = {
                                 val report = viewModel.buildAbsenceReport()
                                 if (report != null) {
@@ -299,7 +302,8 @@ private fun ScheduleView(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun QuickActionsCard(
-    onBulkChange: (String) -> Unit
+    onBulkChange: (String) -> Unit,
+    onReset: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -324,6 +328,7 @@ private fun QuickActionsCard(
                 QuickActionChip("⏰ Tất cả đi muộn", YellowLate) { onBulkChange("LATE") }
                 QuickActionChip("📋 Tất cả có phép", BluePerm) { onBulkChange("ABSENT") }
                 QuickActionChip("✗ Tất cả không phép", RedAbsent) { onBulkChange("UNEXCUSED_ABSENT") }
+                QuickActionChip("🗑 Xóa tất cả", GrayUnmarked) { onReset() }
             }
         }
     }
@@ -590,33 +595,37 @@ private fun SaveButtonBar(
     isSaving: Boolean,
     saveSuccess: Boolean?,
     pendingCount: Int,
+    hasMarkedStudents: Boolean,
     onSave: () -> Unit,
+    onDelete: () -> Unit,
     onShare: () -> Unit
 ) {
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shadowElevation = 8.dp,
+        shadowElevation = 12.dp,
         color = Color.White
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Success/error/pending indicator
+            // Status indicator
             Column(modifier = Modifier.weight(1f)) {
                 if (saveSuccess != null) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         if (saveSuccess == true) {
-                            Icon(Icons.Default.Check, contentDescription = null, tint = GreenPresent, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Đã lưu!", color = GreenPresent, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                            Icon(Icons.Default.Check, contentDescription = null, tint = GreenPresent, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text("Đã lưu!", color = GreenPresent, fontWeight = FontWeight.SemiBold, fontSize = 11.sp)
                         } else {
-                            Icon(Icons.Default.Close, contentDescription = null, tint = RedAbsent, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Lỗi!", color = RedAbsent, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                            Icon(Icons.Default.Close, contentDescription = null, tint = RedAbsent, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text("Lỗi!", color = RedAbsent, fontWeight = FontWeight.SemiBold, fontSize = 11.sp)
                         }
                     }
                 }
@@ -624,18 +633,28 @@ private fun SaveButtonBar(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier
-                                .size(8.dp)
+                                .size(7.dp)
                                 .clip(CircleShape)
                                 .background(Color(0xFFF59E0B))
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            "$pendingCount chờ đồng bộ",
-                            fontSize = 11.sp,
-                            color = Color(0xFFF59E0B),
-                            fontWeight = FontWeight.SemiBold
-                        )
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text("$pendingCount chờ đồng bộ", fontSize = 10.sp, color = Color(0xFFF59E0B), fontWeight = FontWeight.SemiBold)
                     }
+                }
+            }
+
+            // Delete button
+            if (hasMarkedStudents) {
+                IconButton(
+                    onClick = { showDeleteConfirm = true },
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Xóa điểm danh",
+                        tint = RedAbsent,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
 
@@ -644,39 +663,69 @@ private fun SaveButtonBar(
                 OutlinedButton(
                     onClick = onShare,
                     shape = RoundedCornerShape(12.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
                     border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryBlue)
                 ) {
-                    Text("📤", fontSize = 14.sp)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Gửi TB", fontSize = 12.sp, color = PrimaryBlue, fontWeight = FontWeight.SemiBold)
+                    Text("📤 Gửi TB", fontSize = 11.sp, color = PrimaryBlue, fontWeight = FontWeight.SemiBold)
                 }
             }
 
-            // Save button
+            // Save button with gradient
             Button(
                 onClick = onSave,
                 enabled = !isSaving,
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                contentPadding = PaddingValues(),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
             ) {
-                if (isSaving) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(18.dp),
-                        color = Color.White,
-                        strokeWidth = 2.dp
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Đang lưu...", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                } else {
-                    Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Lưu điểm danh", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                Box(
+                    modifier = Modifier
+                        .background(
+                            Brush.horizontalGradient(listOf(Color(0xFF667EEA), Color(0xFF764BA2))),
+                            RoundedCornerShape(14.dp)
+                        )
+                        .padding(horizontal = 20.dp, vertical = 12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (isSaving) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White, strokeWidth = 2.dp)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Đang lưu...", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color.White)
+                        }
+                    } else {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.White)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Lưu điểm danh", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color.White)
+                        }
+                    }
                 }
             }
         }
+    }
+
+    // Delete confirmation dialog
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Xóa điểm danh?", fontWeight = FontWeight.Bold) },
+            text = { Text("Xóa toàn bộ dữ liệu điểm danh đã lưu cho lớp này vào ngày hôm nay. Thao tác này không thể hoàn tác.") },
+            confirmButton = {
+                Button(
+                    onClick = { showDeleteConfirm = false; onDelete() },
+                    colors = ButtonDefaults.buttonColors(containerColor = RedAbsent)
+                ) {
+                    Text("Xóa", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text("Hủy")
+                }
+            }
+        )
     }
 }
 

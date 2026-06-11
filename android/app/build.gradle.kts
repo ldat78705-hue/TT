@@ -56,6 +56,7 @@ dependencies {
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+    implementation("androidx.appcompat:appcompat:1.6.1")
     
     // Compose
     implementation("androidx.activity:activity-compose:1.8.2")
@@ -100,6 +101,9 @@ dependencies {
 
     // Security (Encrypted SharedPreferences)
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
+
+    // Biometric (Fingerprint login)
+    implementation("androidx.biometric:biometric:1.2.0-alpha05")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

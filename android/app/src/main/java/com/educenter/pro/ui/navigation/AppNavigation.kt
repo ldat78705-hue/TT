@@ -1,13 +1,24 @@
 package com.educenter.pro.ui.navigation
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Class
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -83,12 +94,58 @@ fun AppNavigation() {
             val showBottomBar = mainRoutes.contains(currentDestination?.route)
 
             if (showBottomBar) {
-                NavigationBar {
+                NavigationBar(
+                    containerColor = androidx.compose.ui.graphics.Color.White,
+                    tonalElevation = 0.dp,
+                    modifier = Modifier
+                        .shadow(
+                            elevation = 20.dp,
+                            spotColor = androidx.compose.ui.graphics.Color(0x1A000000),
+                            ambientColor = androidx.compose.ui.graphics.Color(0x0D000000)
+                        )
+                ) {
                     visibleNavItems.forEach { screen ->
+                        val isSelected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
                         NavigationBarItem(
-                            icon = { Icon(screen.icon!!, contentDescription = null) },
-                            label = { Text(screen.title!!) },
-                            selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
+                            icon = {
+                                Box(
+                                    modifier = if (isSelected) {
+                                        Modifier
+                                            .clip(RoundedCornerShape(14.dp))
+                                            .background(
+                                                Brush.horizontalGradient(
+                                                    listOf(
+                                                        androidx.compose.ui.graphics.Color(0xFF667EEA),
+                                                        androidx.compose.ui.graphics.Color(0xFF764BA2)
+                                                    )
+                                                )
+                                            )
+                                            .padding(horizontal = 16.dp, vertical = 6.dp)
+                                    } else {
+                                        Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                                    },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        screen.icon!!,
+                                        contentDescription = null,
+                                        tint = if (isSelected) androidx.compose.ui.graphics.Color.White
+                                               else androidx.compose.ui.graphics.Color(0xFF94A3B8),
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                            },
+                            label = {
+                                Text(
+                                    screen.title!!,
+                                    fontSize = 10.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSelected) androidx.compose.ui.graphics.Color(0xFF667EEA)
+                                           else androidx.compose.ui.graphics.Color(0xFF94A3B8),
+                                    maxLines = 1
+                                )
+                            },
+                            selected = isSelected,
                             onClick = {
                                 navController.navigate(screen.route) {
                                     popUpTo(navController.graph.findStartDestination().id) {
@@ -97,7 +154,10 @@ fun AppNavigation() {
                                     launchSingleTop = true
                                     restoreState = true
                                 }
-                            }
+                            },
+                            colors = NavigationBarItemDefaults.colors(
+                                indicatorColor = androidx.compose.ui.graphics.Color.Transparent
+                            )
                         )
                     }
                 }
