@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.educenter.pro.data.model.ClassModel
 import com.educenter.pro.data.model.Student
+import com.educenter.pro.ui.components.PullRefreshWrapper
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,6 +35,7 @@ fun ClassesScreen(
     val students by viewModel.selectedClassStudents.collectAsState()
     val availableStudents by viewModel.availableStudentsForClass.collectAsState()
     val teacherNames by viewModel.selectedClassTeacherNames.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
 
     var showAddClassDialog by remember { mutableStateOf(false) }
     var showEditClassDialog by remember { mutableStateOf(false) }
@@ -220,7 +222,12 @@ fun ClassesScreen(
                 }
             }
         ) { padding ->
-            Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
+            PullRefreshWrapper(
+                isRefreshing = isRefreshing,
+                onRefresh = { viewModel.refresh() },
+                modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)
+            ) {
+            Column(modifier = Modifier.fillMaxSize()) {
                 Text("Danh sách Lớp học", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(16.dp))
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -232,6 +239,7 @@ fun ClassesScreen(
                     }
                 }
             }
+            } // PullRefreshWrapper
         }
 
         // === ADD CLASS DIALOG ===

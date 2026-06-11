@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.educenter.pro.data.model.Student
+import com.educenter.pro.ui.components.PullRefreshWrapper
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -35,6 +36,7 @@ fun FinanceScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val paymentResult by viewModel.paymentResult.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
     val fmt = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
     var selectedTab by remember { mutableStateOf(0) }
     var paymentStudent by remember { mutableStateOf<DebtStudent?>(null) }
@@ -55,7 +57,12 @@ fun FinanceScreen(
     Scaffold(
         topBar = { TopAppBar(title = { Text("Quản lý Tài chính") }) }
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+        PullRefreshWrapper(
+            isRefreshing = isRefreshing,
+            onRefresh = { viewModel.refresh() },
+            modifier = Modifier.fillMaxSize().padding(padding)
+        ) {
+        Column(modifier = Modifier.fillMaxSize()) {
             // Tabs
             TabRow(selectedTabIndex = selectedTab) {
                 Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("Tổng quan") })
@@ -69,6 +76,7 @@ fun FinanceScreen(
                 2 -> TransactionsTab(uiState, fmt)
             }
         }
+        } // PullRefreshWrapper
 
         // Payment Dialog
         if (paymentStudent != null) {

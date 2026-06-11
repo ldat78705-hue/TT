@@ -35,6 +35,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.educenter.pro.ui.components.PullRefreshWrapper
 
 // Premium color palette
 private val GreenPresent = Color(0xFF10B981)
@@ -65,6 +66,7 @@ fun AttendanceScreen(
     val saveSuccess by viewModel.saveSuccess.collectAsState()
     val pendingOpsCount by viewModel.pendingOpsCount.collectAsState()
     val attendedClassIds by viewModel.attendedClassIds.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
 
     val selectedClassName = classes.find { it.id == selectedClassId }?.name ?: ""
@@ -112,8 +114,13 @@ fun AttendanceScreen(
     ) { padding ->
         if (selectedClassId == null) {
             // ===== SCHEDULE VIEW =====
+            PullRefreshWrapper(
+                isRefreshing = isRefreshing,
+                onRefresh = { viewModel.refresh() },
+                modifier = Modifier.fillMaxSize().padding(padding)
+            ) {
             ScheduleView(
-                modifier = Modifier.padding(padding),
+                modifier = Modifier,
                 selectedDate = selectedDate,
                 scheduledClasses = scheduledClasses,
                 allClasses = classes,
@@ -121,6 +128,7 @@ fun AttendanceScreen(
                 onDateChange = { viewModel.selectDate(it) },
                 onClassClick = { viewModel.selectClass(it) }
             )
+            }
         } else {
             // ===== ATTENDANCE VIEW =====
             Box(modifier = Modifier.fillMaxSize().padding(padding)) {
