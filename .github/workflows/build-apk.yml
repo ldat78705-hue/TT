@@ -1,4 +1,4 @@
-name: Build APK
+name: Build Android APK
 
 on:
   push:
@@ -25,24 +25,40 @@ jobs:
       - name: Create local.properties
         run: echo "sdk.dir=$ANDROID_HOME" > android/local.properties
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.2'
+      - name: Download Gradle Wrapper JAR
+        run: |
+          mkdir -p android/gradle/wrapper
+          curl -sL https://services.gradle.org/distributions/gradle-8.2-bin.zip -o /tmp/gradle.zip
+          unzip -q /tmp/gradle.zip -d /tmp/gradle
+          cp /tmp/gradle/gradle-8.2/lib/gradle-wrapper-*.jar android/gradle/wrapper/gradle-wrapper.jar 2>/dev/null || true
+          # If the above didn't work, download wrapper jar directly
+          if [ ! -f "android/gradle/wrapper/gradle-wrapper.jar" ]; then
+            curl -sL "https://github.com/gradle/gradle/raw/v8.2.0/gradle/wrapper/gradle-wrapper.jar" -o android/gradle/wrapper/gradle-wrapper.jar 2>/dev/null || true
+          fi
+          # Final fallback: generate wrapper using installed gradle
+          if [ ! -f "android/gradle/wrapper/gradle-wrapper.jar" ]; then
+            cd /tmp && curl -sL https://services.gradle.org/distributions/gradle-8.2-bin.zip -o gradle.zip && unzip -q gradle.zip
+            cd $GITHUB_WORKSPACE/android && /tmp/gradle-8.2/bin/gradle wrapper --gradle-version 8.2
+          fi
+
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
 
       - name: Build Debug APK
         working-directory: android
-        run: gradle assembleDebug --no-daemon --warning-mode=all
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Build Release APK
         working-directory: android
-        run: gradle assembleRelease --no-daemon --warning-mode=all
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
         continue-on-error: true
 
-      - name: Rename APKs
+      - name: Prepare APKs for release
         run: |
           mkdir -p release-apks
-          cp android/app/build/outputs/apk/debug/app-debug.apk release-apks/EduCenterPro-${{ github.ref_name }}.apk
+          if [ -f "android/app/build/outputs/apk/debug/app-debug.apk" ]; then
+            cp android/app/build/outputs/apk/debug/app-debug.apk release-apks/EduCenterPro-${{ github.ref_name }}.apk
+          fi
           if [ -f "android/app/build/outputs/apk/release/app-release-unsigned.apk" ]; then
             cp android/app/build/outputs/apk/release/app-release-unsigned.apk release-apks/EduCenterPro-${{ github.ref_name }}-release.apk
           fi
@@ -55,11 +71,11 @@ jobs:
             ## 📱 EduCenter Pro ${{ github.ref_name }}
             
             ### 📥 Tải & cài đặt:
-            1. Bấm vào file **EduCenterPro-${{ github.ref_name }}.apk** bên dưới
+            1. Bấm vào file **EduCenterPro-${{ github.ref_name }}.apk** bên dưới để tải
             2. Mở file vừa tải → Bấm **Cài đặt**
-            3. Mở app → Đăng nhập
+            3. Mở app **EduCenter Pro** → Đăng nhập
             
-            > ⚠️ Lần đầu cần cho phép "Cài từ nguồn không xác định"
+            > ⚠️ Lần đầu cần cho phép "Cài từ nguồn không xác định" trong Cài đặt điện thoại
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
