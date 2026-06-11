@@ -336,47 +336,67 @@ private fun ScheduleClassCard(
             containerColor = if (isAttended) Color(0xFFF0FDF4) else Color.White
         )
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(16.dp)
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        cls.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    if (isAttended) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(GreenPresent)
-                                .padding(horizontal = 8.dp, vertical = 2.dp)
-                        ) {
-                            Text("✓ Đã ĐD", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                        }
+            // Row 1: Class name + status badge
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    cls.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 17.sp,
+                    modifier = Modifier.weight(1f),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                if (isAttended) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(GreenPresent)
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                    ) {
+                        Text("✓ Đã ĐD", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
-                Spacer(modifier = Modifier.height(4.dp))
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Row 2: Student count + schedule info
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    "Sĩ số: ${cls.studentIds.size} học viên",
+                    "👥 Sĩ số: ${cls.studentIds.size} học viên",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 14.sp
                 )
             }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Row 3: Action button - full width
             Button(
                 onClick = { onClassClick(cls.id) },
+                modifier = Modifier.fillMaxWidth().height(44.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (isAttended) GreenPresent else PrimaryBlue
                 )
             ) {
                 Text(
-                    if (isAttended) "Xem lại" else "Điểm danh",
-                    fontWeight = FontWeight.SemiBold
+                    if (isAttended) "📋 Xem lại điểm danh" else "✏️ Điểm danh ngay",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp
                 )
             }
         }
