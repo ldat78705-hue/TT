@@ -3,7 +3,7 @@ name: Build APK
 on:
   push:
     tags:
-      - 'v*'  # Chỉ build khi tạo tag version (v1.0, v1.1, ...)
+      - 'v*'
 
 jobs:
   build:
@@ -22,33 +22,38 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x android/gradlew
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Create local.properties
         run: echo "sdk.dir=$ANDROID_HOME" > android/local.properties
 
       - name: Build Debug APK
-        run: cd android && ./gradlew assembleDebug
+        run: cd android && gradle assembleDebug
 
       - name: Build Release APK
-        run: cd android && ./gradlew assembleRelease
+        run: cd android && gradle assembleRelease
+
+      - name: Rename APKs
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/EduCenterPro-${{ github.ref_name }}-debug.apk
+          cp android/app/build/outputs/apk/release/app-release-unsigned.apk android/app/build/outputs/apk/release/EduCenterPro-${{ github.ref_name }}.apk || true
 
       - name: Create GitHub Release with APK
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            android/app/build/outputs/apk/debug/app-debug.apk
-            android/app/build/outputs/apk/release/app-release-unsigned.apk
+            android/app/build/outputs/apk/debug/EduCenterPro-${{ github.ref_name }}-debug.apk
+            android/app/build/outputs/apk/release/EduCenterPro-${{ github.ref_name }}.apk
           body: |
             ## 📱 EduCenter Pro ${{ github.ref_name }}
             
             ### Tải xuống:
-            - **app-debug.apk** - Bản debug (khuyên dùng)
-            - **app-release-unsigned.apk** - Bản release
+            - **EduCenterPro-${{ github.ref_name }}-debug.apk** - Bản cài đặt
             
             ### Cài đặt:
             1. Tải file APK về điện thoại
             2. Mở file → Cho phép cài đặt → Xong!
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
