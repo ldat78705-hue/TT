@@ -291,6 +291,8 @@ private fun ClassCard(classModel: ClassModel, onClick: () -> Unit) {
     }
 }
 
+private data class ScheduleEntry(val dayOfWeek: String, val startTime: String, val endTime: String)
+
 // ====== SHARED CLASS FORM DIALOG (Add + Edit) ======
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -308,8 +310,6 @@ fun ClassFormDialog(
     var selectedFeeType by remember { mutableStateOf(initialClass?.fee?.type ?: "PER_SESSION") }
     
     // Schedule entries - each is an independent entry (day + start + end)
-    data class ScheduleEntry(val dayOfWeek: String, val startTime: String, val endTime: String)
-    
     var scheduleEntries by remember {
         mutableStateOf(
             if (initialClass != null && initialClass.schedule.isNotEmpty()) {
