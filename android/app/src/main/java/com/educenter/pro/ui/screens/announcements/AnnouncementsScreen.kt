@@ -48,7 +48,7 @@ fun AnnouncementsScreen(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(Icons.Default.Campaign, contentDescription = null, modifier = Modifier.size(64.dp), tint = Color(0xFFCBD5E1))
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text("Chưa có thông báo nào", fontWeight = FontWeight.Bold, color = Color(0xFF94A3B8))
+                    Text("Chưa có thông báo nào", fontWeight = FontWeight.Bold, color = Color(0xFF64748B))
                     if (canManage) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text("Nhấn + để tạo thông báo đầu tiên", fontSize = 13.sp, color = Color(0xFFCBD5E1))
@@ -83,13 +83,15 @@ fun AnnouncementsScreen(
                             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                                 Text(
                                     "Bởi: ${ann.createdBy}",
-                                    fontSize = 11.sp,
-                                    color = Color(0xFF94A3B8)
+                                    fontSize = 13.sp,
+                                    color = Color(0xFF64748B),
+                                    fontWeight = FontWeight.Medium
                                 )
                                 Text(
                                     ann.createdAt.take(10),
-                                    fontSize = 11.sp,
-                                    color = Color(0xFF94A3B8)
+                                    fontSize = 13.sp,
+                                    color = Color(0xFF64748B),
+                                    fontWeight = FontWeight.Medium
                                 )
                             }
                         }

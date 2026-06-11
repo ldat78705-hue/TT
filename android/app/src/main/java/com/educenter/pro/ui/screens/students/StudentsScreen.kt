@@ -473,7 +473,7 @@ fun StudentCard(
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Surface(
-                        color = if (student.status.name == "ACTIVE") Color(0xFF10B981).copy(alpha = 0.1f) else Color(0xFF94A3B8).copy(alpha = 0.1f),
+                        color = if (student.status.name == "ACTIVE") Color(0xFF10B981).copy(alpha = 0.1f) else Color(0xFF64748B).copy(alpha = 0.1f),
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
                     ) {
                         Text(

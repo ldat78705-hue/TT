@@ -47,7 +47,7 @@ fun ReportsScreen(
                         FilterChip(
                             selected = isSelected,
                             onClick = { viewModel.setPeriod(key) },
-                            label = { Text(label, fontSize = 12.sp) },
+                            label = { Text(label, fontSize = 14.sp, fontWeight = FontWeight.Medium) },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = Color(0xFF3B82F6),
                                 selectedLabelColor = Color.White
@@ -203,9 +203,9 @@ private fun KpiCard(
             Column {
                 Icon(icon, contentDescription = null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(24.dp))
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(title, color = Color.White.copy(alpha = 0.9f), fontSize = 12.sp)
+                Text(title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(value, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, maxLines = 1)
+                Text(value, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, maxLines = 1)
             }
         }
     }
@@ -220,7 +220,7 @@ private fun InfoCard(modifier: Modifier = Modifier, title: String, value: String
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(title, fontSize = 12.sp, color = Color(0xFF64748B))
+            Text(title, fontSize = 14.sp, color = Color(0xFF475569), fontWeight = FontWeight.Medium)
             Spacer(modifier = Modifier.height(8.dp))
             Text(value, fontWeight = FontWeight.ExtraBold, fontSize = 28.sp, color = color)
         }
@@ -231,6 +231,6 @@ private fun InfoCard(modifier: Modifier = Modifier, title: String, value: String
 private fun AttendanceStat(label: String, count: Int, color: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text("$count", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = color)
-        Text(label, fontSize = 11.sp, color = Color(0xFF64748B))
+        Text(label, fontSize = 13.sp, color = Color(0xFF475569), fontWeight = FontWeight.Medium)
     }
 }

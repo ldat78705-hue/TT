@@ -300,7 +300,7 @@ private fun ScheduleView(
                     Icon(
                         if (showAllClasses) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                         contentDescription = null,
-                        tint = Color(0xFF94A3B8)
+                        tint = Color(0xFF64748B)
                     )
                 }
             }
@@ -451,7 +451,7 @@ private fun QuickActionChip(
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
         elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
     ) {
-        Text(label, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+        Text(label, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
     }
 }
 
@@ -503,7 +503,7 @@ private fun SummaryBadge(label: String, count: Int, color: Color) {
             )
         }
         Spacer(modifier = Modifier.height(2.dp))
-        Text(label, fontSize = 10.sp, color = Color.Gray)
+        Text(label, fontSize = 13.sp, color = Color(0xFF64748B))
     }
 }
 
@@ -588,7 +588,7 @@ private fun StudentAttendanceCard(
                         ) {
                             Text(
                                 "Tháng: ${monthlyCount} buổi",
-                                fontSize = 10.sp,
+                                fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = PrimaryBlue
                             )
@@ -602,7 +602,7 @@ private fun StudentAttendanceCard(
                                     .background(GrayUnmarked.copy(alpha = 0.15f))
                                     .padding(horizontal = 6.dp, vertical = 2.dp)
                             ) {
-                                Text("Chưa ĐD", fontSize = 10.sp, color = GrayUnmarked, fontWeight = FontWeight.SemiBold)
+                                Text("Chưa ĐD", fontSize = 13.sp, color = GrayUnmarked, fontWeight = FontWeight.SemiBold)
                             }
                         }
                     }
@@ -686,7 +686,7 @@ private fun StatusButton(
         Text(
             label,
             color = textColor,
-            fontSize = 11.sp,
+            fontSize = 14.sp,
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
             maxLines = 1,
             textAlign = TextAlign.Center
@@ -725,11 +725,11 @@ private fun SaveButtonBar(
                         if (saveSuccess == true) {
                             Icon(Icons.Default.Check, contentDescription = null, tint = GreenPresent, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(3.dp))
-                            Text("Đã lưu!", color = GreenPresent, fontWeight = FontWeight.SemiBold, fontSize = 11.sp)
+                            Text("Đã lưu!", color = GreenPresent, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                         } else {
                             Icon(Icons.Default.Close, contentDescription = null, tint = RedAbsent, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(3.dp))
-                            Text("Lỗi!", color = RedAbsent, fontWeight = FontWeight.SemiBold, fontSize = 11.sp)
+                            Text("Lỗi!", color = RedAbsent, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                         }
                     }
                 }
@@ -742,7 +742,7 @@ private fun SaveButtonBar(
                                 .background(Color(0xFFF59E0B))
                         )
                         Spacer(modifier = Modifier.width(3.dp))
-                        Text("$pendingCount chờ đồng bộ", fontSize = 10.sp, color = Color(0xFFF59E0B), fontWeight = FontWeight.SemiBold)
+                        Text("$pendingCount chờ đồng bộ", fontSize = 13.sp, color = Color(0xFFF59E0B), fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -770,7 +770,7 @@ private fun SaveButtonBar(
                     contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
                     border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryBlue)
                 ) {
-                    Text("📤 Gửi TB", fontSize = 11.sp, color = PrimaryBlue, fontWeight = FontWeight.SemiBold)
+                    Text("📤 Gửi TB", fontSize = 14.sp, color = PrimaryBlue, fontWeight = FontWeight.SemiBold)
                 }
             }
 

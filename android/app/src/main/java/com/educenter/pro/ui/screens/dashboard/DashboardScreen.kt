@@ -273,7 +273,7 @@ fun DashboardScreen(
                                             when (index) {
                                                 0 -> RedAccent
                                                 1 -> OrangeAccent
-                                                else -> Color(0xFF94A3B8)
+                                                else -> Color(0xFF64748B)
                                             }
                                         ),
                                     contentAlignment = Alignment.Center
@@ -333,12 +333,12 @@ fun DashboardScreen(
                                             when (index) {
                                                 0 -> OrangeAccent
                                                 1 -> Color(0xFFFB923C)
-                                                else -> Color(0xFF94A3B8)
+                                                else -> Color(0xFF64748B)
                                             }
                                         ),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text("${index + 1}", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text("${index + 1}", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                                 }
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(item.student.name, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B), modifier = Modifier.weight(1f))
@@ -352,7 +352,7 @@ fun DashboardScreen(
                                         "${item.absentCount} buổi",
                                         color = RedAccent,
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 12.sp
+                                        fontSize = 14.sp
                                     )
                                 }
                             }
@@ -388,10 +388,10 @@ fun DashboardScreen(
                             ) {
                                 Box(
                                     modifier = Modifier.size(28.dp).clip(CircleShape)
-                                        .background(if (index == 0) Color(0xFFF97316) else Color(0xFF94A3B8)),
+                                        .background(if (index == 0) Color(0xFFF97316) else Color(0xFF64748B)),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text("${index + 1}", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text("${index + 1}", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                                 }
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(item.student.name, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B), modifier = Modifier.weight(1f))
@@ -400,7 +400,7 @@ fun DashboardScreen(
                                         .background(OrangeAccent.copy(alpha = 0.1f))
                                         .padding(horizontal = 8.dp, vertical = 4.dp)
                                 ) {
-                                    Text("${item.absentCount} buổi", color = OrangeAccent, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                    Text("${item.absentCount} buổi", color = OrangeAccent, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                 }
                             }
                             if (index < uiState.topLate.lastIndex) {

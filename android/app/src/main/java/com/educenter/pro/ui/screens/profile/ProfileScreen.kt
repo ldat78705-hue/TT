@@ -101,7 +101,7 @@ fun ProfileScreen(
                 "Phiên bản: v$versionName",
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 fontSize = 13.sp,
-                color = Color(0xFF94A3B8),
+                color = Color(0xFF64748B),
                 textAlign = TextAlign.Center
             )
 
@@ -144,7 +144,7 @@ private fun ProfileMenuItem(
                 Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
             }
             Spacer(modifier = Modifier.width(16.dp))
-            Text(label, fontWeight = FontWeight.SemiBold, color = if (enabled) Color(0xFF1E293B) else Color(0xFF94A3B8))
+            Text(label, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = if (enabled) Color(0xFF1E293B) else Color(0xFF64748B))
         }
     }
 }

@@ -44,7 +44,7 @@ private val PrimaryGradientStart = Color(0xFF667EEA)
 private val PrimaryGradientEnd = Color(0xFF764BA2)
 private val AccentBlue = Color(0xFF3B82F6)
 private val SurfaceWhite = Color(0xFFFAFAFC)
-private val SubtleGray = Color(0xFF94A3B8)
+private val SubtleGray = Color(0xFFCBD5E1)
 
 @Composable
 fun LoginScreen(
@@ -153,7 +153,7 @@ fun LoginScreen(
             )
             Text(
                 "Hệ thống quản lý trung tâm",
-                fontSize = 14.sp,
+                fontSize = 15.sp,
                 color = SubtleGray,
                 modifier = Modifier.padding(top = 6.dp)
             )
@@ -369,9 +369,9 @@ fun LoginScreen(
 
             // Footer
             Text(
-                "Phiên bản 1.0 • EduCenter Pro",
-                fontSize = 11.sp,
-                color = Color(0xFF475569),
+                "Phiên bản 1.1 • EduCenter Pro",
+                fontSize = 13.sp,
+                color = Color(0xFF64748B),
                 modifier = Modifier.padding(bottom = 24.dp)
             )
         }

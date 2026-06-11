@@ -228,7 +228,7 @@ private fun DebtTab(uiState: FinanceUiState, fmt: NumberFormat, onCollectFee: (D
                         // Rank badge
                         Box(
                             modifier = Modifier.size(36.dp).clip(CircleShape)
-                                .background(if (index < 3) Color(0xFFEF4444) else Color(0xFF94A3B8)),
+                                .background(if (index < 3) Color(0xFFEF4444) else Color(0xFF64748B)),
                             contentAlignment = Alignment.Center
                         ) {
                             Text("${index + 1}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)

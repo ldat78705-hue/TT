@@ -127,7 +127,7 @@ fun AppNavigation() {
                                         screen.icon!!,
                                         contentDescription = null,
                                         tint = if (isSelected) androidx.compose.ui.graphics.Color.White
-                                               else androidx.compose.ui.graphics.Color(0xFF94A3B8),
+                                               else androidx.compose.ui.graphics.Color(0xFF64748B),
                                         modifier = Modifier.size(22.dp)
                                     )
                                 }
@@ -135,10 +135,10 @@ fun AppNavigation() {
                             label = {
                                 Text(
                                     screen.title!!,
-                                    fontSize = 10.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    fontSize = 12.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
                                     color = if (isSelected) androidx.compose.ui.graphics.Color(0xFF667EEA)
-                                           else androidx.compose.ui.graphics.Color(0xFF94A3B8),
+                                           else androidx.compose.ui.graphics.Color(0xFF64748B),
                                     maxLines = 1
                                 )
                             },

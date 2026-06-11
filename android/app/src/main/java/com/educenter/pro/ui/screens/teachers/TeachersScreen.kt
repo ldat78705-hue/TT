@@ -73,18 +73,18 @@ fun TeachersScreen(
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(teacher.name, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF1E293B))
+                            Text(teacher.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B))
                             Spacer(modifier = Modifier.height(2.dp))
                             Text("Môn: ${teacher.subject}", fontSize = 13.sp, color = Color(0xFF64748B))
                             if (teacher.phone.isNotBlank()) {
-                                Text("SĐT: ${teacher.phone}", fontSize = 12.sp, color = Color(0xFF94A3B8))
+                                Text("SĐT: ${teacher.phone}", fontSize = 14.sp, color = Color(0xFF475569))
                             }
                             if (teacher.qualification.isNotBlank()) {
-                                Text("Trình độ: ${teacher.qualification}", fontSize = 12.sp, color = Color(0xFF94A3B8))
+                                Text("Trình độ: ${teacher.qualification}", fontSize = 14.sp, color = Color(0xFF475569))
                             }
                             if (teacher.rate > 0) {
                                 val salaryLabel = if (teacher.salaryType == "MONTHLY") "Lương tháng" else "Lương/buổi"
-                                Text("$salaryLabel: ${fmt.format(teacher.rate)}", fontSize = 12.sp, color = Color(0xFF10B981))
+                                Text("$salaryLabel: ${fmt.format(teacher.rate)}", fontSize = 14.sp, color = Color(0xFF10B981), fontWeight = FontWeight.Medium)
                             }
                         }
                         Column {
@@ -188,7 +188,7 @@ fun AddOrEditTeacherDialog(
                             FilterChip(
                                 selected = salaryType == key,
                                 onClick = { salaryType = key },
-                                label = { Text(label, fontSize = 12.sp) },
+                                label = { Text(label, fontSize = 14.sp) },
                                 modifier = Modifier.padding(end = 8.dp)
                             )
                         }

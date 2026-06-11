@@ -139,7 +139,7 @@ fun ClassesScreen(
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(student.name, fontWeight = FontWeight.Bold, color = Color(0xFF3B82F6))
                                     Spacer(modifier = Modifier.height(2.dp))
-                                    Text(student.phone, style = MaterialTheme.typography.bodySmall, color = Color(0xFF94A3B8))
+                                    Text(student.phone, style = MaterialTheme.typography.bodySmall, color = Color(0xFF475569))
                                 }
                                 IconButton(onClick = { studentToRemove = student }) {
                                     Icon(Icons.Default.RemoveCircle, contentDescription = "Xóa khỏi lớp", tint = Color(0xFFEF4444))
@@ -400,7 +400,7 @@ fun ClassFormDialog(
                                     value = allDays.find { it.first == entry.dayOfWeek }?.second ?: entry.dayOfWeek,
                                     onValueChange = {},
                                     readOnly = true,
-                                    label = { Text("Thứ", fontSize = 11.sp) },
+                                    label = { Text("Thứ", fontSize = 13.sp) },
                                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
                                     modifier = Modifier.menuAnchor().fillMaxWidth(),
                                     shape = RoundedCornerShape(10.dp),
@@ -429,7 +429,7 @@ fun ClassFormDialog(
                                             it[index] = entry.copy(startTime = newVal)
                                         }
                                     },
-                                    label = { Text("Bắt đầu", fontSize = 11.sp) },
+                                    label = { Text("Bắt đầu", fontSize = 13.sp) },
                                     singleLine = true,
                                     modifier = Modifier.weight(1f),
                                     shape = RoundedCornerShape(10.dp),
@@ -442,7 +442,7 @@ fun ClassFormDialog(
                                             it[index] = entry.copy(endTime = newVal)
                                         }
                                     },
-                                    label = { Text("Kết thúc", fontSize = 11.sp) },
+                                    label = { Text("Kết thúc", fontSize = 13.sp) },
                                     singleLine = true,
                                     modifier = Modifier.weight(1f),
                                     shape = RoundedCornerShape(10.dp),
