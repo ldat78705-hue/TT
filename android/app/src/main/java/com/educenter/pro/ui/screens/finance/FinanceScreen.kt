@@ -121,7 +121,7 @@ private fun OverviewTab(uiState: FinanceUiState, fmt: NumberFormat) {
                         .padding(24.dp)
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                        Text("Dòng tiền (Thu - Chi)", color = Color.White.copy(alpha = 0.9f), fontSize = 14.sp)
+                        Text("Dòng tiền (Thu - Chi)", color = Color.White.copy(alpha = 0.95f), fontSize = 15.sp)
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(fmt.format(uiState.cashFlow), color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 28.sp)
                     }
@@ -141,8 +141,8 @@ private fun OverviewTab(uiState: FinanceUiState, fmt: NumberFormat) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Icon(Icons.Default.TrendingUp, contentDescription = null, tint = Color(0xFF10B981))
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("Tổng thu", fontSize = 12.sp, color = Color(0xFF64748B))
-                        Text(fmt.format(uiState.cashRevenue), fontWeight = FontWeight.Bold, color = Color(0xFF10B981), fontSize = 16.sp)
+                        Text("Tổng thu", fontSize = 14.sp, color = Color(0xFF475569))
+                        Text(fmt.format(uiState.cashRevenue), fontWeight = FontWeight.Bold, color = Color(0xFF059669), fontSize = 17.sp)
                     }
                 }
                 Card(
@@ -154,8 +154,8 @@ private fun OverviewTab(uiState: FinanceUiState, fmt: NumberFormat) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Icon(Icons.Default.TrendingDown, contentDescription = null, tint = Color(0xFFEF4444))
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("Tổng chi", fontSize = 12.sp, color = Color(0xFF64748B))
-                        Text(fmt.format(uiState.totalExpenses), fontWeight = FontWeight.Bold, color = Color(0xFFEF4444), fontSize = 16.sp)
+                        Text("Tổng chi", fontSize = 14.sp, color = Color(0xFF475569))
+                        Text(fmt.format(uiState.totalExpenses), fontWeight = FontWeight.Bold, color = Color(0xFFDC2626), fontSize = 17.sp)
                     }
                 }
             }
@@ -173,8 +173,8 @@ private fun OverviewTab(uiState: FinanceUiState, fmt: NumberFormat) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFF59E0B))
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("Nợ phải thu", fontSize = 12.sp, color = Color(0xFF64748B))
-                        Text(fmt.format(uiState.totalReceivables), fontWeight = FontWeight.Bold, color = Color(0xFFF59E0B), fontSize = 16.sp)
+                        Text("Nợ phải thu", fontSize = 14.sp, color = Color(0xFF475569))
+                        Text(fmt.format(uiState.totalReceivables), fontWeight = FontWeight.Bold, color = Color(0xFFD97706), fontSize = 17.sp)
                     }
                 }
                 Card(
@@ -186,8 +186,8 @@ private fun OverviewTab(uiState: FinanceUiState, fmt: NumberFormat) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Icon(Icons.Default.AccountBalanceWallet, contentDescription = null, tint = Color(0xFF8B5CF6))
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("Số dư ví HS", fontSize = 12.sp, color = Color(0xFF64748B))
-                        Text(fmt.format(uiState.totalCredit), fontWeight = FontWeight.Bold, color = Color(0xFF8B5CF6), fontSize = 16.sp)
+                        Text("Số dư ví HS", fontSize = 14.sp, color = Color(0xFF475569))
+                        Text(fmt.format(uiState.totalCredit), fontWeight = FontWeight.Bold, color = Color(0xFF7C3AED), fontSize = 17.sp)
                     }
                 }
             }
@@ -211,7 +211,7 @@ private fun DebtTab(uiState: FinanceUiState, fmt: NumberFormat, onCollectFee: (D
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item {
-                Text("${uiState.debtStudents.size} học viên đang nợ", fontWeight = FontWeight.Bold, color = Color(0xFF64748B))
+                Text("${uiState.debtStudents.size} học viên đang nợ", fontWeight = FontWeight.Bold, color = Color(0xFF475569), fontSize = 15.sp)
                 Spacer(modifier = Modifier.height(8.dp))
             }
             itemsIndexed(uiState.debtStudents) { index, item ->
@@ -236,14 +236,14 @@ private fun DebtTab(uiState: FinanceUiState, fmt: NumberFormat, onCollectFee: (D
                         Spacer(modifier = Modifier.width(12.dp))
                         // Student info
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(item.student.name, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Text(item.student.phone, fontSize = 11.sp, color = Color(0xFF64748B))
+                            Text(item.student.name, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF1E293B))
+                            Text(item.student.phone, fontSize = 13.sp, color = Color(0xFF475569))
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 "Nợ: ${fmt.format(item.debt)}",
                                 fontWeight = FontWeight.ExtraBold,
-                                color = Color(0xFFEF4444),
-                                fontSize = 13.sp
+                                color = Color(0xFFDC2626),
+                                fontSize = 14.sp
                             )
                         }
                         // Collect Fee button
@@ -254,9 +254,9 @@ private fun DebtTab(uiState: FinanceUiState, fmt: NumberFormat, onCollectFee: (D
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                             modifier = Modifier.height(36.dp)
                         ) {
-                            Icon(Icons.Default.Payments, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.Payments, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Thu HP", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Text("Thu HP", fontSize = 13.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -289,14 +289,14 @@ private fun TransactionsTab(uiState: FinanceUiState, fmt: NumberFormat) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(tx.description, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, maxLines = 2)
+                            Text(tx.description, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B), maxLines = 2)
                             Spacer(modifier = Modifier.height(4.dp))
                             Row {
-                                Text(tx.date.take(10), fontSize = 12.sp, color = Color(0xFF94A3B8))
+                                Text(tx.date.take(10), fontSize = 13.sp, color = Color(0xFF64748B))
                                 if (!tx.paymentMethod.isNullOrBlank()) {
                                     Spacer(modifier = Modifier.width(8.dp))
                                     val methodLabel = if (tx.paymentMethod == "cash") "💵 Tiền mặt" else "🏦 Chuyển khoản"
-                                    Text(methodLabel, fontSize = 11.sp, color = Color(0xFF64748B))
+                                    Text(methodLabel, fontSize = 13.sp, color = Color(0xFF475569))
                                 }
                             }
                         }

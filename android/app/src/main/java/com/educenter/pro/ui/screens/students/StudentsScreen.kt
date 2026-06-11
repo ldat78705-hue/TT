@@ -442,9 +442,9 @@ fun StudentCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(student.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = Color(0xFF1E293B))
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(student.phone, style = MaterialTheme.typography.bodyMedium, color = Color(0xFF64748B))
+                    Text(student.phone, style = MaterialTheme.typography.bodyMedium, color = Color(0xFF475569))
                     if (student.parentName.isNotBlank()) {
-                        Text("PH: ${student.parentName}", style = MaterialTheme.typography.bodySmall, color = Color(0xFF94A3B8))
+                        Text("PH: ${student.parentName}", style = MaterialTheme.typography.bodySmall, color = Color(0xFF64748B))
                     }
                     // Show classes
                     if (studentClasses.isNotEmpty()) {
@@ -457,16 +457,16 @@ fun StudentCard(
                                 ) {
                                     Text(
                                         cls.name,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                        fontSize = 10.sp,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                        fontSize = 12.sp,
                                         fontWeight = FontWeight.SemiBold,
-                                        color = Color(0xFF3B82F6),
+                                        color = Color(0xFF2563EB),
                                         maxLines = 1
                                     )
                                 }
                             }
                             if (studentClasses.size > 3) {
-                                Text("+${studentClasses.size - 3}", fontSize = 10.sp, color = Color(0xFF94A3B8))
+                                Text("+${studentClasses.size - 3}", fontSize = 12.sp, color = Color(0xFF64748B))
                             }
                         }
                     }
@@ -478,9 +478,9 @@ fun StudentCard(
                     ) {
                         Text(
                             text = if (student.status.name == "ACTIVE") "Đang học" else "Nghỉ học",
-                            color = if (student.status.name == "ACTIVE") Color(0xFF10B981) else Color(0xFF94A3B8),
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            fontSize = 11.sp,
+                            color = if (student.status.name == "ACTIVE") Color(0xFF10B981) else Color(0xFF64748B),
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }

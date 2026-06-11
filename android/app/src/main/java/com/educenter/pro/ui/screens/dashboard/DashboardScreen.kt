@@ -138,7 +138,7 @@ fun DashboardScreen(
                         modifier = Modifier.fillMaxWidth().padding(24.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("Không có lịch học nào hôm nay 🎉", color = Color.Gray)
+                        Text("Không có lịch học nào hôm nay 🎉", color = Color(0xFF64748B), fontSize = 15.sp)
                     }
                 }
             }
@@ -165,7 +165,7 @@ fun DashboardScreen(
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         Column {
-                            Text(classModel.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                            Text(classModel.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = Color(0xFF1E293B))
                             Spacer(modifier = Modifier.height(2.dp))
                             // Show schedule time for today
                             val todayDayName = try {
@@ -185,8 +185,8 @@ fun DashboardScreen(
                             val timeStr = if (todaySchedule != null) "${todaySchedule.startTime} - ${todaySchedule.endTime} • " else ""
                             Text(
                                 "${timeStr}${classModel.subject} • ${classModel.studentIds.size} HV",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.Gray
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color(0xFF64748B)
                             )
                         }
                     }
@@ -278,12 +278,12 @@ fun DashboardScreen(
                                         ),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text("${index + 1}", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text("${index + 1}", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                                 }
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(item.student.name, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                                    Text(item.student.phone, fontSize = 12.sp, color = Color.Gray)
+                                    Text(item.student.name, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B))
+                                    Text(item.student.phone, fontSize = 13.sp, color = Color(0xFF64748B))
                                 }
                                 Text(
                                     "-${currencyFormatter.format(item.debt)}",
@@ -341,7 +341,7 @@ fun DashboardScreen(
                                     Text("${index + 1}", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 }
                                 Spacer(modifier = Modifier.width(12.dp))
-                                Text(item.student.name, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                                Text(item.student.name, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B), modifier = Modifier.weight(1f))
                                 Box(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(8.dp))
@@ -394,7 +394,7 @@ fun DashboardScreen(
                                     Text("${index + 1}", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 }
                                 Spacer(modifier = Modifier.width(12.dp))
-                                Text(item.student.name, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                                Text(item.student.name, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B), modifier = Modifier.weight(1f))
                                 Box(
                                     modifier = Modifier.clip(RoundedCornerShape(8.dp))
                                         .background(OrangeAccent.copy(alpha = 0.1f))
@@ -489,17 +489,18 @@ fun StatCard(
                 .padding(16.dp)
         ) {
             Column {
-                Icon(icon, contentDescription = null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(22.dp))
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(title, style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = 0.9f))
+                Icon(icon, contentDescription = null, tint = Color.White.copy(alpha = 0.9f), modifier = Modifier.size(24.dp))
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(title, style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = 0.95f))
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     value,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.ExtraBold,
                     color = Color.White,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    fontSize = 20.sp
                 )
             }
         }
@@ -532,7 +533,7 @@ private fun QuickAccessButton(
                 Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
             }
             Spacer(modifier = Modifier.height(6.dp))
-            Text(label, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF475569), maxLines = 1)
+            Text(label, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF334155), maxLines = 1)
         }
     }
 }

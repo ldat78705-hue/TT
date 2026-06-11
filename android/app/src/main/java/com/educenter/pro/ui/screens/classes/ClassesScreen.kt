@@ -277,7 +277,7 @@ private fun ClassCard(classModel: ClassModel, onClick: () -> Unit) {
                 val schedText = classModel.schedule.joinToString(" | ") { 
                     "${dayMap[it.dayOfWeek] ?: it.dayOfWeek}: ${it.startTime}-${it.endTime}" 
                 }
-                Text(schedText, style = MaterialTheme.typography.bodySmall, color = Color(0xFF64748B), fontSize = 11.sp)
+                Text(schedText, style = MaterialTheme.typography.bodySmall, color = Color(0xFF475569), fontSize = 13.sp)
             }
             // Show fee
             if (classModel.fee.amount > 0) {
@@ -290,9 +290,9 @@ private fun ClassCard(classModel: ClassModel, onClick: () -> Unit) {
                 Text(
                     "Học phí: ${java.text.NumberFormat.getCurrencyInstance(java.util.Locale("vi", "VN")).format(classModel.fee.amount)}/$feeTypeText",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF10B981),
+                    color = Color(0xFF059669),
                     fontWeight = FontWeight.SemiBold,
-                    fontSize = 12.sp
+                    fontSize = 14.sp
                 )
             }
         }
