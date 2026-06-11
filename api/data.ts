@@ -388,12 +388,12 @@ export async function executeAttendanceTransaction(payload: any) {
                 const cls = classes.find((c: any) => c.id === classId);
                 const currentTeacherIds = cls ? cls.teacherIds : [];
                 
-                // Which shard does this date belong to?
-                const sample = { date };
+                // Which shard does this class+date belong to? Must include classId!
+                const sample = { date, classId };
                 const sKey = getShardKey(sample, 'attendance');
                 
                 if (!updatedShardsData[sKey]) {
-                    updatedShardsData[sKey] = [...currentData[sKey]]; // clone
+                    updatedShardsData[sKey] = [...(currentData[sKey] || [])]; // clone, fallback to empty
                 }
 
                 // Remove old records for this class and date
