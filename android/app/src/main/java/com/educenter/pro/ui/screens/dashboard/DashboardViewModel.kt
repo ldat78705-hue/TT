@@ -31,6 +31,16 @@ class DashboardViewModel @Inject constructor(
         loadDashboardData()
     }
 
+    fun refresh() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isRefreshing = true)
+            try {
+                dataRepository.syncData()
+            } catch (_: Exception) { }
+            _uiState.value = _uiState.value.copy(isRefreshing = false)
+        }
+    }
+
     private fun loadDashboardData() {
         viewModelScope.launch {
             dataRepository.appData.collect { appData ->
@@ -132,5 +142,6 @@ data class DashboardUiState(
     val topLate: List<StudentAbsent> = emptyList(),
     val todayClasses: List<ClassModel> = emptyList(),
     val announcements: List<com.educenter.pro.data.model.Announcement> = emptyList(),
-    val isLoading: Boolean = true
+    val isLoading: Boolean = true,
+    val isRefreshing: Boolean = false
 )

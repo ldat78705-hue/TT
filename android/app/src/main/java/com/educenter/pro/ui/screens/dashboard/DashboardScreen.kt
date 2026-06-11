@@ -31,6 +31,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.educenter.pro.ui.components.ShimmerLoadingList
+import com.educenter.pro.ui.components.PullRefreshWrapper
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -52,12 +54,15 @@ fun DashboardScreen(
     val currencyFormatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
 
     if (uiState.isLoading) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-        }
+        ShimmerLoadingList()
         return
     }
 
+    PullRefreshWrapper(
+        isRefreshing = uiState.isRefreshing,
+        onRefresh = { viewModel.refresh() },
+        modifier = Modifier.fillMaxSize()
+    ) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -452,6 +457,7 @@ fun DashboardScreen(
         // Bottom padding
         item { Spacer(modifier = Modifier.height(16.dp)) }
     }
+    } // PullRefreshWrapper
 }
 
 @Composable

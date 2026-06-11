@@ -52,6 +52,17 @@ class AttendanceViewModel @Inject constructor(
     private val _saveSuccess = MutableStateFlow<Boolean?>(null)
     val saveSuccess: StateFlow<Boolean?> = _saveSuccess.asStateFlow()
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing = _isRefreshing.asStateFlow()
+
+    fun refresh() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            try { dataRepository.syncData() } catch (_: Exception) { }
+            _isRefreshing.value = false
+        }
+    }
+
     val scheduledClasses: StateFlow<List<ClassModel>> = combine(
         classes,
         _selectedDate

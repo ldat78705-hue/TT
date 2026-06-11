@@ -38,6 +38,17 @@ class ClassesViewModel @Inject constructor(
         }
     }
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing = _isRefreshing.asStateFlow()
+
+    fun refresh() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            try { dataRepository.syncData() } catch (_: Exception) { }
+            _isRefreshing.value = false
+        }
+    }
+
     fun selectClass(classModel: ClassModel) {
         _selectedClass.value = classModel
         viewModelScope.launch {

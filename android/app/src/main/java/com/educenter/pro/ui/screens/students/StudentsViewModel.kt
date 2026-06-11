@@ -56,6 +56,9 @@ class StudentsViewModel @Inject constructor(
         .map { it?.classes ?: emptyList() }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing = _isRefreshing.asStateFlow()
+
     init {
         viewModelScope.launch {
             dataRepository.appData.collect { appData ->
@@ -63,6 +66,14 @@ class StudentsViewModel @Inject constructor(
                     _allStudents.value = appData.students
                 }
             }
+        }
+    }
+
+    fun refresh() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            try { dataRepository.syncData() } catch (_: Exception) { }
+            _isRefreshing.value = false
         }
     }
 

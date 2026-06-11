@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.educenter.pro.data.model.Student
 import com.educenter.pro.data.model.ClassModel
+import com.educenter.pro.ui.components.PullRefreshWrapper
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -36,6 +37,7 @@ fun StudentsScreen(
     val classes by viewModel.classes.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val currentUserRole by viewModel.currentUserRole.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
     
     val canManage = currentUserRole == com.educenter.pro.data.model.UserRole.ADMIN || currentUserRole == com.educenter.pro.data.model.UserRole.MANAGER
     val canCollectFee = canManage || currentUserRole == com.educenter.pro.data.model.UserRole.ACCOUNTANT
@@ -64,7 +66,12 @@ fun StudentsScreen(
             }
         }
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+        PullRefreshWrapper(
+            isRefreshing = isRefreshing,
+            onRefresh = { viewModel.refresh() },
+            modifier = Modifier.fillMaxSize().padding(padding)
+        ) {
+        Column(modifier = Modifier.fillMaxSize()) {
             // Search bar with clear button
             OutlinedTextField(
                 value = searchQuery,
@@ -104,6 +111,7 @@ fun StudentsScreen(
                 }
             }
         }
+        } // PullRefreshWrapper
 
         // === DELETE CONFIRMATION ===
         if (studentToDelete != null) {
