@@ -362,6 +362,15 @@ export const AttendanceScreen: React.FC = () => {
                                     <span className="hidden sm:inline ml-2">Xóa Dữ liệu</span>
                                 </Button>
                             )}
+                            <Button
+                                variant="secondary"
+                                onClick={() => window.print()}
+                                className="print-hidden"
+                                title="In bảng điểm danh"
+                            >
+                                {ICONS.print}
+                                <span className="hidden sm:inline ml-2">In</span>
+                            </Button>
                         </div>
                         
                         <div className="flex-1 flex justify-end">

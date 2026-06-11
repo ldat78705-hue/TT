@@ -1,6 +1,6 @@
 
 import React, { createContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import { Student, Teacher, Staff, Class, AttendanceRecord, Invoice, ProgressReport, Income, Expense, CenterSettings, Payroll, Announcement, Transaction, UserRole, AppData } from '../types';
+import { Student, Teacher, Staff, Class, AttendanceRecord, Invoice, ProgressReport, Income, Expense, CenterSettings, Payroll, Announcement, Transaction, UserRole, AppData, AuditLog, Room } from '../types';
 import * as api from '../services/api';
 import { MOCK_SETTINGS } from '../api/_lib/mockData';
 import { applyOperation } from '../api/_lib/operations';
@@ -20,6 +20,8 @@ interface AppState {
   settings: CenterSettings;
   payrolls: Payroll[];
   announcements: Announcement[];
+  auditLogs: AuditLog[];
+  rooms: Room[];
   loading: boolean;
 }
 
@@ -37,6 +39,8 @@ const initialState: AppState = {
   settings: MOCK_SETTINGS,
   payrolls: [],
   announcements: [],
+  auditLogs: [],
+  rooms: [],
   loading: true,
 };
 
@@ -89,6 +93,9 @@ interface DataContextType {
     compactData: () => Promise<void>;
     deleteAttendanceByMonth: (payload: { month: number; year: number; }) => Promise<void>;
     clearAllTransactions: () => Promise<void>;
+    addRoom: (payload: { name: string; capacity: number; description: string }) => Promise<void>;
+    updateRoom: (payload: { id: string; name: string; capacity: number; description: string }) => Promise<void>;
+    deleteRoom: (roomId: string) => Promise<void>;
 }
 
 
@@ -232,6 +239,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     addAnnouncement: handleStateUpdateOperation(api.addAnnouncement, 'addAnnouncement'),
     deleteAnnouncement: handleStateUpdateOperation(api.deleteAnnouncement, 'deleteAnnouncement'),
+    
+    addRoom: handleStateUpdateOperation(api.addRoom, 'addRoom'),
+    updateRoom: handleStateUpdateOperation(api.updateRoom, 'updateRoom'),
+    deleteRoom: handleStateUpdateOperation(api.deleteRoom, 'deleteRoom'),
     
     updateSettings: handleStateUpdateOperation(api.updateSettings, 'updateSettings'),
     

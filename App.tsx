@@ -32,6 +32,8 @@ const StudentDetailScreen = React.lazy(() => import('./screens/StudentDetailScre
 const TeacherDetailScreen = React.lazy(() => import('./screens/TeacherDetailScreen').then(m => ({ default: m.TeacherDetailScreen })));
 const SettingsScreen = React.lazy(() => import('./screens/SettingsScreen').then(m => ({ default: m.SettingsScreen })));
 const AnnouncementsScreen = React.lazy(() => import('./screens/AnnouncementsScreen').then(m => ({ default: m.AnnouncementsScreen })));
+const RoomsScreen = React.lazy(() => import('./screens/RoomsScreen').then(m => ({ default: m.RoomsScreen })));
+const AuditLogScreen = React.lazy(() => import('./screens/AuditLogScreen').then(m => ({ default: m.AuditLogScreen })));
 // Parent Portal Screens
 const ParentDashboardScreen = React.lazy(() => import('./screens/parent/ParentDashboardScreen').then(m => ({ default: m.ParentDashboardScreen })));
 const ParentReportsScreen = React.lazy(() => import('./screens/parent/ParentReportsScreen').then(m => ({ default: m.ParentReportsScreen })));
@@ -90,6 +92,8 @@ const AppLayout: React.FC = () => {
             case ROUTES.ANNOUNCEMENTS: return 'Tiến độ học tập';
             case ROUTES.REPORTS: return 'Báo cáo';
             case ROUTES.SETTINGS: return 'Cài đặt';
+            case ROUTES.ROOMS: return 'Phòng học';
+            case ROUTES.AUDIT_LOG: return 'Lịch sử thao tác';
             default: return 'EduCenter Pro';
         }
     }, [location.pathname]);
@@ -212,6 +216,8 @@ const AppRoutes: React.FC = () => {
                     <Route path={ROUTES.REPORTS} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.VIEWER]}><ReportsScreen /></ProtectedRoute>} />
                     <Route path={ROUTES.SETTINGS} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.VIEWER]}><SettingsScreen /></ProtectedRoute>} />
                     <Route path={ROUTES.ANNOUNCEMENTS} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.TEACHER, UserRole.VIEWER]}><AnnouncementsScreen /></ProtectedRoute>} />
+                    <Route path={ROUTES.ROOMS} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.VIEWER]}><RoomsScreen /></ProtectedRoute>} />
+                    <Route path={ROUTES.AUDIT_LOG} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.VIEWER]}><AuditLogScreen /></ProtectedRoute>} />
                 </Route>
 
                 {/* Parent Portal Routes */}

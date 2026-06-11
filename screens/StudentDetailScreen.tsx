@@ -604,11 +604,16 @@ export const StudentDetailScreen: React.FC = () => {
                      <div className="card-base">
                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
                             <h2 className="text-xl font-semibold">Sổ cái Giao dịch</h2>
-                            {canManage && (
-                                <Button onClick={() => setTransactionModal({ open: true })} className="w-full md:w-auto">
-                                    {ICONS.plus} Thêm Giao dịch
+                            <div className="flex gap-2">
+                                <Button variant="secondary" onClick={() => window.print()} className="print-hidden">
+                                    {ICONS.print} <span className="ml-1">In sổ</span>
                                 </Button>
-                            )}
+                                {canManage && (
+                                    <Button onClick={() => setTransactionModal({ open: true })} className="w-full md:w-auto">
+                                        {ICONS.plus} Thêm Giao dịch
+                                    </Button>
+                                )}
+                            </div>
                         </div>
                         <div className="hidden md:block">
                             <Table<Transaction & { endingBalance: number }>

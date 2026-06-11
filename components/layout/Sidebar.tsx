@@ -11,10 +11,12 @@ const adminNavLinks = [
   { to: ROUTES.TEACHERS, icon: ICONS.teachers, label: 'Giáo viên' },
   { to: ROUTES.STAFF, icon: ICONS.staff, label: 'Nhân viên' },
   { to: ROUTES.CLASSES, icon: ICONS.classes, label: 'Lớp học' },
+  { to: ROUTES.ROOMS, icon: ICONS.classes, label: '🏫 Phòng học' },
   { to: ROUTES.ATTENDANCE_HUB, icon: ICONS.calendar, label: 'Lịch điểm danh' },
   { to: ROUTES.FINANCE, icon: ICONS.finance, label: 'Tài chính' },
   { to: ROUTES.ANNOUNCEMENTS, icon: ICONS.announcement, label: 'Tiến độ học tập' },
   { to: ROUTES.REPORTS, icon: ICONS.reports, label: 'Báo cáo' },
+  { to: ROUTES.AUDIT_LOG, icon: ICONS.settings, label: '📝 Lịch sử' },
   { to: ROUTES.SETTINGS, icon: ICONS.settings, label: 'Cài đặt' },
 ];
 

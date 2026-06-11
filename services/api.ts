@@ -132,6 +132,10 @@ export const deleteExpense = (itemId: string) => patchData({ op: 'deleteExpense'
 export const addAnnouncement = (payload: Omit<Announcement, 'id'>) => patchData({ op: 'addAnnouncement', payload });
 export const deleteAnnouncement = (id: string) => patchData({ op: 'deleteAnnouncement', payload: { id } });
 
+export const addRoom = (payload: { name: string; capacity: number; description: string }) => patchData({ op: 'addRoom', payload });
+export const updateRoom = (payload: { id: string; name: string; capacity: number; description: string }) => patchData({ op: 'updateRoom', payload });
+export const deleteRoom = (roomId: string) => patchData({ op: 'deleteRoom', payload: { roomId } });
+
 export const clearCollections = (collectionKeys: ('students' | 'teachers' | 'staff' | 'classes')[]) => patchData({ op: 'clearCollections', payload: collectionKeys });
 export const compactData = () => patchData({ op: 'compactData', payload: {} });
 
