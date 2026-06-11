@@ -11,12 +11,12 @@ const adminNavLinks = [
   { to: ROUTES.TEACHERS, icon: ICONS.teachers, label: 'Giáo viên' },
   { to: ROUTES.STAFF, icon: ICONS.staff, label: 'Nhân viên' },
   { to: ROUTES.CLASSES, icon: ICONS.classes, label: 'Lớp học' },
-  { to: ROUTES.ROOMS, icon: ICONS.classes, label: '🏫 Phòng học' },
+  { to: ROUTES.ROOMS, icon: ICONS.rooms, label: 'Phòng học' },
   { to: ROUTES.ATTENDANCE_HUB, icon: ICONS.calendar, label: 'Lịch điểm danh' },
   { to: ROUTES.FINANCE, icon: ICONS.finance, label: 'Tài chính' },
   { to: ROUTES.ANNOUNCEMENTS, icon: ICONS.announcement, label: 'Tiến độ học tập' },
   { to: ROUTES.REPORTS, icon: ICONS.reports, label: 'Báo cáo' },
-  { to: ROUTES.AUDIT_LOG, icon: ICONS.settings, label: '📝 Lịch sử' },
+  { to: ROUTES.AUDIT_LOG, icon: ICONS.history, label: 'Lịch sử' },
   { to: ROUTES.SETTINGS, icon: ICONS.settings, label: 'Cài đặt' },
 ];
 
@@ -96,7 +96,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
           </button>
         </div>
-        <nav className="flex-1 p-3 md:p-4 overflow-y-auto pb-safe">
+        <nav className="flex-1 p-3 md:p-4 overflow-y-auto pb-24 md:pb-4">
           {navLinks.map(link => (
             <NavLink
               key={link.to}

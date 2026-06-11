@@ -34,7 +34,9 @@ import {
   Key,
   User,
   Lock,
-  Cloud
+  Cloud,
+  Building,
+  History
 } from 'lucide-react';
 
 export const ROUTES = {
@@ -97,4 +99,6 @@ export const ICONS = {
     user: <User size={24} />,
     lock: <Lock size={24} />,
     drive: <Cloud size={24} />,
+    rooms: <Building size={24} />,
+    history: <History size={24} />,
 };
