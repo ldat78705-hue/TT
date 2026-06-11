@@ -354,16 +354,31 @@ private fun PaymentDialog(
                     }
                 }
 
-                // Amount input
+                // Amount input with thousand separators
+                val displayAmount = remember(amountText) {
+                    val digits = amountText.filter { c -> c.isDigit() }
+                    if (digits.isEmpty()) "" else {
+                        val num = digits.toLongOrNull() ?: 0L
+                        java.text.NumberFormat.getInstance(java.util.Locale("vi", "VN")).format(num)
+                    }
+                }
                 OutlinedTextField(
-                    value = amountText,
-                    onValueChange = { amountText = it.filter { c -> c.isDigit() } },
+                    value = displayAmount,
+                    onValueChange = { newVal ->
+                        amountText = newVal.filter { c -> c.isDigit() }
+                    },
                     label = { Text("Số tiền thanh toán (VNĐ)") },
                     leadingIcon = { Icon(Icons.Default.Payments, contentDescription = null, tint = Color(0xFF10B981)) },
+                    suffix = { Text("đ", fontWeight = FontWeight.Bold, color = Color(0xFF10B981)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    textStyle = androidx.compose.ui.text.TextStyle(
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1E293B)
+                    )
                 )
 
                 // Payment method

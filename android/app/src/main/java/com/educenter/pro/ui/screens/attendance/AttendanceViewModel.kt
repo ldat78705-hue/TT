@@ -77,6 +77,14 @@ class AttendanceViewModel @Inject constructor(
         }
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
+    // Set of classIds that already have attendance records for the selected date
+    val attendedClassIds: StateFlow<Set<String>> = combine(
+        allAttendance,
+        _selectedDate
+    ) { attendance, date ->
+        attendance.filter { it.date == date }.map { it.classId }.toSet()
+    }.stateIn(viewModelScope, SharingStarted.Lazily, emptySet())
+
     // Students in selected class (active + those with existing records)
     val studentsInClass: StateFlow<List<Student>> = combine(
         allStudents,

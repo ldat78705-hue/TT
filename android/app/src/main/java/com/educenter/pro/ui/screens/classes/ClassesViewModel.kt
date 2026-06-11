@@ -90,6 +90,32 @@ class ClassesViewModel @Inject constructor(
         }
     }
 
+    fun updateClass(name: String, subject: String, schedule: List<Map<String, String>>, feeType: String, feeAmount: Double) {
+        val cls = _selectedClass.value ?: return
+        val scheduleModels = schedule.map {
+            com.educenter.pro.data.model.ClassSchedule(
+                dayOfWeek = it["dayOfWeek"] ?: "",
+                startTime = it["startTime"] ?: "",
+                endTime = it["endTime"] ?: ""
+            )
+        }
+        val updatedCls = cls.copy(
+            name = name,
+            subject = subject,
+            schedule = scheduleModels,
+            fee = com.educenter.pro.data.model.ClassFee(type = feeType, amount = feeAmount)
+        )
+        val currentClasses = _classes.value.toMutableList()
+        val index = currentClasses.indexOfFirst { it.id == cls.id }
+        if (index != -1) {
+            currentClasses[index] = updatedCls
+            viewModelScope.launch {
+                dataRepository.saveClasses(currentClasses)
+                selectClass(updatedCls)
+            }
+        }
+    }
+
     fun addStudentToClass(studentId: String) {
         val cls = _selectedClass.value ?: return
         val updatedCls = cls.copy(studentIds = cls.studentIds + studentId)

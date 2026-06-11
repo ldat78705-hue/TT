@@ -19,6 +19,8 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -62,6 +64,7 @@ fun AttendanceScreen(
     val isSaving by viewModel.isSaving.collectAsState()
     val saveSuccess by viewModel.saveSuccess.collectAsState()
     val pendingOpsCount by viewModel.pendingOpsCount.collectAsState()
+    val attendedClassIds by viewModel.attendedClassIds.collectAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
 
     val selectedClassName = classes.find { it.id == selectedClassId }?.name ?: ""
@@ -113,6 +116,8 @@ fun AttendanceScreen(
                 modifier = Modifier.padding(padding),
                 selectedDate = selectedDate,
                 scheduledClasses = scheduledClasses,
+                allClasses = classes,
+                attendedClassIds = attendedClassIds,
                 onDateChange = { viewModel.selectDate(it) },
                 onClassClick = { viewModel.selectClass(it) }
             )
@@ -206,94 +211,165 @@ private fun ScheduleView(
     modifier: Modifier = Modifier,
     selectedDate: String,
     scheduledClasses: List<com.educenter.pro.data.model.ClassModel>,
+    allClasses: List<com.educenter.pro.data.model.ClassModel>,
+    attendedClassIds: Set<String>,
     onDateChange: (String) -> Unit,
     onClassClick: (String) -> Unit
 ) {
-    Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
+    var showAllClasses by remember { mutableStateOf(false) }
+
+    LazyColumn(
+        modifier = modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
         // Date selector card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F7FF)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.DateRange, contentDescription = null, tint = PrimaryBlue)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Chọn ngày điểm danh", fontWeight = FontWeight.SemiBold, color = PrimaryBlue)
-                }
-                Spacer(modifier = Modifier.height(12.dp))
-                OutlinedTextField(
-                    value = selectedDate,
-                    onValueChange = onDateChange,
-                    label = { Text("Ngày (YYYY-MM-DD)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Text(
-            "Lịch học ngày ${formatDateVN(selectedDate)}",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-
-        if (scheduledClasses.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("📅", fontSize = 48.sp)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        "Không có lịch học vào ngày này",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F7FF)),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.DateRange, contentDescription = null, tint = PrimaryBlue)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Chọn ngày điểm danh", fontWeight = FontWeight.SemiBold, color = PrimaryBlue)
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = selectedDate,
+                        onValueChange = onDateChange,
+                        label = { Text("Ngày (YYYY-MM-DD)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = true
                     )
                 }
             }
+        }
+
+        // Scheduled classes title
+        item {
+            Text(
+                "Lịch học ngày ${formatDateVN(selectedDate)}",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        if (scheduledClasses.isEmpty()) {
+            item {
+                Box(modifier = Modifier.fillMaxWidth().height(80.dp), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("📅", fontSize = 32.sp)
+                        Text("Không có lịch học vào ngày này", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
+                    }
+                }
+            }
         } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(scheduledClasses) { cls ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onClassClick(cls.id) },
-                        shape = RoundedCornerShape(16.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+            items(scheduledClasses) { cls ->
+                val isAttended = attendedClassIds.contains(cls.id)
+                ScheduleClassCard(cls = cls, isAttended = isAttended, onClassClick = onClassClick)
+            }
+        }
+
+        // Expandable "All Classes" section
+        item {
+            Spacer(modifier = Modifier.height(8.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth().clickable { showAllClasses = !showAllClasses },
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
+                elevation = CardDefaults.cardElevation(0.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(14.dp).fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("📋 Tất cả lớp học (${allClasses.size})", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF475569))
+                    Icon(
+                        if (showAllClasses) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                        contentDescription = null,
+                        tint = Color(0xFF94A3B8)
+                    )
+                }
+            }
+        }
+
+        if (showAllClasses) {
+            val unscheduledClasses = allClasses.filter { all -> scheduledClasses.none { it.id == all.id } }
+            items(unscheduledClasses) { cls ->
+                val isAttended = attendedClassIds.contains(cls.id)
+                ScheduleClassCard(cls = cls, isAttended = isAttended, onClassClick = onClassClick)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ScheduleClassCard(
+    cls: com.educenter.pro.data.model.ClassModel,
+    isAttended: Boolean,
+    onClassClick: (String) -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClassClick(cls.id) }
+            .then(
+                if (isAttended) Modifier.border(1.5.dp, GreenPresent, RoundedCornerShape(16.dp))
+                else Modifier
+            ),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isAttended) Color(0xFFF0FDF4) else Color.White
+        )
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        cls.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    if (isAttended) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(GreenPresent)
+                                .padding(horizontal = 8.dp, vertical = 2.dp)
                         ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    cls.name,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    "Sĩ số: ${cls.studentIds.size} học viên",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Button(
-                                onClick = { onClassClick(cls.id) },
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
-                            ) {
-                                Text("Điểm danh", fontWeight = FontWeight.SemiBold)
-                            }
+                            Text("✓ Đã ĐD", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    "Sĩ số: ${cls.studentIds.size} học viên",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Button(
+                onClick = { onClassClick(cls.id) },
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isAttended) GreenPresent else PrimaryBlue
+                )
+            ) {
+                Text(
+                    if (isAttended) "Xem lại" else "Điểm danh",
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         }
     }

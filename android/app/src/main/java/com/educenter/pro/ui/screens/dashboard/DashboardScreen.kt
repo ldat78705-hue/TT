@@ -113,6 +113,82 @@ fun DashboardScreen(
             }
         }
 
+        // === TODAY'S CLASSES (moved to top) ===
+        item {
+            SectionHeader(
+                icon = Icons.Default.EventNote,
+                title = "Lịch học hôm nay",
+                color = BlueAccent
+            )
+        }
+
+        if (uiState.todayClasses.isEmpty()) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Không có lịch học nào hôm nay 🎉", color = Color.Gray)
+                    }
+                }
+            }
+        } else {
+            items(uiState.todayClasses) { classModel ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(BlueAccent.copy(alpha = 0.1f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Class, contentDescription = null, tint = BlueAccent)
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column {
+                            Text(classModel.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                            Spacer(modifier = Modifier.height(2.dp))
+                            // Show schedule time for today
+                            val todayDayName = try {
+                                val today = java.time.LocalDate.now()
+                                when (today.dayOfWeek) {
+                                    java.time.DayOfWeek.MONDAY -> "Monday"
+                                    java.time.DayOfWeek.TUESDAY -> "Tuesday"
+                                    java.time.DayOfWeek.WEDNESDAY -> "Wednesday"
+                                    java.time.DayOfWeek.THURSDAY -> "Thursday"
+                                    java.time.DayOfWeek.FRIDAY -> "Friday"
+                                    java.time.DayOfWeek.SATURDAY -> "Saturday"
+                                    java.time.DayOfWeek.SUNDAY -> "Sunday"
+                                    else -> ""
+                                }
+                            } catch (e: Exception) { "" }
+                            val todaySchedule = classModel.schedule.find { it.dayOfWeek == todayDayName }
+                            val timeStr = if (todaySchedule != null) "${todaySchedule.startTime} - ${todaySchedule.endTime} • " else ""
+                            Text(
+                                "${timeStr}${classModel.subject} • ${classModel.studentIds.size} HV",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.Gray
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
         // === STAT CARDS ROW 1 ===
         item {
             Row(
@@ -325,66 +401,6 @@ fun DashboardScreen(
                             if (index < uiState.topLate.lastIndex) {
                                 HorizontalDivider(color = Color(0xFFF1F5F9))
                             }
-                        }
-                    }
-                }
-            }
-        }
-
-        // === TODAY'S CLASSES ===
-        item {
-            SectionHeader(
-                icon = Icons.Default.EventNote,
-                title = "Lịch học hôm nay",
-                color = BlueAccent
-            )
-        }
-
-        if (uiState.todayClasses.isEmpty()) {
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().padding(32.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("Không có lịch học nào hôm nay 🎉", color = Color.Gray)
-                    }
-                }
-            }
-        } else {
-            items(uiState.todayClasses) { classModel ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(BlueAccent.copy(alpha = 0.1f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Default.Class, contentDescription = null, tint = BlueAccent)
-                        }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text(classModel.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                "Môn: ${classModel.subject} • ${classModel.studentIds.size} học viên",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.Gray
-                            )
                         }
                     }
                 }
