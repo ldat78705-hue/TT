@@ -10,7 +10,6 @@ import android.os.Build
 import android.os.Environment
 import androidx.core.content.FileProvider
 import com.educenter.pro.data.remote.GitHubApiService
-import com.educenter.pro.data.remote.GitHubRelease
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow

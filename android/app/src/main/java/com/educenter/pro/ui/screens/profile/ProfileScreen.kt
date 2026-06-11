@@ -17,7 +17,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -27,7 +29,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 fun ProfileScreen(
     onLogoutSuccess: () -> Unit,
     onNavigateToTransactions: () -> Unit,
-    onCheckUpdate: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val email by viewModel.userEmail.collectAsState()
@@ -35,12 +36,17 @@ fun ProfileScreen(
     val isLoggedOut by viewModel.isLoggedOut.collectAsState()
     val centerName by viewModel.centerName.collectAsState()
     val currentRole by viewModel.currentUserRole.collectAsState()
+    val context = LocalContext.current
 
     LaunchedEffect(isLoggedOut) {
         if (isLoggedOut) {
             onLogoutSuccess()
         }
     }
+
+    val versionName = try {
+        context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0"
+    } catch (e: Exception) { "1.0" }
 
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF8FAFC))) {
         // Header with gradient
@@ -90,24 +96,13 @@ fun ProfileScreen(
                 onClick = onNavigateToTransactions
             )
 
-            ProfileMenuItem(
-                icon = Icons.Default.SystemUpdate,
-                label = "Kiểm tra cập nhật",
-                color = Color(0xFF8B5CF6),
-                onClick = onCheckUpdate
-            )
-
             // App version
-            val versionName = try {
-                val context = androidx.compose.ui.platform.LocalContext.current
-                context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0"
-            } catch (e: Exception) { "1.0" }
             Text(
                 "Phiên bản: v$versionName",
-                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 fontSize = 13.sp,
                 color = Color(0xFF94A3B8),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                textAlign = TextAlign.Center
             )
 
             Spacer(modifier = Modifier.height(16.dp))

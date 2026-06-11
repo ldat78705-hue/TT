@@ -46,11 +46,7 @@ import com.educenter.pro.ui.screens.finance.FinanceScreen
 import com.educenter.pro.ui.screens.announcements.AnnouncementsScreen
 
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.hilt.navigation.compose.hiltViewModel
-import kotlinx.coroutines.launch
 
 sealed class Screen(val route: String, val title: String? = null, val icon: androidx.compose.ui.graphics.vector.ImageVector? = null) {
     object Splash : Screen("splash")
@@ -221,15 +217,6 @@ fun AppNavigation() {
                     },
                     onNavigateToTransactions = {
                         navController.navigate(Screen.Transactions.route)
-                    },
-                    onCheckUpdate = {
-                        // Trigger update check from MainActivity's AppUpdateManager
-                        val activity = navController.context as? com.educenter.pro.MainActivity
-                        activity?.let {
-                            kotlinx.coroutines.MainScope().launch {
-                                it.appUpdateManager.checkForUpdate(force = true)
-                            }
-                        }
                     }
                 )
             }

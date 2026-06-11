@@ -1,6 +1,8 @@
 package com.educenter.pro.data.remote
 
 import com.google.gson.annotations.SerializedName
+import retrofit2.http.GET
+import retrofit2.http.Path
 
 /**
  * GitHub Release API response model
@@ -23,9 +25,9 @@ data class GitHubAsset(
  * Retrofit interface for GitHub Releases API (no auth needed for public repos)
  */
 interface GitHubApiService {
-    @retrofit2.http.GET("repos/{owner}/{repo}/releases/latest")
+    @GET("repos/{owner}/{repo}/releases/latest")
     suspend fun getLatestRelease(
-        @retrofit2.http.Path("owner") owner: String,
-        @retrofit2.http.Path("repo") repo: String
+        @Path("owner") owner: String,
+        @Path("repo") repo: String
     ): GitHubRelease
 }
