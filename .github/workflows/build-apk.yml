@@ -28,29 +28,27 @@ jobs:
       - name: Create local.properties
         run: echo "sdk.dir=$ANDROID_HOME" > android/local.properties
 
-      - name: Install Gradle 8.2
+      - name: Verify Java version
         run: |
-          curl -sL https://services.gradle.org/distributions/gradle-8.2-bin.zip -o /tmp/gradle.zip
-          sudo unzip -q /tmp/gradle.zip -d /opt
-          sudo ln -sf /opt/gradle-8.2/bin/gradle /usr/local/bin/gradle
-          gradle --version
+          echo "JAVA_HOME=$JAVA_HOME"
+          java -version
 
-      - name: Generate Gradle Wrapper
+      - name: Make gradlew executable
         working-directory: android
-        run: gradle wrapper --gradle-version 8.2
+        run: chmod +x gradlew
 
       - name: Build Debug APK
         working-directory: android
         run: |
           ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee build_output.log
-          BUILD_EXIT=${PIPESTATUS[0]}
-          if [ $BUILD_EXIT -ne 0 ]; then
-            echo "=== LAST 100 LINES OF BUILD LOG ==="
-            tail -100 build_output.log
-            echo "=== KOTLIN ERRORS ==="
-            grep -i "error:" build_output.log || true
-            exit $BUILD_EXIT
-          fi
+          exit ${PIPESTATUS[0]}
+
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: android/build_output.log
 
       - name: Build Release APK
         working-directory: android
