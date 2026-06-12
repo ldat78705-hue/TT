@@ -113,7 +113,7 @@ fun ReportsScreen(
 
             // Finance KPIs
             item {
-                Text("💰 Tài chính", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
+                Text("💰 Tài chính", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onBackground)
             }
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -155,7 +155,7 @@ fun ReportsScreen(
             // Student KPIs
             item {
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("👨‍🎓 Học viên", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
+                Text("👨‍🎓 Học viên", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onBackground)
             }
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -177,13 +177,13 @@ fun ReportsScreen(
             // Attendance KPIs
             item {
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("📋 Chuyên cần", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
+                Text("📋 Chuyên cần", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onBackground)
             }
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
@@ -249,11 +249,11 @@ private fun InfoCard(modifier: Modifier = Modifier, title: String, value: String
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(title, fontSize = 14.sp, color = Color(0xFF475569), fontWeight = FontWeight.Medium)
+            Text(title, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
             Spacer(modifier = Modifier.height(8.dp))
             Text(value, fontWeight = FontWeight.ExtraBold, fontSize = 28.sp, color = color)
         }
@@ -264,6 +264,6 @@ private fun InfoCard(modifier: Modifier = Modifier, title: String, value: String
 private fun AttendanceStat(label: String, count: Int, color: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text("$count", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = color)
-        Text(label, fontSize = 13.sp, color = Color(0xFF475569), fontWeight = FontWeight.Medium)
+        Text(label, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
     }
 }

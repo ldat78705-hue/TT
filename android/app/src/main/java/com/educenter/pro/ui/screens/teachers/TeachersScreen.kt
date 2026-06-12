@@ -74,7 +74,7 @@ fun TeachersScreen(
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(teacher.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B))
+                            Text(teacher.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onBackground)
                             Spacer(modifier = Modifier.height(2.dp))
                             Text("Môn: ${teacher.subject}", fontSize = 13.sp, color = Color(0xFF64748B))
                             if (teacher.phone.isNotBlank()) {

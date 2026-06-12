@@ -440,7 +440,7 @@ fun StudentCard(
         Column(modifier = Modifier.padding(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(student.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = Color(0xFF1E293B))
+                    Text(student.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
                     Spacer(modifier = Modifier.height(4.dp))
                     if (student.phone.isNotBlank()) {
                         val context = androidx.compose.ui.platform.LocalContext.current
@@ -553,7 +553,7 @@ fun StudentDetailDialog(
         title = { Text("Chi tiết Học viên", fontWeight = FontWeight.Bold) },
         text = {
             Column(modifier = Modifier.fillMaxSize()) {
-                Text(student.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
+                Text(student.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // Quick action: Call
@@ -624,7 +624,7 @@ fun StudentDetailDialog(
                                 Card(modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp), shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(1.dp)) {
                                     Row(modifier = Modifier.padding(10.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                         Column(modifier = Modifier.weight(1f)) {
-                                            Text(tx.description, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
+                                            Text(tx.description, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onBackground)
                                             Text(tx.date, fontSize = 13.sp, color = Color(0xFF64748B))
                                         }
                                         Text(currencyFormatter.format(tx.amount), color = if (tx.amount > 0) Color(0xFF10B981) else Color(0xFFEF4444), fontWeight = FontWeight.Bold, fontSize = 14.sp)
@@ -665,7 +665,7 @@ fun StudentDetailDialog(
                                     val statusColor = when (att.status) { "PRESENT" -> Color(0xFF10B981); "LATE" -> Color(0xFFF59E0B); "ABSENT" -> Color(0xFF0EA5E9); "UNEXCUSED_ABSENT" -> Color(0xFFEF4444); else -> Color(0xFF64748B) }
                                     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 4.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                         Column(modifier = Modifier.weight(1f)) {
-                                            Text(att.date, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color(0xFF1E293B))
+                                            Text(att.date, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onBackground)
                                             if (clsName.isNotBlank()) Text(clsName, fontSize = 13.sp, color = Color(0xFF64748B))
                                         }
                                         Text("$statusText $statusLabel", color = statusColor, fontWeight = FontWeight.Bold, fontSize = 14.sp)

@@ -236,7 +236,7 @@ private fun DebtTab(uiState: FinanceUiState, fmt: NumberFormat, onCollectFee: (D
                         Spacer(modifier = Modifier.width(12.dp))
                         // Student info
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(item.student.name, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF1E293B))
+                            Text(item.student.name, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onBackground)
                             Text(item.student.phone, fontSize = 13.sp, color = Color(0xFF475569))
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
@@ -289,7 +289,7 @@ private fun TransactionsTab(uiState: FinanceUiState, fmt: NumberFormat) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(tx.description, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B), maxLines = 2)
+                            Text(tx.description, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onBackground, maxLines = 2)
                             Spacer(modifier = Modifier.height(4.dp))
                             Row {
                                 Text(tx.date.take(10), fontSize = 13.sp, color = Color(0xFF64748B))
@@ -385,7 +385,7 @@ private fun PaymentDialog(
                     textStyle = androidx.compose.ui.text.TextStyle(
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1E293B)
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 )
 

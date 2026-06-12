@@ -289,7 +289,7 @@ private fun ScheduleView(
                                     formatDateVN(selectedDate),
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 17.sp,
-                                    color = Color(0xFF1E293B)
+                                    color = MaterialTheme.colorScheme.onBackground
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
@@ -394,7 +394,7 @@ private fun ScheduleView(
             Card(
                 modifier = Modifier.fillMaxWidth().clickable { showAllClasses = !showAllClasses },
                 shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 elevation = CardDefaults.cardElevation(0.dp)
             ) {
                 Row(

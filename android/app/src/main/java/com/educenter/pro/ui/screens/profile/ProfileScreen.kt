@@ -48,7 +48,7 @@ fun ProfileScreen(
         context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0"
     } catch (e: Exception) { "1.0" }
 
-    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF8FAFC))) {
+    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         // Header with gradient
         Box(
             modifier = Modifier
@@ -101,7 +101,7 @@ fun ProfileScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = if (isDark) 0.1f else 1f)),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
                 Row(
@@ -124,7 +124,7 @@ fun ProfileScreen(
                         if (isDark) "Chế độ tối" else "Chế độ sáng",
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 15.sp,
-                        color = Color(0xFF1E293B),
+                        color = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.weight(1f)
                     )
                     Switch(
@@ -168,7 +168,7 @@ private fun ProfileMenuItem(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         onClick = onClick,
         enabled = enabled
@@ -184,7 +184,7 @@ private fun ProfileMenuItem(
                 Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
             }
             Spacer(modifier = Modifier.width(16.dp))
-            Text(label, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = if (enabled) Color(0xFF1E293B) else Color(0xFF64748B))
+            Text(label, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = if (enabled) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

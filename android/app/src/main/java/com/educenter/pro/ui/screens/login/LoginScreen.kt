@@ -369,7 +369,7 @@ fun LoginScreen(
 
             // Footer
             Text(
-                "Phiên bản 1.3 • EduCenter Pro",
+                "Phiên bản 1.4 • EduCenter Pro",
                 fontSize = 13.sp,
                 color = Color(0xFF64748B),
                 modifier = Modifier.padding(bottom = 24.dp)
