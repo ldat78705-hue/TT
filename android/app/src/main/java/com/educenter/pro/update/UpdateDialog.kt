@@ -157,6 +157,23 @@ fun UpdateDialog(
                         )
                     }
                 } else {
+                    // Warning about signature mismatch
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF3C7))
+                    ) {
+                        Text(
+                            "⚠️ Nếu gặp lỗi \"App not installed\":\n1. Gỡ app cũ trước\n2. Tải lại bản mới\n(Chỉ cần làm 1 lần duy nhất)",
+                            modifier = Modifier.padding(10.dp),
+                            fontSize = 13.sp,
+                            color = Color(0xFF92400E),
+                            lineHeight = 18.sp
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
                     Button(
                         onClick = { updateManager.downloadAndInstall(updateInfo.downloadUrl) },
                         modifier = Modifier
@@ -177,6 +194,22 @@ fun UpdateDialog(
                             "Cập nhật ngay",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    // Fallback: open in browser
+                    OutlinedButton(
+                        onClick = { updateManager.openInBrowser(updateInfo.downloadUrl) },
+                        modifier = Modifier.fillMaxWidth().height(42.dp),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Text(
+                            "📥 Tải qua trình duyệt",
+                            fontSize = 14.sp,
+                            color = Color(0xFF667EEA),
+                            fontWeight = FontWeight.Medium
                         )
                     }
 
