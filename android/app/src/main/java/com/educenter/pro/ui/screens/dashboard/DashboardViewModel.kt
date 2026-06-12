@@ -114,7 +114,6 @@ class DashboardViewModel @Inject constructor(
 
                     // Monthly revenue for last 6 months (for chart)
                     val monthlyRevenueChart = mutableListOf<Pair<String, Double>>()
-                    val chartCal = Calendar.getInstance()
                     for (i in 5 downTo 0) {
                         val cal2 = Calendar.getInstance()
                         cal2.add(Calendar.MONTH, -i)

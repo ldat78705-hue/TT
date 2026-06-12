@@ -50,7 +50,7 @@ fun ReportsScreen(
                             appendLine("👨‍🎓 HS mới: ${uiState.newStudents}")
                             appendLine("❌ HS tạm nghỉ: ${uiState.inactiveStudents}")
                             appendLine("📋 Tổng buổi học: ${uiState.totalSessions}")
-                            appendLine("✅ Chuyên cần: ${String.format("%.1f", uiState.attendanceRate)}%")
+                            appendLine("✅ Chuyên cần: ${"%.1f".format(uiState.attendanceRate)}%")
                             appendLine("━━━━━━━━━━━━━━━")
                             appendLine("📱 EduCenter Pro")
                         }
@@ -189,7 +189,7 @@ fun ReportsScreen(
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text("Tỉ lệ chuyên cần", fontWeight = FontWeight.Bold)
-                            Text("${String.format("%.1f", uiState.attendanceRate)}%", fontWeight = FontWeight.ExtraBold, color = Color(0xFF3B82F6), fontSize = 20.sp)
+                            Text("${"%.1f".format(uiState.attendanceRate)}%", fontWeight = FontWeight.ExtraBold, color = Color(0xFF3B82F6), fontSize = 20.sp)
                         }
                         Spacer(modifier = Modifier.height(12.dp))
 

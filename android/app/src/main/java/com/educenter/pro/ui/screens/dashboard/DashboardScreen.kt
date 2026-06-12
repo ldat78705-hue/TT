@@ -299,7 +299,7 @@ fun DashboardScreen(
                                     )
                                 }
                                 Text(
-                                    "${String.format("%.0f", uiState.attendanceRate)}%",
+                                    "${"%.0f".format(uiState.attendanceRate)}%",
                                     fontWeight = FontWeight.ExtraBold,
                                     fontSize = 18.sp,
                                     color = MaterialTheme.colorScheme.onBackground
