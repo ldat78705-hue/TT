@@ -14,8 +14,8 @@ android {
         applicationId = "com.educenter.pro"
         minSdk = 26
         targetSdk = 34
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 3
+        versionName = "1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -23,9 +23,22 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("educenter-release.keystore")
+            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "educenter2026"
+            keyAlias = System.getenv("KEY_ALIAS") ?: "educenter"
+            keyPassword = System.getenv("KEY_PASSWORD") ?: "educenter2026"
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("release")
+        }
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
