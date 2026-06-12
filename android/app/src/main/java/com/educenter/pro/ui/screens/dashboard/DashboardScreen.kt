@@ -1,4 +1,4 @@
-﻿package com.educenter.pro.ui.screens.dashboard
+package com.educenter.pro.ui.screens.dashboard
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -99,9 +99,9 @@ fun DashboardScreen(
                     shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = BlueAccent,
-                        unfocusedBorderColor = Color(0xFFE2E8F0),
-                        focusedcontainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedcontainerColor = MaterialTheme.colorScheme.surface
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
                     ),
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
