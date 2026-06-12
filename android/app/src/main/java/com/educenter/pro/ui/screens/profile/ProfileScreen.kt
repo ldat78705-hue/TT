@@ -66,14 +66,14 @@ fun ProfileScreen(
                     Icon(Icons.Default.AccountCircle, contentDescription = null, modifier = Modifier.size(56.dp), tint = Color.White)
                 }
                 Spacer(modifier = Modifier.height(12.dp))
-                Text(email.ifBlank { "NgÆ°á»i dĂ¹ng" }, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text(email.ifBlank { "Người dùng" }, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 if (centerName.isNotBlank()) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(centerName, color = Color.White.copy(alpha = 0.8f), fontSize = 13.sp)
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    "Vai trĂ²: ${currentRole.name}",
+                    "Vai trò: ${currentRole.name}",
                     color = Color.White.copy(alpha = 0.7f),
                     fontSize = 12.sp
                 )
@@ -84,7 +84,7 @@ fun ProfileScreen(
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             ProfileMenuItem(
                 icon = Icons.Default.Sync,
-                label = if (isSyncing) "Äang Ä‘á»“ng bá»™..." else "Äá»“ng bá»™ dá»¯ liá»‡u",
+                label = if (isSyncing) "Đang đồng bộ..." else "Đồng bộ dữ liệu",
                 color = Color(0xFF3B82F6),
                 enabled = !isSyncing,
                 onClick = viewModel::manualSync
@@ -92,7 +92,7 @@ fun ProfileScreen(
 
             ProfileMenuItem(
                 icon = Icons.Default.Receipt,
-                label = "Lá»‹ch sá»­ Thu / Chi",
+                label = "Lịch sử Thu / Chi",
                 color = Color(0xFF10B981),
                 onClick = onNavigateToTransactions
             )
@@ -122,7 +122,7 @@ fun ProfileScreen(
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Text(
-                        if (isDark) "Cháº¿ Ä‘á»™ tá»‘i" else "Cháº¿ Ä‘á»™ sĂ¡ng",
+                        if (isDark) "Chế độ tối" else "Chế độ sáng",
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 15.sp,
                         color = MaterialTheme.colorScheme.onBackground,
@@ -139,7 +139,7 @@ fun ProfileScreen(
 
             // App version
             Text(
-                "PhiĂªn báº£n: v$versionName",
+                "Phiên bản: v$versionName",
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 fontSize = 13.sp,
                 color = Color(0xFF64748B),
@@ -150,7 +150,7 @@ fun ProfileScreen(
 
             ProfileMenuItem(
                 icon = Icons.Default.Logout,
-                label = "ÄÄƒng xuáº¥t",
+                label = "Đăng xuất",
                 color = Color(0xFFEF4444),
                 onClick = viewModel::logout
             )

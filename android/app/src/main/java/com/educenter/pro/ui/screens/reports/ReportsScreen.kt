@@ -37,32 +37,32 @@ fun ReportsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("BĂ¡o cĂ¡o & PhĂ¢n tĂ­ch") },
+                title = { Text("Báo cáo & Phân tích") },
                 actions = {
                     IconButton(onClick = {
                         val report = buildString {
-                            appendLine("đŸ“ BĂO CĂO ${uiState.period.label.uppercase()}")
-                            appendLine("â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”")
-                            appendLine("đŸ’° Doanh thu: ${fmt.format(uiState.totalRevenue)}")
-                            appendLine("đŸ“ˆ Lá»£i nhuáº­n: ${fmt.format(uiState.profit)}")
-                            appendLine("đŸ’³ HP Ä‘Ă£ thu: ${fmt.format(uiState.tuitionCollected)}")
-                            appendLine("â ï¸ Ná»£ pháº£i thu: ${fmt.format(uiState.totalReceivables)}")
-                            appendLine("â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”")
-                            appendLine("đŸ‘¨â€đŸ“ HS má»›i: ${uiState.newStudents}")
-                            appendLine("âŒ HS táº¡m nghá»‰: ${uiState.inactiveStudents}")
-                            appendLine("đŸ“‹ Tá»•ng buá»•i há»c: ${uiState.totalSessions}")
-                            appendLine("âœ… ChuyĂªn cáº§n: ${"%.1f".format(uiState.attendanceRate)}%")
-                            appendLine("â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”")
-                            appendLine("đŸ“± EduCenter Pro")
+                            appendLine("📊 BÁO CÁO ${uiState.period.label.uppercase()}")
+                            appendLine("━━━━━━━━━━━━━━━")
+                            appendLine("💰 Doanh thu: ${fmt.format(uiState.totalRevenue)}")
+                            appendLine("📈 Lợi nhuận: ${fmt.format(uiState.profit)}")
+                            appendLine("💳 HP đã thu: ${fmt.format(uiState.tuitionCollected)}")
+                            appendLine("⚠️ Nợ phải thu: ${fmt.format(uiState.totalReceivables)}")
+                            appendLine("━━━━━━━━━━━━━━━")
+                            appendLine("👨‍🎓 HS mới: ${uiState.newStudents}")
+                            appendLine("❌ HS tạm nghỉ: ${uiState.inactiveStudents}")
+                            appendLine("📋 Tổng buổi học: ${uiState.totalSessions}")
+                            appendLine("✅ Chuyên cần: ${"%.1f".format(uiState.attendanceRate)}%")
+                            appendLine("━━━━━━━━━━━━━━━")
+                            appendLine("📱 EduCenter Pro")
                         }
                         val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
                             type = "text/plain"
-                            putExtra(android.content.Intent.EXTRA_SUBJECT, "BĂ¡o cĂ¡o ${uiState.period.label}")
+                            putExtra(android.content.Intent.EXTRA_SUBJECT, "Báo cáo ${uiState.period.label}")
                             putExtra(android.content.Intent.EXTRA_TEXT, report)
                         }
-                        context.startActivity(android.content.Intent.createChooser(intent, "Chia sáº» bĂ¡o cĂ¡o"))
+                        context.startActivity(android.content.Intent.createChooser(intent, "Chia sẻ báo cáo"))
                     }) {
-                        Icon(Icons.Default.Share, contentDescription = "Chia sáº»", tint = Color(0xFF3B82F6))
+                        Icon(Icons.Default.Share, contentDescription = "Chia sẻ", tint = Color(0xFF3B82F6))
                     }
                 }
             )
@@ -76,7 +76,7 @@ fun ReportsScreen(
             // Period selector
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("this_month" to "ThĂ¡ng nĂ y", "last_month" to "ThĂ¡ng trÆ°á»›c", "this_year" to "NÄƒm nay").forEach { (key, label) ->
+                    listOf("this_month" to "Tháng này", "last_month" to "Tháng trước", "this_year" to "Năm nay").forEach { (key, label) ->
                         val isSelected = uiState.period.label == label
                         FilterChip(
                             selected = isSelected,
@@ -95,16 +95,16 @@ fun ReportsScreen(
             item {
                 ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
                     OutlinedTextField(
-                        value = if (uiState.classFilter == "all") "Táº¥t cáº£ cĂ¡c lá»›p" else classes.find { it.id == uiState.classFilter }?.name ?: "",
+                        value = if (uiState.classFilter == "all") "Tất cả các lớp" else classes.find { it.id == uiState.classFilter }?.name ?: "",
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Lá»c theo lá»›p") },
+                        label = { Text("Lọc theo lớp") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                         modifier = Modifier.menuAnchor().fillMaxWidth(),
                         singleLine = true
                     )
                     ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                        DropdownMenuItem(text = { Text("Táº¥t cáº£ cĂ¡c lá»›p") }, onClick = { viewModel.setClassFilter("all"); expanded = false })
+                        DropdownMenuItem(text = { Text("Tất cả các lớp") }, onClick = { viewModel.setClassFilter("all"); expanded = false })
                         classes.forEach { cls ->
                             DropdownMenuItem(text = { Text(cls.name) }, onClick = { viewModel.setClassFilter(cls.id); expanded = false })
                         }
@@ -114,7 +114,7 @@ fun ReportsScreen(
 
             // Finance KPIs
             item {
-                Text("đŸ’° TĂ i chĂ­nh", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onBackground)
+                Text("💰 Tài chính", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onBackground)
             }
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -127,7 +127,7 @@ fun ReportsScreen(
                     )
                     KpiCard(
                         modifier = Modifier.weight(1f),
-                        title = "Lá»£i nhuáº­n",
+                        title = "Lợi nhuận",
                         value = fmt.format(uiState.profit),
                         gradient = if (uiState.profit >= 0) listOf(Color(0xFF3B82F6), Color(0xFF2563EB)) else listOf(Color(0xFFEF4444), Color(0xFFDC2626)),
                         icon = if (uiState.profit >= 0) Icons.Default.TrendingUp else Icons.Default.TrendingDown
@@ -138,14 +138,14 @@ fun ReportsScreen(
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     KpiCard(
                         modifier = Modifier.weight(1f),
-                        title = "HP Ä‘Ă£ thu",
+                        title = "HP đã thu",
                         value = fmt.format(uiState.tuitionCollected),
                         gradient = listOf(Color(0xFF8B5CF6), Color(0xFF7C3AED)),
                         icon = Icons.Default.Payments
                     )
                     KpiCard(
                         modifier = Modifier.weight(1f),
-                        title = "Ná»£ pháº£i thu",
+                        title = "Nợ phải thu",
                         value = fmt.format(uiState.totalReceivables),
                         gradient = listOf(Color(0xFFEF4444), Color(0xFFDC2626)),
                         icon = Icons.Default.Warning
@@ -156,19 +156,19 @@ fun ReportsScreen(
             // Student KPIs
             item {
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("đŸ‘¨â€đŸ“ Há»c viĂªn", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onBackground)
+                Text("👨‍🎓 Học viên", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onBackground)
             }
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     InfoCard(
                         modifier = Modifier.weight(1f),
-                        title = "HS má»›i trong ká»³",
+                        title = "HS mới trong kỳ",
                         value = "${uiState.newStudents}",
                         color = Color(0xFF10B981)
                     )
                     InfoCard(
                         modifier = Modifier.weight(1f),
-                        title = "HS táº¡m nghá»‰",
+                        title = "HS tạm nghỉ",
                         value = "${uiState.inactiveStudents}",
                         color = Color(0xFFEF4444)
                     )
@@ -178,7 +178,7 @@ fun ReportsScreen(
             // Attendance KPIs
             item {
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("đŸ“‹ ChuyĂªn cáº§n", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onBackground)
+                Text("📋 Chuyên cần", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onBackground)
             }
             item {
                 Card(
@@ -189,7 +189,7 @@ fun ReportsScreen(
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Tá»‰ lá»‡ chuyĂªn cáº§n", fontWeight = FontWeight.Bold)
+                            Text("Tỉ lệ chuyên cần", fontWeight = FontWeight.Bold)
                             Text("${"%.1f".format(uiState.attendanceRate)}%", fontWeight = FontWeight.ExtraBold, color = Color(0xFF3B82F6), fontSize = 20.sp)
                         }
                         Spacer(modifier = Modifier.height(12.dp))
@@ -204,9 +204,9 @@ fun ReportsScreen(
 
                         Spacer(modifier = Modifier.height(16.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            AttendanceStat("CĂ³ máº·t", uiState.presentCount, Color(0xFF10B981))
-                            AttendanceStat("Äi muá»™n", uiState.lateCount, Color(0xFFF59E0B))
-                            AttendanceStat("Váº¯ng", uiState.absentCount, Color(0xFFEF4444))
+                            AttendanceStat("Có mặt", uiState.presentCount, Color(0xFF10B981))
+                            AttendanceStat("Đi muộn", uiState.lateCount, Color(0xFFF59E0B))
+                            AttendanceStat("Vắng", uiState.absentCount, Color(0xFFEF4444))
                         }
                     }
                 }

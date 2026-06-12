@@ -32,14 +32,14 @@ fun AnnouncementsScreen(
     var announcementToDelete by remember { mutableStateOf<com.educenter.pro.data.model.Announcement?>(null) }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("ThĂ´ng bĂ¡o") }) },
+        topBar = { TopAppBar(title = { Text("Thông báo") }) },
         floatingActionButton = {
             if (canManage) {
                 FloatingActionButton(
                     onClick = { showAddDialog = true },
                     containerColor = Color(0xFF3B82F6)
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "Táº¡o thĂ´ng bĂ¡o", tint = Color.White)
+                    Icon(Icons.Default.Add, contentDescription = "Tạo thông báo", tint = Color.White)
                 }
             }
         }
@@ -49,10 +49,10 @@ fun AnnouncementsScreen(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(Icons.Default.Campaign, contentDescription = null, modifier = Modifier.size(64.dp), tint = Color(0xFFCBD5E1))
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text("ChÆ°a cĂ³ thĂ´ng bĂ¡o nĂ o", fontWeight = FontWeight.Bold, color = Color(0xFF64748B))
+                    Text("Chưa có thông báo nào", fontWeight = FontWeight.Bold, color = Color(0xFF64748B))
                     if (canManage) {
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("Nháº¥n + Ä‘á»ƒ táº¡o thĂ´ng bĂ¡o Ä‘áº§u tiĂªn", fontSize = 13.sp, color = Color(0xFFCBD5E1))
+                        Text("Nhấn + để tạo thông báo đầu tiên", fontSize = 13.sp, color = Color(0xFFCBD5E1))
                     }
                 }
             }
@@ -74,7 +74,7 @@ fun AnnouncementsScreen(
                                 Text(ann.title, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF3B82F6), modifier = Modifier.weight(1f))
                                 if (canManage) {
                                     IconButton(onClick = { announcementToDelete = ann }, modifier = Modifier.size(32.dp)) {
-                                        Icon(Icons.Default.Delete, contentDescription = "XĂ³a", tint = Color(0xFFEF4444), modifier = Modifier.size(18.dp))
+                                        Icon(Icons.Default.Delete, contentDescription = "Xóa", tint = Color(0xFFEF4444), modifier = Modifier.size(18.dp))
                                     }
                                 }
                             }
@@ -83,7 +83,7 @@ fun AnnouncementsScreen(
                             Spacer(modifier = Modifier.height(12.dp))
                             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                                 Text(
-                                    "Bá»Ÿi: ${ann.createdBy}",
+                                    "Bởi: ${ann.createdBy}",
                                     fontSize = 13.sp,
                                     color = Color(0xFF64748B),
                                     fontWeight = FontWeight.Medium
@@ -105,8 +105,8 @@ fun AnnouncementsScreen(
         if (announcementToDelete != null) {
             AlertDialog(
                 onDismissRequest = { announcementToDelete = null },
-                title = { Text("XĂ¡c nháº­n xĂ³a") },
-                text = { Text("Báº¡n cĂ³ cháº¯c muá»‘n xĂ³a thĂ´ng bĂ¡o \"${announcementToDelete?.title}\"?") },
+                title = { Text("Xác nhận xóa") },
+                text = { Text("Bạn có chắc muốn xóa thông báo \"${announcementToDelete?.title}\"?") },
                 confirmButton = {
                     Button(
                         onClick = {
@@ -114,9 +114,9 @@ fun AnnouncementsScreen(
                             announcementToDelete = null
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444))
-                    ) { Text("XĂ³a") }
+                    ) { Text("Xóa") }
                 },
-                dismissButton = { TextButton(onClick = { announcementToDelete = null }) { Text("Há»§y") } }
+                dismissButton = { TextButton(onClick = { announcementToDelete = null }) { Text("Hủy") } }
             )
         }
 
@@ -127,18 +127,18 @@ fun AnnouncementsScreen(
 
             AlertDialog(
                 onDismissRequest = { showAddDialog = false },
-                title = { Text("Táº¡o ThĂ´ng bĂ¡o má»›i") },
+                title = { Text("Tạo Thông báo mới") },
                 text = {
                     Column {
                         OutlinedTextField(
                             value = title, onValueChange = { title = it },
-                            label = { Text("TiĂªu Ä‘á» *") }, singleLine = true,
+                            label = { Text("Tiêu đề *") }, singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         OutlinedTextField(
                             value = content, onValueChange = { content = it },
-                            label = { Text("Ná»™i dung *") },
+                            label = { Text("Nội dung *") },
                             modifier = Modifier.fillMaxWidth().height(150.dp),
                             maxLines = 6
                         )
@@ -152,9 +152,9 @@ fun AnnouncementsScreen(
                                 showAddDialog = false
                             }
                         }
-                    ) { Text("ÄÄƒng") }
+                    ) { Text("Đăng") }
                 },
-                dismissButton = { TextButton(onClick = { showAddDialog = false }) { Text("Há»§y") } }
+                dismissButton = { TextButton(onClick = { showAddDialog = false }) { Text("Hủy") } }
             )
         }
     }

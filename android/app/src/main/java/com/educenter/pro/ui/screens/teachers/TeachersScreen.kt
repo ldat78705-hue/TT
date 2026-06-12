@@ -39,13 +39,13 @@ fun TeachersScreen(
     val fmt = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("GiĂ¡o viĂªn") }) },
+        topBar = { TopAppBar(title = { Text("Giáo viên") }) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showAddDialog = true },
                 containerColor = Color(0xFF3B82F6)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "ThĂªm", tint = Color.White)
+                Icon(Icons.Default.Add, contentDescription = "Thêm", tint = Color.White)
             }
         }
     ) { padding ->
@@ -77,11 +77,11 @@ fun TeachersScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(teacher.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onBackground)
                             Spacer(modifier = Modifier.height(2.dp))
-                            Text("MĂ´n: ${teacher.subject}", fontSize = 13.sp, color = Color(0xFF64748B))
+                            Text("Môn: ${teacher.subject}", fontSize = 13.sp, color = Color(0xFF64748B))
                             if (teacher.phone.isNotBlank()) {
                                 val context = androidx.compose.ui.platform.LocalContext.current
                                 Text(
-                                    "đŸ“ ${teacher.phone}",
+                                    "📞 ${teacher.phone}",
                                     fontSize = 14.sp,
                                     color = Color(0xFF3B82F6),
                                     fontWeight = FontWeight.Medium,
@@ -94,19 +94,19 @@ fun TeachersScreen(
                                 )
                             }
                             if (teacher.qualification.isNotBlank()) {
-                                Text("TrĂ¬nh Ä‘á»™: ${teacher.qualification}", fontSize = 14.sp, color = Color(0xFF475569))
+                                Text("Trình độ: ${teacher.qualification}", fontSize = 14.sp, color = Color(0xFF475569))
                             }
                             if (teacher.rate > 0) {
-                                val salaryLabel = if (teacher.salaryType == "MONTHLY") "LÆ°Æ¡ng thĂ¡ng" else "LÆ°Æ¡ng/buá»•i"
+                                val salaryLabel = if (teacher.salaryType == "MONTHLY") "Lương tháng" else "Lương/buổi"
                                 Text("$salaryLabel: ${fmt.format(teacher.rate)}", fontSize = 14.sp, color = Color(0xFF10B981), fontWeight = FontWeight.Medium)
                             }
                         }
                         Column {
                             IconButton(onClick = { selectedForEdit = teacher }, modifier = Modifier.size(32.dp)) {
-                                Icon(Icons.Default.Edit, contentDescription = "Sá»­a", tint = Color(0xFF3B82F6), modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.Edit, contentDescription = "Sửa", tint = Color(0xFF3B82F6), modifier = Modifier.size(18.dp))
                             }
                             IconButton(onClick = { teacherToDelete = teacher }, modifier = Modifier.size(32.dp)) {
-                                Icon(Icons.Default.Delete, contentDescription = "XĂ³a", tint = Color(0xFFEF4444), modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.Delete, contentDescription = "Xóa", tint = Color(0xFFEF4444), modifier = Modifier.size(18.dp))
                             }
                         }
                     }
@@ -118,8 +118,8 @@ fun TeachersScreen(
         if (teacherToDelete != null) {
             AlertDialog(
                 onDismissRequest = { teacherToDelete = null },
-                title = { Text("XĂ¡c nháº­n xĂ³a") },
-                text = { Text("Báº¡n cĂ³ cháº¯c cháº¯n muá»‘n xĂ³a giĂ¡o viĂªn \"${teacherToDelete?.name}\"?") },
+                title = { Text("Xác nhận xóa") },
+                text = { Text("Bạn có chắc chắn muốn xóa giáo viên \"${teacherToDelete?.name}\"?") },
                 confirmButton = {
                     Button(
                         onClick = {
@@ -127,9 +127,9 @@ fun TeachersScreen(
                             teacherToDelete = null
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444))
-                    ) { Text("XĂ³a") }
+                    ) { Text("Xóa") }
                 },
-                dismissButton = { TextButton(onClick = { teacherToDelete = null }) { Text("Há»§y") } }
+                dismissButton = { TextButton(onClick = { teacherToDelete = null }) { Text("Hủy") } }
             )
         }
 
@@ -168,37 +168,37 @@ fun AddOrEditTeacherDialog(
     var address by remember { mutableStateOf(teacher?.address ?: "") }
     var dob by remember { mutableStateOf(teacher?.dob ?: "") }
     var qualification by remember { mutableStateOf(teacher?.qualification ?: "") }
-    var gender by remember { mutableStateOf(teacher?.gender ?: "KhĂ¡c") }
+    var gender by remember { mutableStateOf(teacher?.gender ?: "Khác") }
     var salaryType by remember { mutableStateOf(teacher?.salaryType ?: "PER_SESSION") }
     var rate by remember { mutableStateOf(if ((teacher?.rate ?: 0.0) > 0) teacher!!.rate.toLong().toString() else "") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (teacher == null) "ThĂªm GiĂ¡o viĂªn" else "Sá»­a GiĂ¡o viĂªn") },
+        title = { Text(if (teacher == null) "Thêm Giáo viên" else "Sửa Giáo viên") },
         text = {
             LazyColumn(modifier = Modifier.heightIn(max = 400.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                item { OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Há» tĂªn *") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
-                item { OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Sá»‘ Ä‘iá»‡n thoáº¡i") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
-                item { OutlinedTextField(value = subject, onValueChange = { subject = it }, label = { Text("MĂ´n dáº¡y") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
+                item { OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Họ tên *") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
+                item { OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Số điện thoại") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
+                item { OutlinedTextField(value = subject, onValueChange = { subject = it }, label = { Text("Môn dạy") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
                 item { OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
-                item { OutlinedTextField(value = dob, onValueChange = { dob = it }, label = { Text("NgĂ y sinh (YYYY-MM-DD)") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
-                item { OutlinedTextField(value = qualification, onValueChange = { qualification = it }, label = { Text("TrĂ¬nh Ä‘á»™") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
-                item { OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Äá»‹a chá»‰") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
+                item { OutlinedTextField(value = dob, onValueChange = { dob = it }, label = { Text("Ngày sinh (YYYY-MM-DD)") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
+                item { OutlinedTextField(value = qualification, onValueChange = { qualification = it }, label = { Text("Trình độ") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
+                item { OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Địa chỉ") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
                 item {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Giá»›i tĂ­nh: ", style = MaterialTheme.typography.bodyMedium)
+                        Text("Giới tính: ", style = MaterialTheme.typography.bodyMedium)
                         Spacer(modifier = Modifier.width(8.dp))
-                        listOf("Nam", "Ná»¯", "KhĂ¡c").forEach { g ->
+                        listOf("Nam", "Nữ", "Khác").forEach { g ->
                             RadioButton(selected = gender == g, onClick = { gender = g })
                             Text(g, modifier = Modifier.padding(end = 8.dp))
                         }
                     }
                 }
                 item {
-                    Text("Loáº¡i lÆ°Æ¡ng:", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                    Text("Loại lương:", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
                     Spacer(modifier = Modifier.height(4.dp))
                     Row {
-                        listOf("PER_SESSION" to "Theo buá»•i", "MONTHLY" to "Theo thĂ¡ng").forEach { (key, label) ->
+                        listOf("PER_SESSION" to "Theo buổi", "MONTHLY" to "Theo tháng").forEach { (key, label) ->
                             FilterChip(
                                 selected = salaryType == key,
                                 onClick = { salaryType = key },
@@ -208,7 +208,7 @@ fun AddOrEditTeacherDialog(
                         }
                     }
                 }
-                item { OutlinedTextField(value = rate, onValueChange = { rate = it.filter { c -> c.isDigit() } }, label = { Text("Má»©c lÆ°Æ¡ng (VNÄ)") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
+                item { OutlinedTextField(value = rate, onValueChange = { rate = it.filter { c -> c.isDigit() } }, label = { Text("Mức lương (VNĐ)") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
             }
         },
         confirmButton = {
@@ -224,8 +224,8 @@ fun AddOrEditTeacherDialog(
                     )
                     onSave(result)
                 }
-            }) { Text("LÆ°u") }
+            }) { Text("Lưu") }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Há»§y") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Hủy") } }
     )
 }

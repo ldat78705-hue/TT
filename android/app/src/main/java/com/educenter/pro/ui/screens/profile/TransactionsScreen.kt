@@ -31,10 +31,10 @@ fun TransactionsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Lá»‹ch sá»­ Thu/Chi") },
+                title = { Text("Lịch sử Thu/Chi") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Trá»Ÿ vá»")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Trở về")
                     }
                 }
             )
@@ -75,7 +75,7 @@ fun TransactionsScreen(
             }
             if (transactions.isEmpty()) {
                 item {
-                    Text("ChÆ°a cĂ³ giao dá»‹ch nĂ o.", modifier = Modifier.padding(16.dp))
+                    Text("Chưa có giao dịch nào.", modifier = Modifier.padding(16.dp))
                 }
             }
         }

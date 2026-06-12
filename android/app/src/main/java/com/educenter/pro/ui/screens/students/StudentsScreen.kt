@@ -46,7 +46,7 @@ fun StudentsScreen(
     var showAddDialog by remember { mutableStateOf(false) }
     var selectedStudentForFee by remember { mutableStateOf<Student?>(null) }
     var feeAmountText by remember { mutableStateOf("") }
-    var selectedPaymentMethod by remember { mutableStateOf("Tiá»n máº·t") }
+    var selectedPaymentMethod by remember { mutableStateOf("Tiền mặt") }
     
     var selectedStudentForEdit by remember { mutableStateOf<Student?>(null) }
     var selectedStudentForDetails by remember { mutableStateOf<Student?>(null) }
@@ -54,7 +54,7 @@ fun StudentsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Quáº£n lĂ½ Há»c viĂªn") })
+            TopAppBar(title = { Text("Quản lý Học viên") })
         },
         floatingActionButton = {
             if (canManage) {
@@ -62,7 +62,7 @@ fun StudentsScreen(
                     onClick = { showAddDialog = true },
                     containerColor = Color(0xFF3B82F6)
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "ThĂªm há»c viĂªn", tint = Color.White)
+                    Icon(Icons.Default.Add, contentDescription = "Thêm học viên", tint = Color.White)
                 }
             }
         }
@@ -80,12 +80,12 @@ fun StudentsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                placeholder = { Text("TĂ¬m tĂªn hoáº·c sá»‘ Ä‘iá»‡n thoáº¡i...") },
+                placeholder = { Text("Tìm tên hoặc số điện thoại...") },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
                         IconButton(onClick = { viewModel.onSearchQueryChange("") }) {
-                            Icon(Icons.Default.Clear, contentDescription = "XĂ³a tĂ¬m kiáº¿m")
+                            Icon(Icons.Default.Clear, contentDescription = "Xóa tìm kiếm")
                         }
                     }
                 },
@@ -118,8 +118,8 @@ fun StudentsScreen(
         if (studentToDelete != null) {
             AlertDialog(
                 onDismissRequest = { studentToDelete = null },
-                title = { Text("XĂ¡c nháº­n xĂ³a") },
-                text = { Text("Báº¡n cĂ³ cháº¯c cháº¯n muá»‘n xĂ³a há»c viĂªn \"${studentToDelete?.name}\"? Thao tĂ¡c nĂ y khĂ´ng thá»ƒ hoĂ n tĂ¡c.") },
+                title = { Text("Xác nhận xóa") },
+                text = { Text("Bạn có chắc chắn muốn xóa học viên \"${studentToDelete?.name}\"? Thao tác này không thể hoàn tác.") },
                 confirmButton = {
                     Button(
                         onClick = {
@@ -127,10 +127,10 @@ fun StudentsScreen(
                             studentToDelete = null
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444))
-                    ) { Text("XĂ³a") }
+                    ) { Text("Xóa") }
                 },
                 dismissButton = {
-                    TextButton(onClick = { studentToDelete = null }) { Text("Há»§y") }
+                    TextButton(onClick = { studentToDelete = null }) { Text("Hủy") }
                 }
             )
         }
@@ -185,7 +185,7 @@ fun StudentsScreen(
                 onDismissRequest = { selectedStudentForFee = null },
                 title = {
                     Column {
-                        Text("đŸ’° Thu há»c phĂ­")
+                        Text("💰 Thu học phí")
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             selectedStudentForFee?.name ?: "",
@@ -208,7 +208,7 @@ fun StudentsScreen(
                                 modifier = Modifier.padding(12.dp).fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("Sá»‘ dÆ°:", fontSize = 13.sp)
+                                Text("Số dư:", fontSize = 13.sp)
                                 Text(
                                     fmt.format(selectedStudentForFee!!.balance),
                                     fontWeight = FontWeight.Bold,
@@ -220,25 +220,25 @@ fun StudentsScreen(
                         OutlinedTextField(
                             value = feeAmountText,
                             onValueChange = { feeAmountText = it.filter { c -> c.isDigit() } },
-                            label = { Text("Sá»‘ tiá»n (VNÄ)") },
+                            label = { Text("Số tiền (VNĐ)") },
                             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
 
-                        Text("HĂ¬nh thá»©c ná»™p:", style = MaterialTheme.typography.labelMedium)
+                        Text("Hình thức nộp:", style = MaterialTheme.typography.labelMedium)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(
-                                selected = selectedPaymentMethod == "Tiá»n máº·t",
-                                onClick = { selectedPaymentMethod = "Tiá»n máº·t" }
+                                selected = selectedPaymentMethod == "Tiền mặt",
+                                onClick = { selectedPaymentMethod = "Tiền mặt" }
                             )
-                            Text("đŸ’µ Tiá»n máº·t")
+                            Text("💵 Tiền mặt")
                             Spacer(modifier = Modifier.width(16.dp))
                             RadioButton(
-                                selected = selectedPaymentMethod == "Chuyá»ƒn khoáº£n",
-                                onClick = { selectedPaymentMethod = "Chuyá»ƒn khoáº£n" }
+                                selected = selectedPaymentMethod == "Chuyển khoản",
+                                onClick = { selectedPaymentMethod = "Chuyển khoản" }
                             )
-                            Text("đŸ¦ Chuyá»ƒn khoáº£n")
+                            Text("🏦 Chuyển khoản")
                         }
 
                         // Preview after payment
@@ -253,7 +253,7 @@ fun StudentsScreen(
                                     modifier = Modifier.padding(12.dp).fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Sá»‘ dÆ° sau:", fontSize = 13.sp)
+                                    Text("Số dư sau:", fontSize = 13.sp)
                                     Text(
                                         fmt.format(newBalance),
                                         fontWeight = FontWeight.Bold,
@@ -270,22 +270,22 @@ fun StudentsScreen(
                             val amount = feeAmountText.toDoubleOrNull()
                             if (amount != null && amount > 0) {
                                 selectedStudentForFee?.let {
-                                    val method = if (selectedPaymentMethod == "Tiá»n máº·t") "cash" else "transfer"
+                                    val method = if (selectedPaymentMethod == "Tiền mặt") "cash" else "transfer"
                                     viewModel.collectFee(it.id, amount, method)
                                 }
                             }
                             selectedStudentForFee = null
                             feeAmountText = ""
-                            selectedPaymentMethod = "Tiá»n máº·t"
+                            selectedPaymentMethod = "Tiền mặt"
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981))
                     ) {
-                        Text("âœ… XĂ¡c nháº­n Ghi sá»•", fontWeight = FontWeight.Bold)
+                        Text("✅ Xác nhận Ghi sổ", fontWeight = FontWeight.Bold)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { selectedStudentForFee = null }) {
-                        Text("Há»§y")
+                        Text("Hủy")
                     }
                 }
             )
@@ -320,7 +320,7 @@ fun AddOrEditStudentDialog(
     var parentName by remember { mutableStateOf(student?.parentName ?: "") }
     var email by remember { mutableStateOf(student?.email ?: "") }
     var address by remember { mutableStateOf(student?.address ?: "") }
-    var gender by remember { mutableStateOf(student?.gender ?: "KhĂ¡c") }
+    var gender by remember { mutableStateOf(student?.gender ?: "Khác") }
     var dob by remember { mutableStateOf(student?.dob ?: "") }
     var discountText by remember { mutableStateOf(student?.discountPercentage?.toString() ?: "0") }
     var isActive by remember { mutableStateOf(student?.status == com.educenter.pro.data.model.PersonStatus.ACTIVE) }
@@ -328,26 +328,26 @@ fun AddOrEditStudentDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (student == null) "ThĂªm Há»c viĂªn" else "Sá»­a Há»c viĂªn") },
+        title = { Text(if (student == null) "Thêm Học viên" else "Sửa Học viên") },
         text = {
             LazyColumn {
-                item { OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Há» TĂªn *") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
+                item { OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Họ Tên *") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
                 item { Spacer(modifier = Modifier.height(8.dp)) }
-                item { OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Sá»‘ Ä‘iá»‡n thoáº¡i") }, singleLine = true, keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Phone), modifier = Modifier.fillMaxWidth()) }
+                item { OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Số điện thoại") }, singleLine = true, keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Phone), modifier = Modifier.fillMaxWidth()) }
                 item { Spacer(modifier = Modifier.height(8.dp)) }
-                item { OutlinedTextField(value = parentName, onValueChange = { parentName = it }, label = { Text("TĂªn Phá»¥ huynh") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
+                item { OutlinedTextField(value = parentName, onValueChange = { parentName = it }, label = { Text("Tên Phụ huynh") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
                 item { Spacer(modifier = Modifier.height(8.dp)) }
                 item { OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
                 item { Spacer(modifier = Modifier.height(8.dp)) }
-                item { OutlinedTextField(value = dob, onValueChange = { dob = it }, label = { Text("NgĂ y sinh (YYYY-MM-DD)") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
+                item { OutlinedTextField(value = dob, onValueChange = { dob = it }, label = { Text("Ngày sinh (YYYY-MM-DD)") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
                 item { Spacer(modifier = Modifier.height(8.dp)) }
-                item { OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Äá»‹a chá»‰") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
+                item { OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Địa chỉ") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
                 item { Spacer(modifier = Modifier.height(8.dp)) }
                 item {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Giá»›i tĂ­nh: ", style = MaterialTheme.typography.bodyMedium)
+                        Text("Giới tính: ", style = MaterialTheme.typography.bodyMedium)
                         Spacer(modifier = Modifier.width(8.dp))
-                        listOf("Nam", "Ná»¯", "KhĂ¡c").forEach { g ->
+                        listOf("Nam", "Nữ", "Khác").forEach { g ->
                             RadioButton(selected = gender == g, onClick = { gender = g })
                             Text(g)
                             Spacer(modifier = Modifier.width(8.dp))
@@ -355,19 +355,19 @@ fun AddOrEditStudentDialog(
                     }
                 }
                 item { Spacer(modifier = Modifier.height(8.dp)) }
-                item { OutlinedTextField(value = discountText, onValueChange = { discountText = it }, label = { Text("% Giáº£m há»c phĂ­") }, singleLine = true, keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth()) }
+                item { OutlinedTextField(value = discountText, onValueChange = { discountText = it }, label = { Text("% Giảm học phí") }, singleLine = true, keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth()) }
                 item { Spacer(modifier = Modifier.height(8.dp)) }
                 item {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = isActive, onCheckedChange = { isActive = it })
-                        Text("Äang theo há»c (ACTIVE)")
+                        Text("Đang theo học (ACTIVE)")
                     }
                 }
                 // === CLASS SELECTION ===
                 if (allClasses.isNotEmpty()) {
                     item {
                         Spacer(modifier = Modifier.height(12.dp))
-                        Text("Lá»›p há»c:", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+                        Text("Lớp học:", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
                         Spacer(modifier = Modifier.height(4.dp))
                     }
                     items(allClasses) { cls ->
@@ -409,11 +409,11 @@ fun AddOrEditStudentDialog(
                     onSave(name, phone, parentName, email, address, gender, dob, discount, status, selectedClassIds)
                 }
             }) {
-                Text("LÆ°u")
+                Text("Lưu")
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Há»§y") }
+            TextButton(onClick = onDismiss) { Text("Hủy") }
         }
     )
 }
@@ -446,7 +446,7 @@ fun StudentCard(
                     if (student.phone.isNotBlank()) {
                         val context = androidx.compose.ui.platform.LocalContext.current
                         Text(
-                            "đŸ“ ${student.phone}",
+                            "📞 ${student.phone}",
                             style = MaterialTheme.typography.bodyMedium,
                             color = Color(0xFF3B82F6),
                             fontWeight = FontWeight.Medium,
@@ -492,7 +492,7 @@ fun StudentCard(
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
                     ) {
                         Text(
-                            text = if (student.status.name == "ACTIVE") "Äang há»c" else "Nghá»‰ há»c",
+                            text = if (student.status.name == "ACTIVE") "Đang học" else "Nghỉ học",
                             color = if (student.status.name == "ACTIVE") Color(0xFF10B981) else Color(0xFF64748B),
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                             fontSize = 12.sp,
@@ -512,10 +512,10 @@ fun StudentCard(
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 if (canManage) {
                     IconButton(onClick = { onDeleteClick(student) }) {
-                        Icon(Icons.Default.Delete, contentDescription = "XĂ³a", tint = Color(0xFFEF4444))
+                        Icon(Icons.Default.Delete, contentDescription = "Xóa", tint = Color(0xFFEF4444))
                     }
                     IconButton(onClick = { onEditClick(student) }) {
-                        Icon(Icons.Default.Edit, contentDescription = "Sá»­a", tint = Color(0xFF3B82F6))
+                        Icon(Icons.Default.Edit, contentDescription = "Sửa", tint = Color(0xFF3B82F6))
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                 }
@@ -527,7 +527,7 @@ fun StudentCard(
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6))
                     ) {
-                        Text("Ná»™p tiá»n", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                        Text("Nộp tiền", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -551,7 +551,7 @@ fun StudentDetailDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier.fillMaxHeight(0.9f).fillMaxWidth(0.95f),
-        title = { Text("Chi tiáº¿t Há»c viĂªn", fontWeight = FontWeight.Bold) },
+        title = { Text("Chi tiết Học viên", fontWeight = FontWeight.Bold) },
         text = {
             Column(modifier = Modifier.fillMaxSize()) {
                 Text(student.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
@@ -567,14 +567,14 @@ fun StudentDetailDialog(
                                 }
                                 context.startActivity(intent)
                             },
-                            label = { Text("đŸ“ ${student.phone}", fontSize = 14.sp) },
+                            label = { Text("📞 ${student.phone}", fontSize = 14.sp) },
                             shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp)
                         )
                     }
                     if (student.parentName.isNotBlank()) {
                         androidx.compose.material3.AssistChip(
                             onClick = {},
-                            label = { Text("đŸ‘¨â€đŸ‘©â€đŸ‘§ ${student.parentName}", fontSize = 14.sp) },
+                            label = { Text("👨‍👩‍👧 ${student.parentName}", fontSize = 14.sp) },
                             shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp)
                         )
                     }
@@ -589,34 +589,34 @@ fun StudentDetailDialog(
                     colors = CardDefaults.cardColors(containerColor = if (student.balance < 0) Color(0xFFFEF2F2) else Color(0xFFF0FDF4))
                 ) {
                     Row(modifier = Modifier.padding(12.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text("Sá»‘ dÆ° tĂ i khoáº£n", fontSize = 14.sp, color = Color(0xFF475569))
+                        Text("Số dư tài khoản", fontSize = 14.sp, color = Color(0xFF475569))
                         Text(currencyFormatter.format(student.balance), fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = if (student.balance < 0) Color(0xFFEF4444) else Color(0xFF10B981))
                     }
                 }
 
                 if (studentClasses.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(6.dp))
-                    Text("Lá»›p: ${studentClasses.joinToString { it.name }}", fontSize = 14.sp, color = Color(0xFF475569))
+                    Text("Lớp: ${studentClasses.joinToString { it.name }}", fontSize = 14.sp, color = Color(0xFF475569))
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
                 TabRow(selectedTabIndex = selectedTab) {
-                    Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("đŸ’° TĂ i chĂ­nh", fontSize = 14.sp) })
-                    Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("đŸ“‹ Äiá»ƒm danh", fontSize = 14.sp) })
+                    Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("💰 Tài chính", fontSize = 14.sp) })
+                    Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("📋 Điểm danh", fontSize = 14.sp) })
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 if (selectedTab == 0) {
                     if (transactions.isEmpty()) {
-                        Text("ChÆ°a cĂ³ giao dá»‹ch nĂ o.", modifier = Modifier.padding(16.dp), color = Color(0xFF64748B))
+                        Text("Chưa có giao dịch nào.", modifier = Modifier.padding(16.dp), color = Color(0xFF64748B))
                     } else {
                         val totalPaid = transactions.filter { it.amount > 0 }.sumOf { it.amount }
                         Card(modifier = Modifier.fillMaxWidth(), shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F7FF))) {
                             Row(modifier = Modifier.padding(12.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Column { Text("Tá»•ng Ä‘Ă£ ná»™p", fontSize = 13.sp, color = Color(0xFF475569)); Text(currencyFormatter.format(totalPaid), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF10B981)) }
-                                Column(horizontalAlignment = Alignment.End) { Text("Giao dá»‹ch", fontSize = 13.sp, color = Color(0xFF475569)); Text("${transactions.size}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF3B82F6)) }
+                                Column { Text("Tổng đã nộp", fontSize = 13.sp, color = Color(0xFF475569)); Text(currencyFormatter.format(totalPaid), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF10B981)) }
+                                Column(horizontalAlignment = Alignment.End) { Text("Giao dịch", fontSize = 13.sp, color = Color(0xFF475569)); Text("${transactions.size}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF3B82F6)) }
                             }
                         }
                         Spacer(modifier = Modifier.height(8.dp))
@@ -636,7 +636,7 @@ fun StudentDetailDialog(
                     }
                 } else {
                     if (attendanceRecords.isEmpty()) {
-                        Text("ChÆ°a cĂ³ lá»‹ch sá»­ Ä‘iá»ƒm danh.", modifier = Modifier.padding(16.dp), color = Color(0xFF64748B))
+                        Text("Chưa có lịch sử điểm danh.", modifier = Modifier.padding(16.dp), color = Color(0xFF64748B))
                     } else {
                         val presentCount = attendanceRecords.count { it.status == "PRESENT" }
                         val lateCount = attendanceRecords.count { it.status == "LATE" }
@@ -645,10 +645,10 @@ fun StudentDetailDialog(
 
                         Card(modifier = Modifier.fillMaxWidth(), shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F7FF))) {
                             Row(modifier = Modifier.padding(12.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                                DetailStatItem("CĂ³ máº·t", presentCount, Color(0xFF10B981))
-                                DetailStatItem("Trá»…", lateCount, Color(0xFFF59E0B))
-                                DetailStatItem("CĂ³ phĂ©p", absentCount, Color(0xFF0EA5E9))
-                                DetailStatItem("K.phĂ©p", unexcusedCount, Color(0xFFEF4444))
+                                DetailStatItem("Có mặt", presentCount, Color(0xFF10B981))
+                                DetailStatItem("Trễ", lateCount, Color(0xFFF59E0B))
+                                DetailStatItem("Có phép", absentCount, Color(0xFF0EA5E9))
+                                DetailStatItem("K.phép", unexcusedCount, Color(0xFFEF4444))
                             }
                         }
                         Spacer(modifier = Modifier.height(8.dp))
@@ -657,12 +657,12 @@ fun StudentDetailDialog(
                         LazyColumn {
                             grouped.forEach { (month, records) ->
                                 item {
-                                    Text("đŸ“… ThĂ¡ng ${month.takeLast(2)}/${month.take(4)} (${records.size} buá»•i)", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF3B82F6), modifier = Modifier.padding(vertical = 6.dp))
+                                    Text("📅 Tháng ${month.takeLast(2)}/${month.take(4)} (${records.size} buổi)", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF3B82F6), modifier = Modifier.padding(vertical = 6.dp))
                                 }
                                 items(records) { att ->
                                     val clsName = classes.find { it.id == att.classId }?.name ?: ""
-                                    val statusText = when (att.status) { "PRESENT" -> "âœ…"; "LATE" -> "â°"; "ABSENT" -> "đŸ“"; "UNEXCUSED_ABSENT" -> "âŒ"; else -> "?" }
-                                    val statusLabel = when (att.status) { "PRESENT" -> "CĂ³ máº·t"; "LATE" -> "Trá»…"; "ABSENT" -> "CĂ³ phĂ©p"; "UNEXCUSED_ABSENT" -> "K.phĂ©p"; else -> att.status }
+                                    val statusText = when (att.status) { "PRESENT" -> "✅"; "LATE" -> "⏰"; "ABSENT" -> "📝"; "UNEXCUSED_ABSENT" -> "❌"; else -> "?" }
+                                    val statusLabel = when (att.status) { "PRESENT" -> "Có mặt"; "LATE" -> "Trễ"; "ABSENT" -> "Có phép"; "UNEXCUSED_ABSENT" -> "K.phép"; else -> att.status }
                                     val statusColor = when (att.status) { "PRESENT" -> Color(0xFF10B981); "LATE" -> Color(0xFFF59E0B); "ABSENT" -> Color(0xFF0EA5E9); "UNEXCUSED_ABSENT" -> Color(0xFFEF4444); else -> Color(0xFF64748B) }
                                     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 4.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                         Column(modifier = Modifier.weight(1f)) {
@@ -679,7 +679,7 @@ fun StudentDetailDialog(
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("ÄĂ³ng", fontWeight = FontWeight.Bold) } }
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Đóng", fontWeight = FontWeight.Bold) } }
     )
 }
 
