@@ -14,8 +14,8 @@ android {
         applicationId = "com.educenter.pro"
         minSdk = 26
         targetSdk = 34
-        versionCode = 3
-        versionName = "1.2"
+        versionCode = 4
+        versionName = "1.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -98,6 +98,11 @@ dependencies {
     implementation("com.google.dagger:hilt-android:2.48")
     ksp("com.google.dagger:hilt-android-compiler:2.48")
     implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
+    implementation("androidx.hilt:hilt-work:1.1.0")
+    ksp("androidx.hilt:hilt-compiler:1.1.0")
+
+    // WorkManager (Background Sync)
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
 
     // Gson (for JSON parsing shards)
     implementation("com.google.code.gson:gson:2.10.1")

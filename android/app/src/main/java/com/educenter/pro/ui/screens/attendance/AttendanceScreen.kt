@@ -20,6 +20,8 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -180,6 +182,9 @@ fun AttendanceScreen(
                                     entry = entry,
                                     onStatusChange = { status ->
                                         viewModel.setStudentStatus(student.id, status)
+                                    },
+                                    onNoteChange = { note ->
+                                        viewModel.setStudentNote(student.id, note)
                                     }
                                 )
                             }
@@ -232,6 +237,8 @@ private fun ScheduleView(
     ) {
         // Date selector card
         item {
+            var showDatePicker by remember { mutableStateOf(false) }
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -242,17 +249,116 @@ private fun ScheduleView(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.DateRange, contentDescription = null, tint = PrimaryBlue)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Chọn ngày điểm danh", fontWeight = FontWeight.SemiBold, color = PrimaryBlue)
+                        Text("Chọn ngày điểm danh", fontWeight = FontWeight.SemiBold, color = PrimaryBlue, fontSize = 15.sp)
                     }
                     Spacer(modifier = Modifier.height(12.dp))
-                    OutlinedTextField(
-                        value = selectedDate,
-                        onValueChange = onDateChange,
-                        label = { Text("Ngày (YYYY-MM-DD)") },
+
+                    // Day navigation row
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        singleLine = true
-                    )
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Previous day button
+                        IconButton(onClick = {
+                            try {
+                                val date = java.time.LocalDate.parse(selectedDate)
+                                onDateChange(date.minusDays(1).toString())
+                            } catch (_: Exception) {}
+                        }) {
+                            Icon(
+                                Icons.Default.KeyboardArrowLeft,
+                                contentDescription = "Ngày trước",
+                                tint = PrimaryBlue,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+
+                        // Date display - tap to open picker
+                        Card(
+                            modifier = Modifier.weight(1f).clickable { showDatePicker = true },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    formatDateVN(selectedDate),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 17.sp,
+                                    color = Color(0xFF1E293B)
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    selectedDate,
+                                    fontSize = 13.sp,
+                                    color = Color(0xFF64748B)
+                                )
+                            }
+                        }
+
+                        // Next day button
+                        IconButton(onClick = {
+                            try {
+                                val date = java.time.LocalDate.parse(selectedDate)
+                                onDateChange(date.plusDays(1).toString())
+                            } catch (_: Exception) {}
+                        }) {
+                            Icon(
+                                Icons.Default.KeyboardArrowRight,
+                                contentDescription = "Ngày sau",
+                                tint = PrimaryBlue,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                    }
+
+                    // Today button
+                    val isToday = selectedDate == java.time.LocalDate.now().toString()
+                    if (!isToday) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        TextButton(
+                            onClick = { onDateChange(java.time.LocalDate.now().toString()) },
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        ) {
+                            Text("📅 Về hôm nay", color = PrimaryBlue, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                        }
+                    }
+                }
+            }
+
+            // DatePicker Dialog
+            if (showDatePicker) {
+                val datePickerState = rememberDatePickerState(
+                    initialSelectedDateMillis = try {
+                        java.time.LocalDate.parse(selectedDate)
+                            .atStartOfDay(java.time.ZoneId.systemDefault())
+                            .toInstant().toEpochMilli()
+                    } catch (_: Exception) {
+                        System.currentTimeMillis()
+                    }
+                )
+
+                DatePickerDialog(
+                    onDismissRequest = { showDatePicker = false },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            datePickerState.selectedDateMillis?.let { millis ->
+                                val instant = java.time.Instant.ofEpochMilli(millis)
+                                val date = instant.atZone(java.time.ZoneId.systemDefault()).toLocalDate()
+                                onDateChange(date.toString())
+                            }
+                            showDatePicker = false
+                        }) { Text("Chọn", fontWeight = FontWeight.Bold) }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDatePicker = false }) { Text("Hủy") }
+                    }
+                ) {
+                    DatePicker(state = datePickerState)
                 }
             }
         }
@@ -514,7 +620,8 @@ private fun StudentAttendanceCard(
     studentName: String,
     monthlyCount: Int,
     entry: AttendanceEntry,
-    onStatusChange: (String) -> Unit
+    onStatusChange: (String) -> Unit,
+    onNoteChange: (String) -> Unit = {}
 ) {
     val borderColor by animateColorAsState(
         targetValue = when (entry.status) {
@@ -647,6 +754,24 @@ private fun StudentAttendanceCard(
                     activeBgColor = RedAbsentLight,
                     onClick = { onStatusChange("UNEXCUSED_ABSENT") },
                     modifier = Modifier.weight(1f)
+                )
+            }
+
+            // Note input - shows when absent or late
+            if (entry.status in listOf("ABSENT", "UNEXCUSED_ABSENT", "LATE")) {
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = entry.note,
+                    onValueChange = onNoteChange,
+                    placeholder = { Text("Ghi chú lý do...", fontSize = 13.sp) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp),
+                    singleLine = true,
+                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = PrimaryBlue,
+                        unfocusedBorderColor = Color(0xFFE2E8F0)
+                    )
                 )
             }
         }

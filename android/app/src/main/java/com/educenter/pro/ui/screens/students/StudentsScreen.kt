@@ -442,7 +442,21 @@ fun StudentCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(student.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = Color(0xFF1E293B))
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(student.phone, style = MaterialTheme.typography.bodyMedium, color = Color(0xFF475569))
+                    if (student.phone.isNotBlank()) {
+                        val context = androidx.compose.ui.platform.LocalContext.current
+                        Text(
+                            "📞 ${student.phone}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color(0xFF3B82F6),
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.clickable {
+                                val intent = android.content.Intent(android.content.Intent.ACTION_DIAL).apply {
+                                    data = android.net.Uri.parse("tel:${student.phone}")
+                                }
+                                context.startActivity(intent)
+                            }
+                        )
+                    }
                     if (student.parentName.isNotBlank()) {
                         Text("PH: ${student.parentName}", style = MaterialTheme.typography.bodySmall, color = Color(0xFF64748B))
                     }
@@ -530,51 +544,90 @@ fun StudentDetailDialog(
 ) {
     val currencyFormatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
     var selectedTab by remember { mutableStateOf(0) }
-    
+    val context = androidx.compose.ui.platform.LocalContext.current
     val studentClasses = classes.filter { it.studentIds.contains(student.id) }
-    
+
     AlertDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier.fillMaxHeight(0.9f).fillMaxWidth(0.95f),
-        title = { Text("Chi tiết Học viên") },
+        title = { Text("Chi tiết Học viên", fontWeight = FontWeight.Bold) },
         text = {
             Column(modifier = Modifier.fillMaxSize()) {
-                Text(student.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Text("SĐT: ${student.phone} | PH: ${student.parentName}")
-                if (student.email.isNotBlank()) Text("Email: ${student.email}")
-                if (student.address.isNotBlank()) Text("Địa chỉ: ${student.address}")
-                Text("Số dư: ${currencyFormatter.format(student.balance)}", fontWeight = FontWeight.Bold, color = if(student.balance < 0) Color.Red else Color(0xFF10B981))
-                
-                if (studentClasses.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Lớp đang học:", fontWeight = FontWeight.Bold)
-                    studentClasses.forEach { cls ->
-                        Text("- ${cls.name} (${cls.subject})")
+                Text(student.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Quick action: Call
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (student.phone.isNotBlank()) {
+                        androidx.compose.material3.AssistChip(
+                            onClick = {
+                                val intent = android.content.Intent(android.content.Intent.ACTION_DIAL).apply {
+                                    data = android.net.Uri.parse("tel:${student.phone}")
+                                }
+                                context.startActivity(intent)
+                            },
+                            label = { Text("📞 ${student.phone}", fontSize = 14.sp) },
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp)
+                        )
+                    }
+                    if (student.parentName.isNotBlank()) {
+                        androidx.compose.material3.AssistChip(
+                            onClick = {},
+                            label = { Text("👨‍👩‍👧 ${student.parentName}", fontSize = 14.sp) },
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp)
+                        )
                     }
                 }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                TabRow(selectedTabIndex = selectedTab) {
-                    Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("Nộp tiền") })
-                    Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("Điểm danh") })
-                }
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
+                // Balance card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = if (student.balance < 0) Color(0xFFFEF2F2) else Color(0xFFF0FDF4))
+                ) {
+                    Row(modifier = Modifier.padding(12.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text("Số dư tài khoản", fontSize = 14.sp, color = Color(0xFF475569))
+                        Text(currencyFormatter.format(student.balance), fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = if (student.balance < 0) Color(0xFFEF4444) else Color(0xFF10B981))
+                    }
+                }
+
+                if (studentClasses.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text("Lớp: ${studentClasses.joinToString { it.name }}", fontSize = 14.sp, color = Color(0xFF475569))
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                TabRow(selectedTabIndex = selectedTab) {
+                    Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("💰 Tài chính", fontSize = 14.sp) })
+                    Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("📋 Điểm danh", fontSize = 14.sp) })
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
                 if (selectedTab == 0) {
                     if (transactions.isEmpty()) {
-                        Text("Chưa có giao dịch nào.", modifier = Modifier.padding(16.dp))
+                        Text("Chưa có giao dịch nào.", modifier = Modifier.padding(16.dp), color = Color(0xFF64748B))
                     } else {
+                        val totalPaid = transactions.filter { it.amount > 0 }.sumOf { it.amount }
+                        Card(modifier = Modifier.fillMaxWidth(), shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F7FF))) {
+                            Row(modifier = Modifier.padding(12.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Column { Text("Tổng đã nộp", fontSize = 13.sp, color = Color(0xFF475569)); Text(currencyFormatter.format(totalPaid), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF10B981)) }
+                                Column(horizontalAlignment = Alignment.End) { Text("Giao dịch", fontSize = 13.sp, color = Color(0xFF475569)); Text("${transactions.size}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF3B82F6)) }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
                         LazyColumn {
                             items(transactions.sortedByDescending { it.date }) { tx ->
-                                Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                                    Column(modifier = Modifier.padding(8.dp)) {
-                                        Text("${tx.date} - ${tx.description}", fontWeight = FontWeight.Bold)
-                                        Text("Số tiền: ${currencyFormatter.format(tx.amount)}", color = if(tx.amount > 0) Color(0xFF10B981) else Color.Red)
-                                        if (!tx.paymentMethod.isNullOrEmpty()) {
-                                            Text("Hình thức: ${if(tx.paymentMethod == "cash") "Tiền mặt" else "Chuyển khoản"}")
+                                Card(modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp), shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(1.dp)) {
+                                    Row(modifier = Modifier.padding(10.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(tx.description, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
+                                            Text(tx.date, fontSize = 13.sp, color = Color(0xFF64748B))
                                         }
+                                        Text(currencyFormatter.format(tx.amount), color = if (tx.amount > 0) Color(0xFF10B981) else Color(0xFFEF4444), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                     }
                                 }
                             }
@@ -582,37 +635,42 @@ fun StudentDetailDialog(
                     }
                 } else {
                     if (attendanceRecords.isEmpty()) {
-                        Text("Chưa có lịch sử điểm danh.", modifier = Modifier.padding(16.dp))
+                        Text("Chưa có lịch sử điểm danh.", modifier = Modifier.padding(16.dp), color = Color(0xFF64748B))
                     } else {
+                        val presentCount = attendanceRecords.count { it.status == "PRESENT" }
+                        val lateCount = attendanceRecords.count { it.status == "LATE" }
+                        val absentCount = attendanceRecords.count { it.status == "ABSENT" }
+                        val unexcusedCount = attendanceRecords.count { it.status == "UNEXCUSED_ABSENT" }
+
+                        Card(modifier = Modifier.fillMaxWidth(), shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F7FF))) {
+                            Row(modifier = Modifier.padding(12.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                                DetailStatItem("Có mặt", presentCount, Color(0xFF10B981))
+                                DetailStatItem("Trễ", lateCount, Color(0xFFF59E0B))
+                                DetailStatItem("Có phép", absentCount, Color(0xFF0EA5E9))
+                                DetailStatItem("K.phép", unexcusedCount, Color(0xFFEF4444))
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        val grouped = attendanceRecords.sortedByDescending { it.date }.groupBy { it.date.take(7) }
                         LazyColumn {
-                            items(attendanceRecords.sortedByDescending { it.date }) { att ->
-                                val clsName = classes.find { it.id == att.classId }?.name ?: "Lớp đã xóa"
-                                Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                                    Row(modifier = Modifier.padding(8.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                        Column {
-                                            Text(att.date, fontWeight = FontWeight.Bold)
-                                            Text(clsName, style = MaterialTheme.typography.bodySmall)
+                            grouped.forEach { (month, records) ->
+                                item {
+                                    Text("📅 Tháng ${month.takeLast(2)}/${month.take(4)} (${records.size} buổi)", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF3B82F6), modifier = Modifier.padding(vertical = 6.dp))
+                                }
+                                items(records) { att ->
+                                    val clsName = classes.find { it.id == att.classId }?.name ?: ""
+                                    val statusText = when (att.status) { "PRESENT" -> "✅"; "LATE" -> "⏰"; "ABSENT" -> "📝"; "UNEXCUSED_ABSENT" -> "❌"; else -> "?" }
+                                    val statusLabel = when (att.status) { "PRESENT" -> "Có mặt"; "LATE" -> "Trễ"; "ABSENT" -> "Có phép"; "UNEXCUSED_ABSENT" -> "K.phép"; else -> att.status }
+                                    val statusColor = when (att.status) { "PRESENT" -> Color(0xFF10B981); "LATE" -> Color(0xFFF59E0B); "ABSENT" -> Color(0xFF0EA5E9); "UNEXCUSED_ABSENT" -> Color(0xFFEF4444); else -> Color(0xFF64748B) }
+                                    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 4.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(att.date, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color(0xFF1E293B))
+                                            if (clsName.isNotBlank()) Text(clsName, fontSize = 13.sp, color = Color(0xFF64748B))
                                         }
-                                        val statusText = when (att.status) {
-                                            "PRESENT" -> "Có mặt"
-                                            "LATE" -> "Trễ"
-                                            "ABSENT" -> "Có phép"
-                                            "UNEXCUSED_ABSENT" -> "Không phép"
-                                            else -> att.status
-                                        }
-                                        val statusColor = when (att.status) {
-                                            "PRESENT" -> Color(0xFF10B981)
-                                            "LATE" -> Color(0xFFF59E0B)
-                                            "ABSENT" -> Color(0xFF0EA5E9)
-                                            "UNEXCUSED_ABSENT" -> Color(0xFFEF4444)
-                                            else -> Color.Gray
-                                        }
-                                        Text(
-                                            text = statusText,
-                                            color = statusColor,
-                                            fontWeight = FontWeight.Bold
-                                        )
+                                        Text("$statusText $statusLabel", color = statusColor, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                     }
+                                    HorizontalDivider(color = Color(0xFFF1F5F9))
                                 }
                             }
                         }
@@ -620,8 +678,15 @@ fun StudentDetailDialog(
                 }
             }
         },
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Đóng") }
-        }
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Đóng", fontWeight = FontWeight.Bold) } }
     )
 }
+
+@Composable
+private fun DetailStatItem(label: String, count: Int, color: Color) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("$count", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = color)
+        Text(label, fontSize = 13.sp, color = Color(0xFF475569), fontWeight = FontWeight.Medium)
+    }
+}
+

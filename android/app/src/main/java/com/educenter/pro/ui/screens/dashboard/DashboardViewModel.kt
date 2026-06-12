@@ -123,6 +123,9 @@ class DashboardViewModel @Inject constructor(
                         topLate = topLate,
                         todayClasses = todayClasses,
                         announcements = recentAnnouncements,
+                        allStudents = appData.students,
+                        allTeachers = appData.teachers,
+                        allClasses = appData.classes,
                         isLoading = false
                     )
                 }
@@ -142,6 +145,9 @@ data class DashboardUiState(
     val topLate: List<StudentAbsent> = emptyList(),
     val todayClasses: List<ClassModel> = emptyList(),
     val announcements: List<com.educenter.pro.data.model.Announcement> = emptyList(),
+    val allStudents: List<Student> = emptyList(),
+    val allTeachers: List<com.educenter.pro.data.model.Teacher> = emptyList(),
+    val allClasses: List<ClassModel> = emptyList(),
     val isLoading: Boolean = true,
     val isRefreshing: Boolean = false
 )

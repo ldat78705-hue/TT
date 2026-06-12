@@ -20,6 +20,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -79,6 +82,98 @@ fun DashboardScreen(
                 fontWeight = FontWeight.ExtraBold,
                 color = Color(0xFF1E293B)
             )
+        }
+
+        // === GLOBAL SEARCH ===
+        item {
+            var searchQuery by remember { mutableStateOf("") }
+            val appData = uiState
+
+            Column {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("🔍 Tìm học viên, lớp, giáo viên...") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = BlueAccent,
+                        unfocusedBorderColor = Color(0xFFE2E8F0),
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White
+                    ),
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Default.Warning, contentDescription = "Xóa", tint = Color(0xFF64748B), modifier = Modifier.size(18.dp))
+                            }
+                        }
+                    }
+                )
+
+                if (searchQuery.length >= 2) {
+                    val query = searchQuery.lowercase()
+                    val matchedStudents = uiState.allStudents
+                        .filter { it.name.lowercase().contains(query) || it.phone.contains(query) }
+                        .take(5)
+                    val matchedTeachers = uiState.allTeachers
+                        .filter { it.name.lowercase().contains(query) || it.phone.contains(query) }
+                        .take(3)
+                    val matchedClasses = uiState.allClasses
+                        .filter { it.name.lowercase().contains(query) || it.subject.lowercase().contains(query) }
+                        .take(3)
+                    val hasResults = matchedStudents.isNotEmpty() || matchedTeachers.isNotEmpty() || matchedClasses.isNotEmpty()
+
+                    if (hasResults) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(2.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(8.dp)) {
+                                if (matchedStudents.isNotEmpty()) {
+                                    Text("👨‍🎓 Học viên", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF3B82F6), modifier = Modifier.padding(bottom = 4.dp))
+                                    matchedStudents.forEach { student ->
+                                        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Default.People, contentDescription = null, tint = BlueAccent, modifier = Modifier.size(18.dp))
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(student.name, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B))
+                                                if (student.phone.isNotBlank()) Text(student.phone, fontSize = 13.sp, color = Color(0xFF64748B))
+                                            }
+                                        }
+                                    }
+                                }
+                                if (matchedTeachers.isNotEmpty()) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text("👨‍🏫 Giáo viên", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF10B981), modifier = Modifier.padding(bottom = 4.dp))
+                                    matchedTeachers.forEach { teacher ->
+                                        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Default.Person, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(18.dp))
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(teacher.name, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B))
+                                        }
+                                    }
+                                }
+                                if (matchedClasses.isNotEmpty()) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text("🏫 Lớp học", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFFF59E0B), modifier = Modifier.padding(bottom = 4.dp))
+                                    matchedClasses.forEach { cls ->
+                                        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Default.Class, contentDescription = null, tint = Color(0xFFF59E0B), modifier = Modifier.size(18.dp))
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text("${cls.name} - ${cls.subject}", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // === QUICK ACCESS GRID ===

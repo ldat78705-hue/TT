@@ -1,6 +1,7 @@
 package com.educenter.pro.ui.screens.teachers
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -77,7 +78,19 @@ fun TeachersScreen(
                             Spacer(modifier = Modifier.height(2.dp))
                             Text("Môn: ${teacher.subject}", fontSize = 13.sp, color = Color(0xFF64748B))
                             if (teacher.phone.isNotBlank()) {
-                                Text("SĐT: ${teacher.phone}", fontSize = 14.sp, color = Color(0xFF475569))
+                                val context = androidx.compose.ui.platform.LocalContext.current
+                                Text(
+                                    "📞 ${teacher.phone}",
+                                    fontSize = 14.sp,
+                                    color = Color(0xFF3B82F6),
+                                    fontWeight = FontWeight.Medium,
+                                    modifier = Modifier.clickable {
+                                        val intent = android.content.Intent(android.content.Intent.ACTION_DIAL).apply {
+                                            data = android.net.Uri.parse("tel:${teacher.phone}")
+                                        }
+                                        context.startActivity(intent)
+                                    }
+                                )
                             }
                             if (teacher.qualification.isNotBlank()) {
                                 Text("Trình độ: ${teacher.qualification}", fontSize = 14.sp, color = Color(0xFF475569))
