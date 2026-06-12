@@ -96,6 +96,46 @@ fun ProfileScreen(
                 onClick = onNavigateToTransactions
             )
 
+            // Dark Mode Toggle
+            val isDark by com.educenter.pro.ui.theme.ThemeManager.isDarkMode.collectAsState()
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = if (isDark) 0.1f else 1f)),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier.size(40.dp).clip(CircleShape).background(Color(0xFF8B5CF6).copy(alpha = 0.1f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            if (isDark) Icons.Default.DarkMode else Icons.Default.LightMode,
+                            contentDescription = null,
+                            tint = Color(0xFF8B5CF6),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Text(
+                        if (isDark) "Chế độ tối" else "Chế độ sáng",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp,
+                        color = Color(0xFF1E293B),
+                        modifier = Modifier.weight(1f)
+                    )
+                    Switch(
+                        checked = isDark,
+                        onCheckedChange = {
+                            com.educenter.pro.ui.theme.ThemeManager.toggleDarkMode(context)
+                        }
+                    )
+                }
+            }
+
             // App version
             Text(
                 "Phiên bản: v$versionName",

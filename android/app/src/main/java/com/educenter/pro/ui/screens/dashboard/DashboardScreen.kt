@@ -213,6 +213,125 @@ fun DashboardScreen(
             }
         }
 
+        // === REVENUE CHART ===
+        if (uiState.revenueChartData.isNotEmpty()) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("📊 Doanh thu 6 tháng gần nhất", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B))
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        val maxRevenue = uiState.revenueChartData.maxOfOrNull { it.second } ?: 1.0
+
+                        // Bar chart
+                        Row(
+                            modifier = Modifier.fillMaxWidth().height(120.dp),
+                            horizontalArrangement = Arrangement.SpaceEvenly,
+                            verticalAlignment = Alignment.Bottom
+                        ) {
+                            uiState.revenueChartData.forEach { (label, amount) ->
+                                val fraction = if (maxRevenue > 0) (amount / maxRevenue).toFloat() else 0f
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    // Bar
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth(0.6f)
+                                            .height((fraction * 90).dp.coerceAtLeast(4.dp))
+                                            .clip(RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
+                                            .background(
+                                                Brush.verticalGradient(
+                                                    listOf(Color(0xFF3B82F6), Color(0xFF2563EB))
+                                                )
+                                            )
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(label, fontSize = 12.sp, color = Color(0xFF64748B), fontWeight = FontWeight.Medium)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Attendance rate
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    // Attendance rate card
+                    Card(
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(2.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text("✅ Chuyên cần", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF475569))
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            // Circle progress
+                            val rate = uiState.attendanceRate.toFloat()
+                            Box(contentAlignment = Alignment.Center, modifier = Modifier.size(80.dp)) {
+                                androidx.compose.foundation.Canvas(modifier = Modifier.size(80.dp)) {
+                                    val strokeWidth = 10.dp.toPx()
+                                    drawArc(
+                                        color = Color(0xFFE2E8F0),
+                                        startAngle = -90f,
+                                        sweepAngle = 360f,
+                                        useCenter = false,
+                                        style = androidx.compose.ui.graphics.drawscope.Stroke(strokeWidth)
+                                    )
+                                    drawArc(
+                                        color = if (rate >= 80) Color(0xFF10B981) else if (rate >= 60) Color(0xFFF59E0B) else Color(0xFFEF4444),
+                                        startAngle = -90f,
+                                        sweepAngle = rate * 3.6f,
+                                        useCenter = false,
+                                        style = androidx.compose.ui.graphics.drawscope.Stroke(strokeWidth, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                                    )
+                                }
+                                Text(
+                                    "${String.format("%.0f", uiState.attendanceRate)}%",
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 18.sp,
+                                    color = Color(0xFF1E293B)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text("30 ngày qua", fontSize = 12.sp, color = Color(0xFF94A3B8))
+                        }
+                    }
+
+                    // Summary card
+                    Card(
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(2.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text("📈 Tổng quan", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF475569))
+                            Spacer(modifier = Modifier.height(12.dp))
+                            val fmt = java.text.NumberFormat.getCurrencyInstance(java.util.Locale("vi", "VN"))
+                            Text("Doanh thu tháng", fontSize = 12.sp, color = Color(0xFF94A3B8))
+                            Text(fmt.format(uiState.monthlyRevenue), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF10B981))
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Nợ phải thu", fontSize = 12.sp, color = Color(0xFF94A3B8))
+                            Text(fmt.format(uiState.totalUncollected), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFFEF4444))
+                        }
+                    }
+                }
+            }
+        }
+
         // === TODAY'S CLASSES (moved to top) ===
         item {
             SectionHeader(

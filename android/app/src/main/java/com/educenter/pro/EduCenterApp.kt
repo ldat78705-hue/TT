@@ -21,6 +21,7 @@ class EduCenterApp : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        com.educenter.pro.ui.theme.ThemeManager.init(this)
         scheduleSyncWork()
     }
 

@@ -112,6 +112,25 @@ class DashboardViewModel @Inject constructor(
                         .sortedByDescending { it.createdAt }
                         .take(5)
 
+                    // Monthly revenue for last 6 months (for chart)
+                    val monthlyRevenueChart = mutableListOf<Pair<String, Double>>()
+                    val chartCal = Calendar.getInstance()
+                    for (i in 5 downTo 0) {
+                        val cal2 = Calendar.getInstance()
+                        cal2.add(Calendar.MONTH, -i)
+                        val monthKey = SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(cal2.time)
+                        val monthLabel = SimpleDateFormat("MM", Locale.getDefault()).format(cal2.time)
+                        val rev = appData.transactions
+                            .filter { it.date.startsWith(monthKey) && it.type == "PAYMENT" }
+                            .sumOf { it.amount }
+                        monthlyRevenueChart.add("T$monthLabel" to rev)
+                    }
+
+                    // Attendance rate for chart
+                    val totalAttRecords = appData.attendance.filter { it.date >= thirtyDaysAgo }.size
+                    val presentRecords = appData.attendance.filter { it.date >= thirtyDaysAgo && (it.status == "PRESENT" || it.status == "LATE") }.size
+                    val attendanceRate = if (totalAttRecords > 0) (presentRecords.toDouble() / totalAttRecords * 100) else 0.0
+
                     _uiState.value = DashboardUiState(
                         totalStudents = activeStudents,
                         totalClasses = appData.classes.size,
@@ -126,6 +145,8 @@ class DashboardViewModel @Inject constructor(
                         allStudents = appData.students,
                         allTeachers = appData.teachers,
                         allClasses = appData.classes,
+                        revenueChartData = monthlyRevenueChart,
+                        attendanceRate = attendanceRate,
                         isLoading = false
                     )
                 }
@@ -148,6 +169,8 @@ data class DashboardUiState(
     val allStudents: List<Student> = emptyList(),
     val allTeachers: List<com.educenter.pro.data.model.Teacher> = emptyList(),
     val allClasses: List<ClassModel> = emptyList(),
+    val revenueChartData: List<Pair<String, Double>> = emptyList(),
+    val attendanceRate: Double = 0.0,
     val isLoading: Boolean = true,
     val isRefreshing: Boolean = false
 )

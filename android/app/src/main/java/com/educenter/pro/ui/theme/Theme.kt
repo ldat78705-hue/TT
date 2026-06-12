@@ -5,6 +5,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 
 private val DarkColorScheme = darkColorScheme(
     primary = md_theme_dark_primary,
@@ -63,7 +65,11 @@ fun EduCenterProTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) {
+    // Use ThemeManager state if available, otherwise system default
+    val isDarkFromManager by ThemeManager.isDarkMode.collectAsState()
+    val useDark = isDarkFromManager
+
+    val colorScheme = if (useDark) {
         DarkColorScheme
     } else {
         LightColorScheme
