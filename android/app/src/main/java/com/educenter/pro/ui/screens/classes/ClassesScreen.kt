@@ -1,4 +1,4 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+﻿@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.educenter.pro.ui.screens.classes
 
 import androidx.activity.compose.BackHandler
@@ -81,7 +81,7 @@ fun ClassesScreen(
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
@@ -90,7 +90,7 @@ fun ClassesScreen(
                                     Spacer(modifier = Modifier.height(8.dp))
                                     val dayMap = mapOf("Monday" to "Thứ 2", "Tuesday" to "Thứ 3", "Wednesday" to "Thứ 4", "Thursday" to "Thứ 5", "Friday" to "Thứ 6", "Saturday" to "Thứ 7", "Sunday" to "Chủ nhật")
                                     selectedClass!!.schedule.forEach { sch ->
-                                        Text("${dayMap[sch.dayOfWeek] ?: sch.dayOfWeek}: ${sch.startTime} - ${sch.endTime}", fontSize = 14.sp, color = Color(0xFF475569))
+                                        Text("${dayMap[sch.dayOfWeek] ?: sch.dayOfWeek}: ${sch.startTime} - ${sch.endTime}", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                 }
                                 if (selectedClass!!.fee.amount > 0) {
@@ -140,7 +140,7 @@ fun ClassesScreen(
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(student.name, fontWeight = FontWeight.Bold, color = Color(0xFF3B82F6))
                                     Spacer(modifier = Modifier.height(2.dp))
-                                    Text(student.phone, style = MaterialTheme.typography.bodySmall, color = Color(0xFF475569))
+                                    Text(student.phone, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                                 IconButton(onClick = { studentToRemove = student }) {
                                     Icon(Icons.Default.RemoveCircle, contentDescription = "Xóa khỏi lớp", tint = Color(0xFFEF4444))
@@ -278,7 +278,7 @@ private fun ClassCard(classModel: ClassModel, onClick: () -> Unit) {
                 val schedText = classModel.schedule.joinToString(" | ") { 
                     "${dayMap[it.dayOfWeek] ?: it.dayOfWeek}: ${it.startTime}-${it.endTime}" 
                 }
-                Text(schedText, style = MaterialTheme.typography.bodySmall, color = Color(0xFF475569), fontSize = 13.sp)
+                Text(schedText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
             }
             // Show fee
             if (classModel.fee.amount > 0) {
@@ -372,7 +372,7 @@ fun ClassFormDialog(
                 itemsIndexed(scheduleEntries) { index, entry ->
                     Card(
                         shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
                         elevation = CardDefaults.cardElevation(0.dp)
                     ) {
                         Column(modifier = Modifier.padding(10.dp)) {

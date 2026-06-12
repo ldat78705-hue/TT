@@ -1,4 +1,4 @@
-package com.educenter.pro.ui.screens.dashboard
+﻿package com.educenter.pro.ui.screens.dashboard
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -100,8 +100,8 @@ fun DashboardScreen(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = BlueAccent,
                         unfocusedBorderColor = Color(0xFFE2E8F0),
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White
+                        focusedcontainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedcontainerColor = MaterialTheme.colorScheme.surface
                     ),
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
@@ -142,7 +142,7 @@ fun DashboardScreen(
                                             Spacer(modifier = Modifier.width(8.dp))
                                             Column(modifier = Modifier.weight(1f)) {
                                                 Text(student.name, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onBackground)
-                                                if (student.phone.isNotBlank()) Text(student.phone, fontSize = 13.sp, color = Color(0xFF64748B))
+                                                if (student.phone.isNotBlank()) Text(student.phone, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                             }
                                         }
                                     }
@@ -253,7 +253,7 @@ fun DashboardScreen(
                                             )
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
-                                    Text(label, fontSize = 12.sp, color = Color(0xFF64748B), fontWeight = FontWeight.Medium)
+                                    Text(label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
                                 }
                             }
                         }
@@ -275,7 +275,7 @@ fun DashboardScreen(
                             modifier = Modifier.padding(16.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text("✅ Chuyên cần", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF475569))
+                            Text("✅ Chuyên cần", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(modifier = Modifier.height(12.dp))
 
                             // Circle progress
@@ -318,7 +318,7 @@ fun DashboardScreen(
                         elevation = CardDefaults.cardElevation(2.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text("📈 Tổng quan", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF475569))
+                            Text("📈 Tổng quan", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(modifier = Modifier.height(12.dp))
                             val fmt = java.text.NumberFormat.getCurrencyInstance(java.util.Locale("vi", "VN"))
                             Text("Doanh thu tháng", fontSize = 12.sp, color = Color(0xFF94A3B8))
@@ -352,7 +352,7 @@ fun DashboardScreen(
                         modifier = Modifier.fillMaxWidth().padding(24.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("Không có lịch học nào hôm nay 🎉", color = Color(0xFF64748B), fontSize = 15.sp)
+                        Text("Không có lịch học nào hôm nay 🎉", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 15.sp)
                     }
                 }
             }
@@ -400,7 +400,7 @@ fun DashboardScreen(
                             Text(
                                 "${timeStr}${classModel.subject} • ${classModel.studentIds.size} HV",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = Color(0xFF64748B)
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -497,7 +497,7 @@ fun DashboardScreen(
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(item.student.name, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onBackground)
-                                    Text(item.student.phone, fontSize = 13.sp, color = Color(0xFF64748B))
+                                    Text(item.student.phone, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                                 Text(
                                     "-${currencyFormatter.format(item.debt)}",
@@ -507,7 +507,7 @@ fun DashboardScreen(
                                 )
                             }
                             if (index < uiState.topDebtors.lastIndex) {
-                                HorizontalDivider(color = Color(0xFFF1F5F9))
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                             }
                         }
                     }
@@ -571,7 +571,7 @@ fun DashboardScreen(
                                 }
                             }
                             if (index < uiState.topAbsent.lastIndex) {
-                                HorizontalDivider(color = Color(0xFFF1F5F9))
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                             }
                         }
                     }
@@ -618,7 +618,7 @@ fun DashboardScreen(
                                 }
                             }
                             if (index < uiState.topLate.lastIndex) {
-                                HorizontalDivider(color = Color(0xFFF1F5F9))
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                             }
                         }
                     }
@@ -732,7 +732,7 @@ private fun QuickAccessButton(
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         onClick = onClick
     ) {
@@ -747,7 +747,7 @@ private fun QuickAccessButton(
                 Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
             }
             Spacer(modifier = Modifier.height(6.dp))
-            Text(label, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF334155), maxLines = 1)
+            Text(label, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
         }
     }
 }

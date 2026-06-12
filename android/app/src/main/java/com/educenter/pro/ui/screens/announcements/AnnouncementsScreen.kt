@@ -1,4 +1,4 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+﻿@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.educenter.pro.ui.screens.announcements
 
 import androidx.compose.foundation.layout.*
@@ -49,7 +49,7 @@ fun AnnouncementsScreen(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(Icons.Default.Campaign, contentDescription = null, modifier = Modifier.size(64.dp), tint = Color(0xFFCBD5E1))
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text("Chưa có thông báo nào", fontWeight = FontWeight.Bold, color = Color(0xFF64748B))
+                    Text("Chưa có thông báo nào", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     if (canManage) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text("Nhấn + để tạo thông báo đầu tiên", fontSize = 13.sp, color = Color(0xFFCBD5E1))
@@ -66,7 +66,7 @@ fun AnnouncementsScreen(
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
@@ -79,19 +79,19 @@ fun AnnouncementsScreen(
                                 }
                             }
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text(ann.content, color = Color(0xFF475569), lineHeight = 20.sp)
+                            Text(ann.content, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 20.sp)
                             Spacer(modifier = Modifier.height(12.dp))
                             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                                 Text(
                                     "Bởi: ${ann.createdBy}",
                                     fontSize = 13.sp,
-                                    color = Color(0xFF64748B),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontWeight = FontWeight.Medium
                                 )
                                 Text(
                                     ann.createdAt.take(10),
                                     fontSize = 13.sp,
-                                    color = Color(0xFF64748B),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontWeight = FontWeight.Medium
                                 )
                             }

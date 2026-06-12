@@ -1,4 +1,4 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+﻿@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.educenter.pro.ui.screens.teachers
 
 import androidx.compose.foundation.background
@@ -58,7 +58,7 @@ fun TeachersScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Row(
@@ -77,7 +77,7 @@ fun TeachersScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(teacher.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onBackground)
                             Spacer(modifier = Modifier.height(2.dp))
-                            Text("Môn: ${teacher.subject}", fontSize = 13.sp, color = Color(0xFF64748B))
+                            Text("Môn: ${teacher.subject}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             if (teacher.phone.isNotBlank()) {
                                 val context = androidx.compose.ui.platform.LocalContext.current
                                 Text(
@@ -94,7 +94,7 @@ fun TeachersScreen(
                                 )
                             }
                             if (teacher.qualification.isNotBlank()) {
-                                Text("Trình độ: ${teacher.qualification}", fontSize = 14.sp, color = Color(0xFF475569))
+                                Text("Trình độ: ${teacher.qualification}", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             if (teacher.rate > 0) {
                                 val salaryLabel = if (teacher.salaryType == "MONTHLY") "Lương tháng" else "Lương/buổi"

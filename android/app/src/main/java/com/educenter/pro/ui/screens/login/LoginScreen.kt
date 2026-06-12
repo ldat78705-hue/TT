@@ -1,4 +1,4 @@
-package com.educenter.pro.ui.screens.login
+﻿package com.educenter.pro.ui.screens.login
 
 import android.os.Build
 import androidx.biometric.BiometricManager
@@ -95,7 +95,7 @@ fun LoginScreen(
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF0F172A))
+                    colors = listOf(Color(0xFF0F172A), MaterialTheme.colorScheme.onSurface, Color(0xFF0F172A))
                 )
             )
     ) {
@@ -164,7 +164,7 @@ fun LoginScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B).copy(alpha = 0.7f)),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)),
                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
             ) {
                 Column(
@@ -191,7 +191,7 @@ fun LoginScreen(
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = PrimaryGradientStart,
-                            unfocusedBorderColor = Color(0xFF334155),
+                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurface,
                             focusedTextColor = Color.White,
                             unfocusedTextColor = Color(0xFFCBD5E1),
                             cursorColor = PrimaryGradientStart,
@@ -234,7 +234,7 @@ fun LoginScreen(
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = PrimaryGradientStart,
-                            unfocusedBorderColor = Color(0xFF334155),
+                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurface,
                             focusedTextColor = Color.White,
                             unfocusedTextColor = Color(0xFFCBD5E1),
                             cursorColor = PrimaryGradientStart,
@@ -371,7 +371,7 @@ fun LoginScreen(
             Text(
                 "Phiên bản 1.4 • EduCenter Pro",
                 fontSize = 13.sp,
-                color = Color(0xFF64748B),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 24.dp)
             )
         }

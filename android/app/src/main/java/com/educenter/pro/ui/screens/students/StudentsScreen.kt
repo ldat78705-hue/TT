@@ -16,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -435,7 +436,7 @@ fun StudentCard(
     Card(
         modifier = Modifier.fillMaxWidth().clickable { onClick(student) },
         shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -459,7 +460,7 @@ fun StudentCard(
                         )
                     }
                     if (student.parentName.isNotBlank()) {
-                        Text("PH: ${student.parentName}", style = MaterialTheme.typography.bodySmall, color = Color(0xFF64748B))
+                        Text("PH: ${student.parentName}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     // Show classes
                     if (studentClasses.isNotEmpty()) {
@@ -467,7 +468,7 @@ fun StudentCard(
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             studentClasses.take(3).forEach { cls ->
                                 Surface(
-                                    color = Color(0xFF3B82F6).copy(alpha = 0.1f),
+                                    color = Color(0xFF3B82F6).copy(alpha = if (MaterialTheme.colorScheme.surface.luminance() < 0.5f) 0.25f else 0.1f),
                                     shape = androidx.compose.foundation.shape.RoundedCornerShape(6.dp)
                                 ) {
                                     Text(
@@ -481,7 +482,7 @@ fun StudentCard(
                                 }
                             }
                             if (studentClasses.size > 3) {
-                                Text("+${studentClasses.size - 3}", fontSize = 12.sp, color = Color(0xFF64748B))
+                                Text("+${studentClasses.size - 3}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }
@@ -586,17 +587,17 @@ fun StudentDetailDialog(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = if (student.balance < 0) Color(0xFFFEF2F2) else Color(0xFFF0FDF4))
+                    colors = CardDefaults.cardColors(containerColor = if (student.balance < 0) Color(0xFFEF4444).copy(alpha = 0.1f) else Color(0xFF10B981).copy(alpha = 0.1f))
                 ) {
                     Row(modifier = Modifier.padding(12.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text("Số dư tài khoản", fontSize = 14.sp, color = Color(0xFF475569))
+                        Text("Số dư tài khoản", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(currencyFormatter.format(student.balance), fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = if (student.balance < 0) Color(0xFFEF4444) else Color(0xFF10B981))
                     }
                 }
 
                 if (studentClasses.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(6.dp))
-                    Text("Lớp: ${studentClasses.joinToString { it.name }}", fontSize = 14.sp, color = Color(0xFF475569))
+                    Text("Lớp: ${studentClasses.joinToString { it.name }}", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -610,23 +611,23 @@ fun StudentDetailDialog(
 
                 if (selectedTab == 0) {
                     if (transactions.isEmpty()) {
-                        Text("Chưa có giao dịch nào.", modifier = Modifier.padding(16.dp), color = Color(0xFF64748B))
+                        Text("Chưa có giao dịch nào.", modifier = Modifier.padding(16.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     } else {
                         val totalPaid = transactions.filter { it.amount > 0 }.sumOf { it.amount }
-                        Card(modifier = Modifier.fillMaxWidth(), shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F7FF))) {
+                        Card(modifier = Modifier.fillMaxWidth(), shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
                             Row(modifier = Modifier.padding(12.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Column { Text("Tổng đã nộp", fontSize = 13.sp, color = Color(0xFF475569)); Text(currencyFormatter.format(totalPaid), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF10B981)) }
-                                Column(horizontalAlignment = Alignment.End) { Text("Giao dịch", fontSize = 13.sp, color = Color(0xFF475569)); Text("${transactions.size}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF3B82F6)) }
+                                Column { Text("Tổng đã nộp", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant); Text(currencyFormatter.format(totalPaid), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF10B981)) }
+                                Column(horizontalAlignment = Alignment.End) { Text("Giao dịch", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant); Text("${transactions.size}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF3B82F6)) }
                             }
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         LazyColumn {
                             items(transactions.sortedByDescending { it.date }) { tx ->
-                                Card(modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp), shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(1.dp)) {
+                                Card(modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp), shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(1.dp)) {
                                     Row(modifier = Modifier.padding(10.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(tx.description, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onBackground)
-                                            Text(tx.date, fontSize = 13.sp, color = Color(0xFF64748B))
+                                            Text(tx.date, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         }
                                         Text(currencyFormatter.format(tx.amount), color = if (tx.amount > 0) Color(0xFF10B981) else Color(0xFFEF4444), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                     }
@@ -636,14 +637,14 @@ fun StudentDetailDialog(
                     }
                 } else {
                     if (attendanceRecords.isEmpty()) {
-                        Text("Chưa có lịch sử điểm danh.", modifier = Modifier.padding(16.dp), color = Color(0xFF64748B))
+                        Text("Chưa có lịch sử điểm danh.", modifier = Modifier.padding(16.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     } else {
                         val presentCount = attendanceRecords.count { it.status == "PRESENT" }
                         val lateCount = attendanceRecords.count { it.status == "LATE" }
                         val absentCount = attendanceRecords.count { it.status == "ABSENT" }
                         val unexcusedCount = attendanceRecords.count { it.status == "UNEXCUSED_ABSENT" }
 
-                        Card(modifier = Modifier.fillMaxWidth(), shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F7FF))) {
+                        Card(modifier = Modifier.fillMaxWidth(), shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
                             Row(modifier = Modifier.padding(12.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                                 DetailStatItem("Có mặt", presentCount, Color(0xFF10B981))
                                 DetailStatItem("Trễ", lateCount, Color(0xFFF59E0B))
@@ -667,11 +668,11 @@ fun StudentDetailDialog(
                                     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 4.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(att.date, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onBackground)
-                                            if (clsName.isNotBlank()) Text(clsName, fontSize = 13.sp, color = Color(0xFF64748B))
+                                            if (clsName.isNotBlank()) Text(clsName, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         }
                                         Text("$statusText $statusLabel", color = statusColor, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                     }
-                                    HorizontalDivider(color = Color(0xFFF1F5F9))
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                                 }
                             }
                         }
@@ -687,7 +688,7 @@ fun StudentDetailDialog(
 private fun DetailStatItem(label: String, count: Int, color: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text("$count", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = color)
-        Text(label, fontSize = 13.sp, color = Color(0xFF475569), fontWeight = FontWeight.Medium)
+        Text(label, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
     }
 }
 

@@ -1,4 +1,4 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+﻿@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 package com.educenter.pro.ui.screens.attendance
 
 import android.content.Intent
@@ -243,7 +243,7 @@ private fun ScheduleView(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F7FF)),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -279,7 +279,7 @@ private fun ScheduleView(
                         Card(
                             modifier = Modifier.weight(1f).clickable { showDatePicker = true },
                             shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                         ) {
                             Column(
@@ -296,7 +296,7 @@ private fun ScheduleView(
                                 Text(
                                     selectedDate,
                                     fontSize = 13.sp,
-                                    color = Color(0xFF64748B)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
@@ -403,7 +403,7 @@ private fun ScheduleView(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("📋 Tất cả lớp học (${allClasses.size})", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF475569))
+                    Text("📋 Tất cả lớp học (${allClasses.size})", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Icon(
                         if (showAllClasses) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                         contentDescription = null,
@@ -440,7 +440,7 @@ private fun ScheduleClassCard(
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isAttended) Color(0xFFF0FDF4) else Color.White
+            containerColor = if (isAttended) Color(0xFF10B981).copy(alpha = 0.1f) else MaterialTheme.colorScheme.surface
         )
     ) {
         Column(
@@ -458,7 +458,8 @@ private fun ScheduleClassCard(
                     fontSize = 17.sp,
                     modifier = Modifier.weight(1f),
                     maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 if (isAttended) {
                     Spacer(modifier = Modifier.width(8.dp))
@@ -519,7 +520,7 @@ private fun QuickActionsCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F7FF)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
@@ -576,7 +577,7 @@ private fun AttendanceSummaryBar(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
@@ -610,7 +611,7 @@ private fun SummaryBadge(label: String, count: Int, color: Color) {
             )
         }
         Spacer(modifier = Modifier.height(2.dp))
-        Text(label, fontSize = 13.sp, color = Color(0xFF64748B))
+        Text(label, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -642,7 +643,7 @@ private fun StudentAttendanceCard(
             "LATE" -> YellowLateLight.copy(alpha = 0.3f)
             "ABSENT" -> BluePermLight.copy(alpha = 0.3f)
             "UNEXCUSED_ABSENT" -> RedAbsentLight.copy(alpha = 0.3f)
-            else -> Color.White
+            else -> MaterialTheme.colorScheme.surface
         },
         animationSpec = tween(300),
         label = "bgColor"

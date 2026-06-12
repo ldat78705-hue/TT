@@ -1,4 +1,4 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+﻿@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.educenter.pro.ui.screens.profile
 
 import androidx.compose.foundation.background
@@ -142,7 +142,7 @@ fun ProfileScreen(
                 "Phiên bản: v$versionName",
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 fontSize = 13.sp,
-                color = Color(0xFF64748B),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
 
