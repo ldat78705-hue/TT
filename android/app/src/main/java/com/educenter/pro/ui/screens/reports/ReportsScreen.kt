@@ -31,8 +31,41 @@ fun ReportsScreen(
     val fmt = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
     var expanded by remember { mutableStateOf(false) }
 
+    val context = androidx.compose.ui.platform.LocalContext.current
+
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Báo cáo & Phân tích") }) }
+        topBar = {
+            TopAppBar(
+                title = { Text("Báo cáo & Phân tích") },
+                actions = {
+                    IconButton(onClick = {
+                        val report = buildString {
+                            appendLine("📊 BÁO CÁO ${uiState.period.label.uppercase()}")
+                            appendLine("━━━━━━━━━━━━━━━")
+                            appendLine("💰 Doanh thu: ${fmt.format(uiState.totalRevenue)}")
+                            appendLine("📈 Lợi nhuận: ${fmt.format(uiState.profit)}")
+                            appendLine("💳 HP đã thu: ${fmt.format(uiState.tuitionCollected)}")
+                            appendLine("⚠️ Nợ phải thu: ${fmt.format(uiState.totalReceivables)}")
+                            appendLine("━━━━━━━━━━━━━━━")
+                            appendLine("👨‍🎓 HS mới: ${uiState.newStudents}")
+                            appendLine("❌ HS tạm nghỉ: ${uiState.inactiveStudents}")
+                            appendLine("📋 Tổng buổi học: ${uiState.totalSessions}")
+                            appendLine("✅ Chuyên cần: ${String.format("%.1f", uiState.attendanceRate)}%")
+                            appendLine("━━━━━━━━━━━━━━━")
+                            appendLine("📱 EduCenter Pro")
+                        }
+                        val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(android.content.Intent.EXTRA_SUBJECT, "Báo cáo ${uiState.period.label}")
+                            putExtra(android.content.Intent.EXTRA_TEXT, report)
+                        }
+                        context.startActivity(android.content.Intent.createChooser(intent, "Chia sẻ báo cáo"))
+                    }) {
+                        Icon(Icons.Default.Share, contentDescription = "Chia sẻ", tint = Color(0xFF3B82F6))
+                    }
+                }
+            )
+        }
     ) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
