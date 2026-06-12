@@ -1,3 +1,4 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.educenter.pro.ui.screens.profile
 
 import androidx.compose.foundation.layout.*
@@ -30,10 +31,10 @@ fun TransactionsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Lịch sử Thu/Chi") },
+                title = { Text("Lá»‹ch sá»­ Thu/Chi") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Trở về")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Trá»Ÿ vá»")
                     }
                 }
             )
@@ -74,7 +75,7 @@ fun TransactionsScreen(
             }
             if (transactions.isEmpty()) {
                 item {
-                    Text("Chưa có giao dịch nào.", modifier = Modifier.padding(16.dp))
+                    Text("ChÆ°a cĂ³ giao dá»‹ch nĂ o.", modifier = Modifier.padding(16.dp))
                 }
             }
         }

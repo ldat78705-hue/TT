@@ -1,3 +1,4 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.educenter.pro.ui.screens.finance
 
 import androidx.compose.foundation.background
@@ -55,7 +56,7 @@ fun FinanceScreen(
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Quản lý Tài chính") }) }
+        topBar = { TopAppBar(title = { Text("Quáº£n lĂ½ TĂ i chĂ­nh") }) }
     ) { padding ->
         PullRefreshWrapper(
             isRefreshing = isRefreshing,
@@ -65,9 +66,9 @@ fun FinanceScreen(
         Column(modifier = Modifier.fillMaxSize()) {
             // Tabs
             TabRow(selectedTabIndex = selectedTab) {
-                Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("Tổng quan") })
-                Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("Công nợ") })
-                Tab(selected = selectedTab == 2, onClick = { selectedTab = 2 }, text = { Text("Giao dịch") })
+                Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("Tá»•ng quan") })
+                Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("CĂ´ng ná»£") })
+                Tab(selected = selectedTab == 2, onClick = { selectedTab = 2 }, text = { Text("Giao dá»‹ch") })
             }
 
             when (selectedTab) {
@@ -121,7 +122,7 @@ private fun OverviewTab(uiState: FinanceUiState, fmt: NumberFormat) {
                         .padding(24.dp)
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                        Text("Dòng tiền (Thu - Chi)", color = Color.White.copy(alpha = 0.95f), fontSize = 15.sp)
+                        Text("DĂ²ng tiá»n (Thu - Chi)", color = Color.White.copy(alpha = 0.95f), fontSize = 15.sp)
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(fmt.format(uiState.cashFlow), color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 28.sp)
                     }
@@ -141,7 +142,7 @@ private fun OverviewTab(uiState: FinanceUiState, fmt: NumberFormat) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Icon(Icons.Default.TrendingUp, contentDescription = null, tint = Color(0xFF10B981))
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("Tổng thu", fontSize = 14.sp, color = Color(0xFF475569))
+                        Text("Tá»•ng thu", fontSize = 14.sp, color = Color(0xFF475569))
                         Text(fmt.format(uiState.cashRevenue), fontWeight = FontWeight.Bold, color = Color(0xFF059669), fontSize = 17.sp)
                     }
                 }
@@ -154,7 +155,7 @@ private fun OverviewTab(uiState: FinanceUiState, fmt: NumberFormat) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Icon(Icons.Default.TrendingDown, contentDescription = null, tint = Color(0xFFEF4444))
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("Tổng chi", fontSize = 14.sp, color = Color(0xFF475569))
+                        Text("Tá»•ng chi", fontSize = 14.sp, color = Color(0xFF475569))
                         Text(fmt.format(uiState.totalExpenses), fontWeight = FontWeight.Bold, color = Color(0xFFDC2626), fontSize = 17.sp)
                     }
                 }
@@ -173,7 +174,7 @@ private fun OverviewTab(uiState: FinanceUiState, fmt: NumberFormat) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFF59E0B))
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("Nợ phải thu", fontSize = 14.sp, color = Color(0xFF475569))
+                        Text("Ná»£ pháº£i thu", fontSize = 14.sp, color = Color(0xFF475569))
                         Text(fmt.format(uiState.totalReceivables), fontWeight = FontWeight.Bold, color = Color(0xFFD97706), fontSize = 17.sp)
                     }
                 }
@@ -186,7 +187,7 @@ private fun OverviewTab(uiState: FinanceUiState, fmt: NumberFormat) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Icon(Icons.Default.AccountBalanceWallet, contentDescription = null, tint = Color(0xFF8B5CF6))
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("Số dư ví HS", fontSize = 14.sp, color = Color(0xFF475569))
+                        Text("Sá»‘ dÆ° vĂ­ HS", fontSize = 14.sp, color = Color(0xFF475569))
                         Text(fmt.format(uiState.totalCredit), fontWeight = FontWeight.Bold, color = Color(0xFF7C3AED), fontSize = 17.sp)
                     }
                 }
@@ -200,9 +201,9 @@ private fun DebtTab(uiState: FinanceUiState, fmt: NumberFormat, onCollectFee: (D
     if (uiState.debtStudents.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("🎉", fontSize = 48.sp)
+                Text("đŸ‰", fontSize = 48.sp)
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("Không có học viên nợ!", fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
+                Text("KhĂ´ng cĂ³ há»c viĂªn ná»£!", fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
             }
         }
     } else {
@@ -211,7 +212,7 @@ private fun DebtTab(uiState: FinanceUiState, fmt: NumberFormat, onCollectFee: (D
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item {
-                Text("${uiState.debtStudents.size} học viên đang nợ", fontWeight = FontWeight.Bold, color = Color(0xFF475569), fontSize = 15.sp)
+                Text("${uiState.debtStudents.size} há»c viĂªn Ä‘ang ná»£", fontWeight = FontWeight.Bold, color = Color(0xFF475569), fontSize = 15.sp)
                 Spacer(modifier = Modifier.height(8.dp))
             }
             itemsIndexed(uiState.debtStudents) { index, item ->
@@ -240,7 +241,7 @@ private fun DebtTab(uiState: FinanceUiState, fmt: NumberFormat, onCollectFee: (D
                             Text(item.student.phone, fontSize = 13.sp, color = Color(0xFF475569))
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                "Nợ: ${fmt.format(item.debt)}",
+                                "Ná»£: ${fmt.format(item.debt)}",
                                 fontWeight = FontWeight.ExtraBold,
                                 color = Color(0xFFDC2626),
                                 fontSize = 14.sp
@@ -269,7 +270,7 @@ private fun DebtTab(uiState: FinanceUiState, fmt: NumberFormat, onCollectFee: (D
 private fun TransactionsTab(uiState: FinanceUiState, fmt: NumberFormat) {
     if (uiState.recentTransactions.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Chưa có giao dịch nào.", color = Color(0xFF64748B))
+            Text("ChÆ°a cĂ³ giao dá»‹ch nĂ o.", color = Color(0xFF64748B))
         }
     } else {
         LazyColumn(
@@ -295,7 +296,7 @@ private fun TransactionsTab(uiState: FinanceUiState, fmt: NumberFormat) {
                                 Text(tx.date.take(10), fontSize = 13.sp, color = Color(0xFF64748B))
                                 if (!tx.paymentMethod.isNullOrBlank()) {
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    val methodLabel = if (tx.paymentMethod == "cash") "💵 Tiền mặt" else "🏦 Chuyển khoản"
+                                    val methodLabel = if (tx.paymentMethod == "cash") "đŸ’µ Tiá»n máº·t" else "đŸ¦ Chuyá»ƒn khoáº£n"
                                     Text(methodLabel, fontSize = 13.sp, color = Color(0xFF475569))
                                 }
                             }
@@ -336,7 +337,7 @@ private fun PaymentDialog(
         onDismissRequest = { if (!isLoading) onDismiss() },
         title = {
             Column {
-                Text("💰 Thu học phí", fontWeight = FontWeight.ExtraBold)
+                Text("đŸ’° Thu há»c phĂ­", fontWeight = FontWeight.ExtraBold)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(student.name, fontSize = 14.sp, color = Color(0xFF3B82F6), fontWeight = FontWeight.SemiBold)
             }
@@ -352,7 +353,7 @@ private fun PaymentDialog(
                         modifier = Modifier.padding(12.dp).fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Số dư hiện tại:", fontSize = 13.sp, color = Color(0xFF64748B))
+                        Text("Sá»‘ dÆ° hiá»‡n táº¡i:", fontSize = 13.sp, color = Color(0xFF64748B))
                         Text(
                             fmt.format(student.balance),
                             fontWeight = FontWeight.Bold,
@@ -375,9 +376,9 @@ private fun PaymentDialog(
                     onValueChange = { newVal ->
                         amountText = newVal.filter { c -> c.isDigit() }
                     },
-                    label = { Text("Số tiền thanh toán (VNĐ)") },
+                    label = { Text("Sá»‘ tiá»n thanh toĂ¡n (VNÄ)") },
                     leadingIcon = { Icon(Icons.Default.Payments, contentDescription = null, tint = Color(0xFF10B981)) },
-                    suffix = { Text("đ", fontWeight = FontWeight.Bold, color = Color(0xFF10B981)) },
+                    suffix = { Text("Ä‘", fontWeight = FontWeight.Bold, color = Color(0xFF10B981)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -390,12 +391,12 @@ private fun PaymentDialog(
                 )
 
                 // Payment method
-                Text("Hình thức thanh toán:", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                Text("HĂ¬nh thá»©c thanh toĂ¡n:", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(
                         selected = paymentMethod == "transfer",
                         onClick = { paymentMethod = "transfer" },
-                        label = { Text("🏦 Chuyển khoản", fontSize = 12.sp) },
+                        label = { Text("đŸ¦ Chuyá»ƒn khoáº£n", fontSize = 12.sp) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = Color(0xFF3B82F6),
                             selectedLabelColor = Color.White
@@ -404,7 +405,7 @@ private fun PaymentDialog(
                     FilterChip(
                         selected = paymentMethod == "cash",
                         onClick = { paymentMethod = "cash" },
-                        label = { Text("💵 Tiền mặt", fontSize = 12.sp) },
+                        label = { Text("đŸ’µ Tiá»n máº·t", fontSize = 12.sp) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = Color(0xFF10B981),
                             selectedLabelColor = Color.White
@@ -421,12 +422,12 @@ private fun PaymentDialog(
                     ) {
                         Column(modifier = Modifier.padding(12.dp).fillMaxWidth()) {
                             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                                Text("Thanh toán:", fontSize = 13.sp)
+                                Text("Thanh toĂ¡n:", fontSize = 13.sp)
                                 Text(fmt.format(parsedAmount), fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
                             }
                             val newBalance = student.balance + parsedAmount
                             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                                Text("Số dư sau:", fontSize = 13.sp)
+                                Text("Sá»‘ dÆ° sau:", fontSize = 13.sp)
                                 Text(
                                     fmt.format(newBalance),
                                     fontWeight = FontWeight.Bold,
@@ -479,17 +480,17 @@ private fun PaymentDialog(
                 if (isLoading) {
                     CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Đang xử lý...")
+                    Text("Äang xá»­ lĂ½...")
                 } else {
                     Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("Xác nhận Ghi sổ", fontWeight = FontWeight.Bold)
+                    Text("XĂ¡c nháº­n Ghi sá»•", fontWeight = FontWeight.Bold)
                 }
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss, enabled = !isLoading) {
-                Text("Hủy")
+                Text("Há»§y")
             }
         }
     )

@@ -1,3 +1,4 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.educenter.pro.ui.screens.classes
 
 import androidx.activity.compose.BackHandler
@@ -51,7 +52,7 @@ fun ClassesScreen(
                         Column {
                             Text(selectedClass?.name ?: "")
                             Text(
-                                "${selectedClass?.subject ?: ""} • ${students.size} học viên",
+                                "${selectedClass?.subject ?: ""} â€¢ ${students.size} há»c viĂªn",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -64,10 +65,10 @@ fun ClassesScreen(
                     },
                     actions = {
                         IconButton(onClick = { showEditClassDialog = true }) {
-                            Icon(Icons.Default.Edit, contentDescription = "Sửa lớp", tint = Color(0xFF667EEA))
+                            Icon(Icons.Default.Edit, contentDescription = "Sá»­a lá»›p", tint = Color(0xFF667EEA))
                         }
                         IconButton(onClick = { showAddStudentDialog = true }) {
-                            Icon(Icons.Default.PersonAdd, contentDescription = "Thêm học viên")
+                            Icon(Icons.Default.PersonAdd, contentDescription = "ThĂªm há»c viĂªn")
                         }
                     }
                 )
@@ -85,9 +86,9 @@ fun ClassesScreen(
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 if (selectedClass!!.schedule.isNotEmpty()) {
-                                    Text("📅 Lịch học", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF3B82F6))
+                                    Text("đŸ“… Lá»‹ch há»c", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF3B82F6))
                                     Spacer(modifier = Modifier.height(8.dp))
-                                    val dayMap = mapOf("Monday" to "Thứ 2", "Tuesday" to "Thứ 3", "Wednesday" to "Thứ 4", "Thursday" to "Thứ 5", "Friday" to "Thứ 6", "Saturday" to "Thứ 7", "Sunday" to "Chủ nhật")
+                                    val dayMap = mapOf("Monday" to "Thá»© 2", "Tuesday" to "Thá»© 3", "Wednesday" to "Thá»© 4", "Thursday" to "Thá»© 5", "Friday" to "Thá»© 6", "Saturday" to "Thá»© 7", "Sunday" to "Chá»§ nháº­t")
                                     selectedClass!!.schedule.forEach { sch ->
                                         Text("${dayMap[sch.dayOfWeek] ?: sch.dayOfWeek}: ${sch.startTime} - ${sch.endTime}", fontSize = 14.sp, color = Color(0xFF475569))
                                     }
@@ -95,17 +96,17 @@ fun ClassesScreen(
                                 if (selectedClass!!.fee.amount > 0) {
                                     Spacer(modifier = Modifier.height(8.dp))
                                     val feeLabel = when (selectedClass!!.fee.type) {
-                                        "PER_SESSION" -> "Theo buổi"
-                                        "MONTHLY" -> "Theo tháng"
-                                        "PER_COURSE" -> "Theo khóa"
+                                        "PER_SESSION" -> "Theo buá»•i"
+                                        "MONTHLY" -> "Theo thĂ¡ng"
+                                        "PER_COURSE" -> "Theo khĂ³a"
                                         else -> selectedClass!!.fee.type
                                     }
                                     val feeFormatter = java.text.NumberFormat.getCurrencyInstance(java.util.Locale("vi", "VN"))
-                                    Text("💰 Học phí: ${feeFormatter.format(selectedClass!!.fee.amount)} / $feeLabel", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF10B981))
+                                    Text("đŸ’° Há»c phĂ­: ${feeFormatter.format(selectedClass!!.fee.amount)} / $feeLabel", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF10B981))
                                 }
                                 if (teacherNames.isNotEmpty()) {
                                     Spacer(modifier = Modifier.height(8.dp))
-                                    Text("👨‍🏫 GV: ${teacherNames.joinToString(", ")}", fontSize = 14.sp, color = Color(0xFF8B5CF6), fontWeight = FontWeight.SemiBold)
+                                    Text("đŸ‘¨â€đŸ« GV: ${teacherNames.joinToString(", ")}", fontSize = 14.sp, color = Color(0xFF8B5CF6), fontWeight = FontWeight.SemiBold)
                                 }
                             }
                         }
@@ -113,7 +114,7 @@ fun ClassesScreen(
                 }
                 item {
                     Text(
-                        "Danh sách Học viên (${students.size})",
+                        "Danh sĂ¡ch Há»c viĂªn (${students.size})",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -121,7 +122,7 @@ fun ClassesScreen(
                 if (students.isEmpty()) {
                     item {
                         Box(modifier = Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
-                            Text("Lớp này chưa có học viên. Nhấn + để thêm.", color = Color.Gray)
+                            Text("Lá»›p nĂ y chÆ°a cĂ³ há»c viĂªn. Nháº¥n + Ä‘á»ƒ thĂªm.", color = Color.Gray)
                         }
                     }
                 } else {
@@ -142,7 +143,7 @@ fun ClassesScreen(
                                     Text(student.phone, style = MaterialTheme.typography.bodySmall, color = Color(0xFF475569))
                                 }
                                 IconButton(onClick = { studentToRemove = student }) {
-                                    Icon(Icons.Default.RemoveCircle, contentDescription = "Xóa khỏi lớp", tint = Color(0xFFEF4444))
+                                    Icon(Icons.Default.RemoveCircle, contentDescription = "XĂ³a khá»i lá»›p", tint = Color(0xFFEF4444))
                                 }
                             }
                         }
@@ -155,8 +156,8 @@ fun ClassesScreen(
         if (studentToRemove != null) {
             AlertDialog(
                 onDismissRequest = { studentToRemove = null },
-                title = { Text("Xác nhận") },
-                text = { Text("Xóa \"${studentToRemove?.name}\" khỏi lớp \"${selectedClass?.name}\"?") },
+                title = { Text("XĂ¡c nháº­n") },
+                text = { Text("XĂ³a \"${studentToRemove?.name}\" khá»i lá»›p \"${selectedClass?.name}\"?") },
                 confirmButton = {
                     Button(
                         onClick = {
@@ -164,10 +165,10 @@ fun ClassesScreen(
                             studentToRemove = null
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444))
-                    ) { Text("Xóa") }
+                    ) { Text("XĂ³a") }
                 },
                 dismissButton = {
-                    TextButton(onClick = { studentToRemove = null }) { Text("Hủy") }
+                    TextButton(onClick = { studentToRemove = null }) { Text("Há»§y") }
                 }
             )
         }
@@ -175,7 +176,7 @@ fun ClassesScreen(
         if (showAddStudentDialog) {
             AlertDialog(
                 onDismissRequest = { showAddStudentDialog = false },
-                title = { Text("Thêm Học viên vào Lớp") },
+                title = { Text("ThĂªm Há»c viĂªn vĂ o Lá»›p") },
                 text = {
                     LazyColumn(modifier = Modifier.heightIn(max = 300.dp)) {
                         items(availableStudents) { s ->
@@ -191,12 +192,12 @@ fun ClassesScreen(
                             )
                         }
                         if (availableStudents.isEmpty()) {
-                            item { Text("Không có học viên nào khả dụng.") }
+                            item { Text("KhĂ´ng cĂ³ há»c viĂªn nĂ o kháº£ dá»¥ng.") }
                         }
                     }
                 },
                 confirmButton = {
-                    TextButton(onClick = { showAddStudentDialog = false }) { Text("Đóng") }
+                    TextButton(onClick = { showAddStudentDialog = false }) { Text("ÄĂ³ng") }
                 }
             )
         }
@@ -204,7 +205,7 @@ fun ClassesScreen(
         // Edit Class Dialog
         if (showEditClassDialog && selectedClass != null) {
             ClassFormDialog(
-                title = "Chỉnh sửa Lớp học",
+                title = "Chá»‰nh sá»­a Lá»›p há»c",
                 initialClass = selectedClass!!,
                 onDismiss = { showEditClassDialog = false },
                 onSave = { name, subject, schedule, feeType, feeAmount ->
@@ -218,7 +219,7 @@ fun ClassesScreen(
         Scaffold(
             floatingActionButton = {
                 FloatingActionButton(onClick = { showAddClassDialog = true }) {
-                    Icon(Icons.Default.Add, contentDescription = "Thêm Lớp")
+                    Icon(Icons.Default.Add, contentDescription = "ThĂªm Lá»›p")
                 }
             }
         ) { padding ->
@@ -228,7 +229,7 @@ fun ClassesScreen(
                 modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)
             ) {
             Column(modifier = Modifier.fillMaxSize()) {
-                Text("Danh sách Lớp học", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                Text("Danh sĂ¡ch Lá»›p há»c", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(16.dp))
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(classes) { classModel ->
@@ -245,7 +246,7 @@ fun ClassesScreen(
         // === ADD CLASS DIALOG ===
         if (showAddClassDialog) {
             ClassFormDialog(
-                title = "Thêm Lớp Mới",
+                title = "ThĂªm Lá»›p Má»›i",
                 initialClass = null,
                 onDismiss = { showAddClassDialog = false },
                 onSave = { name, subject, schedule, feeType, feeAmount ->
@@ -268,9 +269,9 @@ private fun ClassCard(classModel: ClassModel, onClick: () -> Unit) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(classModel.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.height(4.dp))
-            Text("Môn: ${classModel.subject}", style = MaterialTheme.typography.bodyMedium)
+            Text("MĂ´n: ${classModel.subject}", style = MaterialTheme.typography.bodyMedium)
             Spacer(modifier = Modifier.height(4.dp))
-            Text("Sĩ số: ${classModel.studentIds.size} học sinh", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+            Text("SÄ© sá»‘: ${classModel.studentIds.size} há»c sinh", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
             // Show schedule per entry
             if (classModel.schedule.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(4.dp))
@@ -282,13 +283,13 @@ private fun ClassCard(classModel: ClassModel, onClick: () -> Unit) {
             // Show fee
             if (classModel.fee.amount > 0) {
                 val feeTypeText = when (classModel.fee.type) {
-                    "PER_SESSION" -> "buổi"
-                    "MONTHLY" -> "tháng"
-                    "PER_COURSE" -> "khóa"
+                    "PER_SESSION" -> "buá»•i"
+                    "MONTHLY" -> "thĂ¡ng"
+                    "PER_COURSE" -> "khĂ³a"
                     else -> ""
                 }
                 Text(
-                    "Học phí: ${java.text.NumberFormat.getCurrencyInstance(java.util.Locale("vi", "VN")).format(classModel.fee.amount)}/$feeTypeText",
+                    "Há»c phĂ­: ${java.text.NumberFormat.getCurrencyInstance(java.util.Locale("vi", "VN")).format(classModel.fee.amount)}/$feeTypeText",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF059669),
                     fontWeight = FontWeight.SemiBold,
@@ -336,7 +337,7 @@ fun ClassFormDialog(
                 item {
                     OutlinedTextField(
                         value = className, onValueChange = { className = it },
-                        label = { Text("Tên lớp *") }, singleLine = true,
+                        label = { Text("TĂªn lá»›p *") }, singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
                     )
@@ -344,7 +345,7 @@ fun ClassFormDialog(
                 item {
                     OutlinedTextField(
                         value = subject, onValueChange = { subject = it },
-                        label = { Text("Môn học *") }, singleLine = true,
+                        label = { Text("MĂ´n há»c *") }, singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
                     )
@@ -357,13 +358,13 @@ fun ClassFormDialog(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("📅 Lịch học:", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text("đŸ“… Lá»‹ch há»c:", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         TextButton(onClick = {
                             scheduleEntries = scheduleEntries + ScheduleEntry("Monday", "18:00", "19:30")
                         }) {
                             Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Thêm buổi", fontSize = 12.sp)
+                            Text("ThĂªm buá»•i", fontSize = 12.sp)
                         }
                     }
                 }
@@ -380,13 +381,13 @@ fun ClassFormDialog(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("Buổi ${index + 1}", fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Color(0xFF667EEA))
+                                Text("Buá»•i ${index + 1}", fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Color(0xFF667EEA))
                                 if (scheduleEntries.size > 1) {
                                     IconButton(
                                         onClick = { scheduleEntries = scheduleEntries.toMutableList().also { it.removeAt(index) } },
                                         modifier = Modifier.size(28.dp)
                                     ) {
-                                        Icon(Icons.Default.Close, contentDescription = "Xóa", tint = Color(0xFFEF4444), modifier = Modifier.size(16.dp))
+                                        Icon(Icons.Default.Close, contentDescription = "XĂ³a", tint = Color(0xFFEF4444), modifier = Modifier.size(16.dp))
                                     }
                                 }
                             }
@@ -400,7 +401,7 @@ fun ClassFormDialog(
                                     value = allDays.find { it.first == entry.dayOfWeek }?.second ?: entry.dayOfWeek,
                                     onValueChange = {},
                                     readOnly = true,
-                                    label = { Text("Thứ", fontSize = 13.sp) },
+                                    label = { Text("Thá»©", fontSize = 13.sp) },
                                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
                                     modifier = Modifier.menuAnchor().fillMaxWidth(),
                                     shape = RoundedCornerShape(10.dp),
@@ -429,7 +430,7 @@ fun ClassFormDialog(
                                             it[index] = entry.copy(startTime = newVal)
                                         }
                                     },
-                                    label = { Text("Bắt đầu", fontSize = 13.sp) },
+                                    label = { Text("Báº¯t Ä‘áº§u", fontSize = 13.sp) },
                                     singleLine = true,
                                     modifier = Modifier.weight(1f),
                                     shape = RoundedCornerShape(10.dp),
@@ -442,7 +443,7 @@ fun ClassFormDialog(
                                             it[index] = entry.copy(endTime = newVal)
                                         }
                                     },
-                                    label = { Text("Kết thúc", fontSize = 13.sp) },
+                                    label = { Text("Káº¿t thĂºc", fontSize = 13.sp) },
                                     singleLine = true,
                                     modifier = Modifier.weight(1f),
                                     shape = RoundedCornerShape(10.dp),
@@ -455,10 +456,10 @@ fun ClassFormDialog(
 
                 // Fee section
                 item { Spacer(modifier = Modifier.height(4.dp)) }
-                item { Text("💰 Học phí:", fontWeight = FontWeight.Bold, fontSize = 14.sp) }
+                item { Text("đŸ’° Há»c phĂ­:", fontWeight = FontWeight.Bold, fontSize = 14.sp) }
                 item {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        listOf("PER_SESSION" to "Theo buổi", "MONTHLY" to "Theo tháng").forEach { (type, label) ->
+                        listOf("PER_SESSION" to "Theo buá»•i", "MONTHLY" to "Theo thĂ¡ng").forEach { (type, label) ->
                             RadioButton(selected = selectedFeeType == type, onClick = { selectedFeeType = type })
                             Text(label, fontSize = 12.sp)
                             Spacer(modifier = Modifier.width(4.dp))
@@ -476,8 +477,8 @@ fun ClassFormDialog(
                     OutlinedTextField(
                         value = displayFee,
                         onValueChange = { feeAmountText = it.filter { c -> c.isDigit() } },
-                        label = { Text("Số tiền (VNĐ)") },
-                        suffix = { Text("đ", fontWeight = FontWeight.Bold, color = Color(0xFF10B981)) },
+                        label = { Text("Sá»‘ tiá»n (VNÄ)") },
+                        suffix = { Text("Ä‘", fontWeight = FontWeight.Bold, color = Color(0xFF10B981)) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),
@@ -500,10 +501,10 @@ fun ClassFormDialog(
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF667EEA)),
                 shape = RoundedCornerShape(12.dp)
-            ) { Text("Lưu", fontWeight = FontWeight.Bold) }
+            ) { Text("LÆ°u", fontWeight = FontWeight.Bold) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Hủy") }
+            TextButton(onClick = onDismiss) { Text("Há»§y") }
         }
     )
 }
