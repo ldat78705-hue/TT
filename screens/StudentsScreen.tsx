@@ -83,7 +83,10 @@ const StudentForm: React.FC<{
     onCancel: () => void;
     allClasses: Class[];
     generatedId?: string;
-}> = ({ student, onSubmit, onCancel, allClasses, generatedId }) => {
+    allTeachers: any[];
+    allStaff: any[];
+    allStudents: Student[];
+}> = ({ student, onSubmit, onCancel, allClasses, generatedId, allTeachers, allStaff, allStudents }) => {
     const [formData, setFormData] = useState<Partial<Student>>({
         id: generatedId || '',
         name: '',
@@ -100,6 +103,7 @@ const StudentForm: React.FC<{
     });
     const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
     const [errors, setErrors] = useState<Partial<Record<keyof Student, string>>>({});
+    const [idWarning, setIdWarning] = useState('');
     const idInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -111,6 +115,16 @@ const StudentForm: React.FC<{
             setSelectedClassIds(enrolledClassIds);
         }
     }, [student, allClasses]);
+
+    const checkDuplicateId = (id: string) => {
+        if (!id.trim() || (student && student.id === id)) { setIdWarning(''); return; }
+        const upper = id.toUpperCase();
+        if (upper === 'ADMIN' || upper === 'VIEWER') { setIdWarning('⚠️ Đây là tài khoản hệ thống, không thể sử dụng.'); return; }
+        if (allStudents.some(s => s.id.toUpperCase() === upper && s.id !== student?.id)) { setIdWarning('⚠️ Mã này đã được sử dụng cho học viên khác.'); return; }
+        if (allTeachers.some(t => t.id.toUpperCase() === upper)) { setIdWarning('⚠️ Mã này đã được sử dụng cho giáo viên.'); return; }
+        if (allStaff.some(s => s.id.toUpperCase() === upper)) { setIdWarning('⚠️ Mã này đã được sử dụng cho nhân viên.'); return; }
+        setIdWarning('');
+    };
     
     const validate = () => {
         const newErrors: Partial<Record<keyof Student, string>> = {};
@@ -121,6 +135,7 @@ const StudentForm: React.FC<{
         } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
             newErrors.email = "Email không hợp lệ.";
         }
+        if (idWarning) newErrors.id = idWarning;
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -145,6 +160,7 @@ const StudentForm: React.FC<{
             
             return newData;
         });
+        if (name === 'id') checkDuplicateId(value);
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -167,8 +183,9 @@ const StudentForm: React.FC<{
                 <div className={`${inputGroupClass} mt-2`}>
                     <div>
                         <label className="block text-sm font-medium">Mã Học viên <span className="text-red-500">*</span></label>
-                        <input ref={idInputRef} type="text" name="id" value={formData.id} onChange={handleChange} className="form-input mt-1" />
+                        <input ref={idInputRef} type="text" name="id" value={formData.id} onChange={handleChange} className={`form-input mt-1 ${idWarning ? 'border-orange-400 ring-1 ring-orange-400' : ''}`} />
                         {errors.id && <p className="text-red-500 text-xs mt-1">{errors.id}</p>}
+                        {idWarning && !errors.id && <p className="text-orange-500 text-xs mt-1 font-medium">{idWarning}</p>}
                     </div>
                     <div>
                         <label className="block text-sm font-medium">Họ tên <span className="text-red-500">*</span></label>
@@ -739,6 +756,9 @@ export const StudentsScreen: React.FC = () => {
                     onCancel={handleCloseModal}
                     allClasses={state.classes}
                     generatedId={generatedStudentId}
+                    allTeachers={state.teachers}
+                    allStaff={state.staff}
+                    allStudents={state.students}
                 />
             </Modal>
              <ConfirmationModal
