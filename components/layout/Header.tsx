@@ -87,9 +87,7 @@ export const Header: React.FC<HeaderProps> = ({ pageTitle, onMenuClick }) => {
         
         {/* Right Section */}
         <div className="flex items-center space-x-2 md:space-x-6">
-          <div className="hidden lg:block">
-            <GlobalSearch />
-          </div>
+          <GlobalSearch />
           <NotificationBell />
           <Clock />
           

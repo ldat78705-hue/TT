@@ -254,6 +254,24 @@ const AdminDashboard: React.FC = () => {
             .reduce((sum, s) => sum + s.balance, 0);
     }, [students, canViewFinancials]);
 
+    // Today's attendance ratio
+    const todayAttendanceInfo = useMemo(() => {
+        const vnTimeStr = getVietnamTime();
+        const todayDateString = vnTimeStr.split('T')[0];
+        const vnDateObj = new Date(vnTimeStr);
+        const dayOfWeekEn = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][vnDateObj.getDay()];
+
+        const classesToday = classes.filter(cls =>
+            (cls.schedule || []).some(s => s.dayOfWeek === dayOfWeekEn)
+        );
+
+        const classesWithAttendance = classesToday.filter(cls => {
+            return attendance.some(a => a.classId === cls.id && a.date === todayDateString && a.status !== AttendanceStatus.UNMARKED);
+        });
+
+        return { done: classesWithAttendance.length, total: classesToday.length };
+    }, [classes, attendance]);
+
 
     const WeeklyCalendarWidget: React.FC<{ classes: Class[], teachers: Teacher[] }> = ({ classes, teachers }) => {
         const vnTimeStr = getVietnamTime();
@@ -384,7 +402,7 @@ const AdminDashboard: React.FC = () => {
                     )}
                 </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
                 <Card title="Học viên đang học" value={totalStudents} icon={ICONS.students} color="text-blue-600 dark:text-blue-400" />
                 <Card title="Lớp học hoạt động" value={activeClasses} icon={ICONS.classes} color="text-green-600 dark:text-green-400" />
                 {canViewFinancials && (
@@ -393,6 +411,12 @@ const AdminDashboard: React.FC = () => {
                         <Card title="Tổng nợ phải thu" value={`${Math.abs(totalReceivables).toLocaleString('vi-VN')} ₫`} icon={ICONS.dashboard} color="text-red-600 dark:text-red-400" />
                     </>
                 )}
+                <Card
+                    title="Điểm danh hôm nay"
+                    value={todayAttendanceInfo.total > 0 ? `${todayAttendanceInfo.done}/${todayAttendanceInfo.total} lớp` : 'Không có lớp'}
+                    icon={ICONS.calendar}
+                    color={todayAttendanceInfo.done === todayAttendanceInfo.total && todayAttendanceInfo.total > 0 ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'}
+                />
             </div>
 
             {/* Weekly Calendar */}

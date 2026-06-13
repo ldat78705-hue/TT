@@ -187,42 +187,99 @@ export const GlobalSearch: React.FC = () => {
 
 
     return (
-        <div className="relative w-full max-w-xs" ref={searchRef}>
-            <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                    {ICONS.search}
-                </span>
-                <input
-                    type="text"
-                    value={query}
-                    onChange={e => setQuery(e.target.value)}
-                    onFocus={() => setIsOpen(true)}
-                    placeholder="Tìm kiếm học viên, lớp học..."
-                    className="form-input w-full py-2 pl-10 pr-4"
-                />
+        <>
+            {/* Desktop: inline search */}
+            <div className="relative w-full max-w-xs hidden md:block" ref={searchRef}>
+                <div className="relative">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                        {ICONS.search}
+                    </span>
+                    <input
+                        type="text"
+                        value={query}
+                        onChange={e => setQuery(e.target.value)}
+                        onFocus={() => setIsOpen(true)}
+                        placeholder="Tìm kiếm học viên, lớp học..."
+                        className="form-input w-full py-2 pl-10 pr-4"
+                    />
+                </div>
+
+                {isOpen && query.length > 1 && (
+                    <div className="absolute z-10 w-full mt-2 bg-white rounded-md shadow-lg dark:bg-gray-800 border dark:border-gray-700 max-h-96 overflow-y-auto">
+                        {results.length > 0 ? (
+                            <ul>
+                                {results.map((result, index) => (
+                                    <li key={`${result.type}-${result.id}`}
+                                        onClick={() => handleResultClick(result.path)}
+                                        onMouseEnter={() => setActiveIndex(index)}
+                                        className={`px-4 py-3 cursor-pointer border-b dark:border-gray-700 last:border-b-0
+                                            ${index === activeIndex ? 'bg-gray-100 dark:bg-gray-700' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`
+                                        }>
+                                        <p className="font-semibold text-gray-800 dark:text-gray-200"><HighlightMatch text={result.name} query={debouncedQuery} /></p>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{result.context}</p>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : debouncedQuery.length > 1 ? (
+                            <div className="px-4 py-4 text-center text-gray-500 dark:text-gray-400">Không tìm thấy kết quả.</div>
+                        ) : null}
+                    </div>
+                )}
             </div>
 
-            {isOpen && query.length > 1 && (
-                <div className="absolute z-10 w-full mt-2 bg-white rounded-md shadow-lg dark:bg-gray-800 border dark:border-gray-700 max-h-96 overflow-y-auto">
-                    {results.length > 0 ? (
-                        <ul>
-                            {results.map((result, index) => (
-                                <li key={`${result.type}-${result.id}`}
-                                    onClick={() => handleResultClick(result.path)}
-                                    onMouseEnter={() => setActiveIndex(index)}
-                                    className={`px-4 py-3 cursor-pointer border-b dark:border-gray-700 last:border-b-0
-                                        ${index === activeIndex ? 'bg-gray-100 dark:bg-gray-700' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`
-                                    }>
-                                    <p className="font-semibold text-gray-800 dark:text-gray-200"><HighlightMatch text={result.name} query={debouncedQuery} /></p>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{result.context}</p>
-                                </li>
-                            ))}
-                        </ul>
-                    ) : debouncedQuery.length > 1 ? (
-                        <div className="px-4 py-4 text-center text-gray-500 dark:text-gray-400">Không tìm thấy kết quả.</div>
-                    ) : null}
+            {/* Mobile: icon button + overlay */}
+            <button
+                className="md:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                onClick={() => { setIsOpen(true); setQuery(''); }}
+                aria-label="Tìm kiếm"
+            >
+                {React.cloneElement(ICONS.search, { className: 'w-5 h-5' })}
+            </button>
+
+            {/* Mobile overlay */}
+            {isOpen && (
+                <div className="md:hidden fixed inset-0 z-50 bg-white dark:bg-slate-900 flex flex-col">
+                    <div className="flex items-center gap-2 p-3 border-b dark:border-slate-700">
+                        <span className="text-gray-400 flex-shrink-0">{ICONS.search}</span>
+                        <input
+                            type="text"
+                            value={query}
+                            onChange={e => setQuery(e.target.value)}
+                            placeholder="Tìm kiếm học viên, lớp học..."
+                            className="form-input flex-1 py-2"
+                            autoFocus
+                        />
+                        <button
+                            onClick={() => { setIsOpen(false); setQuery(''); }}
+                            className="p-2 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-medium text-sm"
+                        >
+                            Đóng
+                        </button>
+                    </div>
+                    <div className="flex-1 overflow-y-auto">
+                        {results.length > 0 ? (
+                            <ul>
+                                {results.map((result, index) => (
+                                    <li key={`mobile-${result.type}-${result.id}`}
+                                        onClick={() => handleResultClick(result.path)}
+                                        className={`px-4 py-3 border-b dark:border-gray-700 last:border-b-0 active:bg-gray-100 dark:active:bg-gray-700
+                                            ${index === activeIndex ? 'bg-gray-100 dark:bg-gray-700' : ''}`
+                                        }>
+                                        <p className="font-semibold text-gray-800 dark:text-gray-200"><HighlightMatch text={result.name} query={debouncedQuery} /></p>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{result.context}</p>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : query.length > 1 && debouncedQuery.length > 1 ? (
+                            <div className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Không tìm thấy kết quả.</div>
+                        ) : (
+                            <div className="px-4 py-8 text-center text-gray-400 dark:text-gray-500 text-sm">
+                                Nhập tên học viên, giáo viên hoặc lớp học để tìm kiếm...
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
-        </div>
+        </>
     );
 };
