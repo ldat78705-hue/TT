@@ -9,6 +9,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '../components/common/Button';
 import { getVietnamTime } from '../utils/date';
 import { OnboardingWizard } from '../components/common/OnboardingWizard';
+import { TeacherPayrollTab } from '../components/finance/TeacherPayrollTab';
 
 const toLocalDateString = (date: Date): string => {
     const year = date.getFullYear();
@@ -487,63 +488,67 @@ const TeacherDashboard: React.FC = () => {
 
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-                <h1 className="text-2xl font-bold">Lớp học của tôi</h1>
-                {assignedClasses.length > 0 ? (
-                    <div className="space-y-4">
-                        {assignedClasses.map(cls => {
-                            const hasSessionToday = (cls.schedule || []).some(s => s.dayOfWeek === dayOfWeekEn);
-                            return (
-                                <div key={cls.id} className="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                                    <div className="flex-grow">
-                                        <Link to={`/class/${cls.id}`} className="font-bold text-lg text-primary hover:underline">{cls.name}</Link>
-                                        <p className="text-sm text-gray-600 dark:text-gray-300">{cls.subject} • Sĩ số: {getActiveStudentCount(cls.studentIds)}</p>
-                                        <div className="mt-1 text-xs text-gray-500 dark:text-gray-400 flex flex-wrap gap-x-3 gap-y-1">
-                                            {(cls.schedule || []).map((s, i) => (
-                                                <span key={i}>{`${dayMap[s.dayOfWeek]}: ${s.startTime}-${s.endTime}`}</span>
-                                            ))}
+        <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 space-y-6">
+                    <h1 className="text-2xl font-bold">Lớp học của tôi</h1>
+                    {assignedClasses.length > 0 ? (
+                        <div className="space-y-4">
+                            {assignedClasses.map(cls => {
+                                const hasSessionToday = (cls.schedule || []).some(s => s.dayOfWeek === dayOfWeekEn);
+                                return (
+                                    <div key={cls.id} className="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                        <div className="flex-grow">
+                                            <Link to={`/class/${cls.id}`} className="font-bold text-lg text-primary hover:underline">{cls.name}</Link>
+                                            <p className="text-sm text-gray-600 dark:text-gray-300">{cls.subject} • Sĩ số: {getActiveStudentCount(cls.studentIds)}</p>
+                                            <div className="mt-1 text-xs text-gray-500 dark:text-gray-400 flex flex-wrap gap-x-3 gap-y-1">
+                                                {(cls.schedule || []).map((s, i) => (
+                                                    <span key={i}>{`${dayMap[s.dayOfWeek]}: ${s.startTime}-${s.endTime}`}</span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div className="flex-shrink-0 w-full sm:w-auto">
+                                            <Link 
+                                              to={hasSessionToday ? ROUTES.ATTENDANCE_DETAIL.replace(':classId', cls.id).replace(':date', todayDateString) : `/class/${cls.id}`}
+                                              state={{ defaultTab: 'attendance', returnTo: ROUTES.DASHBOARD }} 
+                                              className="w-full"
+                                            >
+                                                 <Button variant="secondary" className="w-full">
+                                                    {hasSessionToday ? 'Điểm danh hôm nay' : 'Xem điểm danh'}
+                                                </Button>
+                                            </Link>
                                         </div>
                                     </div>
-                                    <div className="flex-shrink-0 w-full sm:w-auto">
-                                        <Link 
-                                          to={hasSessionToday ? ROUTES.ATTENDANCE_DETAIL.replace(':classId', cls.id).replace(':date', todayDateString) : `/class/${cls.id}`}
-                                          state={{ defaultTab: 'attendance', returnTo: ROUTES.DASHBOARD }} 
-                                          className="w-full"
-                                        >
-                                             <Button variant="secondary" className="w-full">
-                                                {hasSessionToday ? 'Điểm danh hôm nay' : 'Xem điểm danh'}
-                                            </Button>
-                                        </Link>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <div className="card-base text-center py-10">
+                            <p className="text-gray-500 dark:text-gray-400">Bạn chưa được phân công vào lớp học nào.</p>
+                        </div>
+                    )}
+                </div>
+                <div className="lg:col-span-1">
+                    <div className="card-base h-full">
+                        <h2 className="text-xl font-bold mb-4">Thông báo</h2>
+                        <div className="space-y-4 max-h-96 overflow-y-auto">
+                            {relevantAnnouncements.length > 0 ? (
+                                relevantAnnouncements.slice(0, 5).map(ann => (
+                                    <div key={ann.id} className="p-3 bg-indigo-50 dark:bg-slate-700/50 rounded-lg">
+                                        <h3 className="font-semibold text-indigo-800 dark:text-indigo-300">{ann.title}</h3>
+                                        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{ann.content.substring(0, 100)}...</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 text-right mt-2">{ann.createdAt} - {ann.createdBy}</p>
                                     </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                ) : (
-                    <div className="card-base text-center py-10">
-                        <p className="text-gray-500 dark:text-gray-400">Bạn chưa được phân công vào lớp học nào.</p>
-                    </div>
-                )}
-            </div>
-            <div className="lg:col-span-1">
-                <div className="card-base h-full">
-                    <h2 className="text-xl font-bold mb-4">Thông báo</h2>
-                    <div className="space-y-4 max-h-96 overflow-y-auto">
-                        {relevantAnnouncements.length > 0 ? (
-                            relevantAnnouncements.slice(0, 5).map(ann => (
-                                <div key={ann.id} className="p-3 bg-indigo-50 dark:bg-slate-700/50 rounded-lg">
-                                    <h3 className="font-semibold text-indigo-800 dark:text-indigo-300">{ann.title}</h3>
-                                    <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{ann.content.substring(0, 100)}...</p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 text-right mt-2">{ann.createdAt} - {ann.createdBy}</p>
-                                </div>
-                            ))
-                        ) : (
-                            <p className="text-gray-500 dark:text-gray-400">Chưa có thông báo nào.</p>
-                        )}
+                                ))
+                            ) : (
+                                <p className="text-gray-500 dark:text-gray-400">Chưa có thông báo nào.</p>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
+            {/* Teacher Payroll Section */}
+            <TeacherPayrollTab />
         </div>
     );
 }
