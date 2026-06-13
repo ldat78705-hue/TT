@@ -34,7 +34,7 @@ interface StoredSession {
 }
 
 interface AuthContextType extends AuthState {
-  login: (identifier: string, password?: string) => Promise<boolean>;
+  login: (identifier: string, password?: string, centerId?: string) => Promise<boolean>;
   logout: () => Promise<void>;
   isAuthLoading: boolean;
 }
@@ -114,17 +114,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }
 
 
-  const login = async (identifier: string, password?: string): Promise<boolean> => {
+  const login = async (identifier: string, password?: string, centerId?: string): Promise<boolean> => {
     if (!password) return false;
 
     try {
-      const response = await loginApi(identifier, password);
+      const response = await loginApi(identifier, password, centerId);
       if (response && response.token && response.user && response.role) {
         setAuth({ isAuthenticated: true, user: response.user, role: response.role });
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({ 
             userId: response.user.id, 
             role: response.role,
-            token: response.token 
+            token: response.token,
+            centerId: response.centerId || ''
         }));
         setStoredSession({ userId: response.user.id, role: response.role, token: response.token });
         refreshData();

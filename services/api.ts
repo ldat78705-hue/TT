@@ -23,17 +23,29 @@ const getHeaders = () => {
     };
 };
 
-export async function loginApi(identifier: string, password?: string) {
+export async function loginApi(identifier: string, password?: string, centerId?: string) {
     const response = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, password }),
+        body: JSON.stringify({ identifier, password, centerId }),
     });
     if (!response.ok) {
         const errorText = await response.text();
         throw new Error(errorText || 'Đăng nhập thất bại');
     }
     return response.json();
+}
+
+export async function fetchCenters(): Promise<{ id: string; name: string; slug: string }[]> {
+    try {
+        // Public endpoint - no auth needed, returns basic center list
+        const response = await fetch('/api/centers-public');
+        if (!response.ok) return [];
+        const data = await response.json();
+        return data.centers || [];
+    } catch {
+        return [];
+    }
 }
 
 // --- Core API Functions ---

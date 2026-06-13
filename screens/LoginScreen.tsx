@@ -7,6 +7,7 @@ import { UserRole, CenterSettings } from '../types';
 import { ROUTES, ICONS } from '../constants';
 import { useData } from '../hooks/useDataContext';
 import { ForgotPasswordModal } from '../components/auth/ChangePasswordModal';
+import { fetchCenters } from '../services/api';
 
 const BrandHeader: React.FC<{ settings: CenterSettings }> = ({ settings }) => {
     const { loginHeaderContent } = settings;
@@ -42,11 +43,23 @@ export const LoginScreen: React.FC = () => {
     
     const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
+    const [centerId, setCenterId] = useState('');
+    const [centers, setCenters] = useState<{id: string; name: string; slug: string}[]>([]);
+    const [centersLoaded, setCentersLoaded] = useState(false);
+
+    useEffect(() => {
+        fetchCenters().then(list => {
+            setCenters(list);
+            setCentersLoaded(true);
+            // Auto-select if only one center
+            if (list.length === 1) setCenterId(list[0].slug);
+        });
+    }, []);
     
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
-        const success = await login(identifier, password);
+        const success = await login(identifier, password, centerId || undefined);
         if (!success) {
             toast.error("Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.");
         }
@@ -123,6 +136,27 @@ export const LoginScreen: React.FC = () => {
                                     />
                                 </div>
                             </div>
+                            {centersLoaded && centers.length > 1 && (
+                                <div>
+                                    <label htmlFor="center" className="block text-sm font-medium">Trung tâm</label>
+                                    <div className="relative mt-1">
+                                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                                            {React.cloneElement(ICONS.rooms, { className: "w-5 h-5"})}
+                                        </span>
+                                        <select
+                                            id="center"
+                                            value={centerId}
+                                            onChange={e => setCenterId(e.target.value)}
+                                            className="form-input pl-10 appearance-none"
+                                        >
+                                            <option value="">-- Chọn trung tâm --</option>
+                                            {centers.map(c => (
+                                                <option key={c.slug} value={c.slug}>{c.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            )}
                             <Button type="submit" className="w-full !py-3 text-lg" isLoading={isLoading}>Đăng nhập</Button>
                         </form>
                         
