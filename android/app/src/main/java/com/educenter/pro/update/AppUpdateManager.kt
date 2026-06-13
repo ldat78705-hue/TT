@@ -105,6 +105,24 @@ class AppUpdateManager @Inject constructor(
     }
 
     /**
+     * Normalize version string to a comparable integer.
+     * Always uses 3-part format: major * 10000 + minor * 100 + patch
+     * Examples: "1.7" -> 10700, "v1.7.0" -> 10700, "v1.8.1" -> 10801
+     */
+    private fun normalizeVersion(versionStr: String): Int {
+        val clean = versionStr.removePrefix("v").removePrefix("V")
+        val parts = clean.split(".")
+        return try {
+            val major = parts.getOrNull(0)?.toIntOrNull() ?: 0
+            val minor = parts.getOrNull(1)?.toIntOrNull() ?: 0
+            val patch = parts.getOrNull(2)?.toIntOrNull() ?: 0
+            major * 10000 + minor * 100 + patch
+        } catch (e: Exception) {
+            0
+        }
+    }
+
+    /**
      * Check if update should be checked (throttled to avoid excessive API calls)
      */
     private fun shouldCheck(): Boolean {
@@ -125,14 +143,21 @@ class AppUpdateManager @Inject constructor(
                 val release = gitHubApi.getLatestRelease(GITHUB_OWNER, GITHUB_REPO)
                 prefs.edit().putLong(PREF_LAST_CHECK, System.currentTimeMillis()).apply()
                 
-                val currentVersionCode = getCurrentVersionCode()
-                val remoteVersionCode = parseVersionCode(release.tagName)
+                // Compare using parsed semantic version (not versionCode!)
+                // Both sides go through parseVersionCode for consistent comparison
+                val currentParsed = parseVersionCode(getCurrentVersionName()) // e.g. "1.7" → 107
+                val remoteParsed = parseVersionCode(release.tagName)         // e.g. "v1.7.0" → 10700 → BUT normalize!
                 val skippedVersion = prefs.getString(PREF_SKIP_VERSION, null)
 
                 // Find APK asset
                 val apkAsset = release.assets.find { it.name.endsWith(".apk") }
 
-                val isAvailable = remoteVersionCode > currentVersionCode 
+                // Normalize: compare major.minor only to avoid 1.7 (107) vs v1.7.0 (10700) mismatch
+                // Strategy: parse both to comparable integers using same format
+                val currentNorm = normalizeVersion(getCurrentVersionName())
+                val remoteNorm = normalizeVersion(release.tagName)
+
+                val isAvailable = remoteNorm > currentNorm 
                     && apkAsset != null
                     && release.tagName != skippedVersion
 
