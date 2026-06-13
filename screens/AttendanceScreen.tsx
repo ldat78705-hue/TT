@@ -9,6 +9,7 @@ import { Button } from '../components/common/Button';
 import { ICONS } from '../constants';
 import { ConfirmationModal } from '../components/common/ConfirmationModal';
 import { Modal } from '../components/common/Modal';
+import { zaloSendAbsence } from '../services/api';
 
 export const AttendanceScreen: React.FC = () => {
     const { classId, date } = useParams<{ classId: string; date: string }>();
@@ -412,45 +413,168 @@ export const AttendanceScreen: React.FC = () => {
                         setZaloNotificationData(null);
                         handleNavigateBack();
                     }}
-                    title="Thông báo học sinh vắng mặt"
+                    title="📱 Thông báo học sinh vắng mặt"
                 >
-                    <div className="space-y-4">
-                        <p className="text-gray-600 dark:text-gray-300">
-                            Các học sinh sau đang nghỉ không phép. Bạn có thể chép mẫu tin nhắn bên dưới để gửi vào Zalo nhóm lớp:
-                        </p>
-                        <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg font-mono text-sm whitespace-pre-wrap select-all border border-gray-200 dark:border-gray-700">
-                            {`Kính gửi Quý Phụ huynh, hiện tại đã vào giờ học nhưng chưa thấy các học sinh sau có mặt tại lớp:\n${zaloNotificationData.join('\n')}\nQuý Phụ huynh vui lòng kiểm tra và phản hồi lại giúp ạ.\nXin cảm ơn!`}
-                        </div>
-                        <div className="flex justify-end gap-3 mt-6">
-                            <Button
-                                variant="secondary"
-                                onClick={() => {
-                                    setZaloNotificationData(null);
-                                    handleNavigateBack();
-                                }}
-                            >
-                                Đóng
-                            </Button>
-                            <Button
-                                onClick={() => {
-                                    const text = `Kính gửi Quý Phụ huynh, hiện tại đã vào giờ học nhưng chưa thấy các học sinh sau có mặt tại lớp:\n${zaloNotificationData.join('\n')}\nQuý Phụ huynh vui lòng kiểm tra và phản hồi lại giúp ạ.\nXin cảm ơn!`;
-                                    navigator.clipboard.writeText(text).then(() => {
-                                        toast.success('Đã chép nội dung vào khay nhớ tạm!');
-                                        setTimeout(() => {
-                                            setZaloNotificationData(null);
-                                            handleNavigateBack();
-                                        }, 1500);
-                                    }).catch(() => {
-                                        toast.error('Lỗi khi chép. Vui lòng thử chép thủ công.');
-                                    });
-                                }}
-                            >
-                                {ICONS.copy} <span className="ml-2">Chép tin nhắn</span>
-                            </Button>
-                        </div>
-                    </div>
+                    <ZaloAbsenceNotifier
+                        absentStudentNames={zaloNotificationData}
+                        allStudents={classStudents}
+                        attendanceData={attendanceData}
+                        className={cls?.name || ''}
+                        date={date || ''}
+                        centerName={state.settings.name || ''}
+                        zaloEnabled={state.settings.zaloOaEnabled || false}
+                        onClose={() => {
+                            setZaloNotificationData(null);
+                            handleNavigateBack();
+                        }}
+                    />
                 </Modal>
             )}
         </>
+    );
+};
+
+// === Zalo Absence Notifier Component ===
+const ZaloAbsenceNotifier: React.FC<{
+    absentStudentNames: string[];
+    allStudents: Student[];
+    attendanceData: Map<string, {status: AttendanceStatus, note: string}>;
+    className: string;
+    date: string;
+    centerName: string;
+    zaloEnabled: boolean;
+    onClose: () => void;
+}> = ({ absentStudentNames, allStudents, attendanceData, className, date, centerName, zaloEnabled, onClose }) => {
+    const { toast } = useToast();
+    const [isSendingZalo, setIsSendingZalo] = useState(false);
+    const [zaloResults, setZaloResults] = useState<any>(null);
+
+    const unexcusedStudents = useMemo(() => {
+        return allStudents.filter(s => {
+            const data = attendanceData.get(s.id);
+            return data?.status === AttendanceStatus.UNEXCUSED_ABSENT;
+        });
+    }, [allStudents, attendanceData]);
+
+    const copyText = `Kính gửi Quý Phụ huynh, hiện tại đã vào giờ học nhưng chưa thấy các học sinh sau có mặt tại lớp:\n${absentStudentNames.join('\n')}\nQuý Phụ huynh vui lòng kiểm tra và phản hồi lại giúp ạ.\nXin cảm ơn!`;
+
+    const handleSendZalo = async () => {
+        const studentsToSend = unexcusedStudents.filter(s => s.parentPhone);
+        if (studentsToSend.length === 0) {
+            toast.error('Không có học viên nào có SĐT Zalo phụ huynh để gửi.');
+            return;
+        }
+
+        setIsSendingZalo(true);
+        try {
+            const result = await zaloSendAbsence(
+                studentsToSend.map(s => ({
+                    name: s.name,
+                    parentName: s.parentName || 'Phụ huynh',
+                    parentPhone: s.parentPhone || '',
+                })),
+                className,
+                new Date(date).toLocaleDateString('vi-VN'),
+                centerName,
+            );
+            
+            if (result.success) {
+                setZaloResults(result);
+                toast.success(result.message || 'Đã gửi thông báo!');
+            } else {
+                toast.error(result.error || 'Lỗi gửi thông báo Zalo');
+            }
+        } catch (err: any) {
+            toast.error(err.message || 'Lỗi kết nối');
+        } finally {
+            setIsSendingZalo(false);
+        }
+    };
+
+    const studentsWithPhone = unexcusedStudents.filter(s => s.parentPhone);
+    const studentsWithoutPhone = unexcusedStudents.filter(s => !s.parentPhone);
+
+    return (
+        <div className="space-y-4">
+            <p className="text-gray-600 dark:text-gray-300 text-sm">
+                Có <strong>{absentStudentNames.length}</strong> học viên vắng không phép. Bạn có thể:
+            </p>
+
+            {/* Copy message section */}
+            <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg font-mono text-sm whitespace-pre-wrap select-all border border-gray-200 dark:border-gray-700 max-h-40 overflow-y-auto">
+                {copyText}
+            </div>
+
+            {/* Zalo OA section */}
+            {zaloEnabled && (
+                <div className="border border-blue-200 dark:border-blue-800 rounded-lg p-4 bg-blue-50/50 dark:bg-blue-900/20 space-y-3">
+                    <h4 className="font-semibold text-sm text-blue-800 dark:text-blue-200 flex items-center gap-2">
+                        📱 Gửi thông báo qua Zalo OA
+                    </h4>
+                    
+                    {studentsWithPhone.length > 0 && (
+                        <div className="text-xs text-green-700 dark:text-green-300">
+                            ✅ Có SĐT Zalo: {studentsWithPhone.map(s => s.name).join(', ')} ({studentsWithPhone.length} người)
+                        </div>
+                    )}
+                    {studentsWithoutPhone.length > 0 && (
+                        <div className="text-xs text-orange-600 dark:text-orange-400">
+                            ⚠️ Chưa có SĐT: {studentsWithoutPhone.map(s => s.name).join(', ')} — Cần cập nhật SĐT Zalo PH
+                        </div>
+                    )}
+                    
+                    {!zaloResults && (
+                        <Button
+                            onClick={handleSendZalo}
+                            isLoading={isSendingZalo}
+                            disabled={studentsWithPhone.length === 0}
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                            📱 Gửi Zalo cho {studentsWithPhone.length} phụ huynh
+                        </Button>
+                    )}
+
+                    {/* Results */}
+                    {zaloResults && (
+                        <div className="space-y-2">
+                            <div className="text-sm font-medium text-green-700 dark:text-green-300">
+                                📊 Kết quả: {zaloResults.summary.sent} gửi thành công / {zaloResults.summary.total} tổng
+                            </div>
+                            <div className="max-h-32 overflow-y-auto space-y-1">
+                                {zaloResults.results.map((r: any, i: number) => (
+                                    <div key={i} className={`text-xs px-2 py-1 rounded ${
+                                        r.status === 'sent' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
+                                        r.status === 'skipped' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' :
+                                        'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                                    }`}>
+                                        {r.status === 'sent' ? '✅' : r.status === 'skipped' ? '⏭️' : '❌'} {r.studentName}: {r.reason}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {!zaloEnabled && (
+                <p className="text-xs text-gray-400 italic">
+                    💡 Bật Zalo OA trong Cài đặt để gửi thông báo trực tiếp cho từng phụ huynh
+                </p>
+            )}
+
+            <div className="flex justify-end gap-3 mt-4">
+                <Button variant="secondary" onClick={onClose}>Đóng</Button>
+                <Button onClick={() => {
+                    navigator.clipboard.writeText(copyText).then(() => {
+                        toast.success('Đã chép nội dung vào khay nhớ tạm!');
+                        setTimeout(onClose, 1500);
+                    }).catch(() => {
+                        toast.error('Lỗi khi chép. Vui lòng thử chép thủ công.');
+                    });
+                }}>
+                    {ICONS.copy} <span className="ml-2">Chép tin nhắn</span>
+                </Button>
+            </div>
+        </div>
     );
 };

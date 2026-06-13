@@ -7,6 +7,7 @@ import { ICONS } from '../constants';
 import { ConfirmationModal } from '../components/common/ConfirmationModal';
 import { useAuth } from '../hooks/useAuth';
 import { Modal } from '../components/common/Modal';
+import { zaloTestConnection } from '../services/api';
 
 // For Google Drive Integration
 declare global {
@@ -666,6 +667,108 @@ export const SettingsScreen: React.FC = () => {
                                         </div>
                                     )}
                                 </div>
+                            </div>
+                        </fieldset>
+
+                        {/* Zalo OA Integration */}
+                        <fieldset className="form-fieldset" disabled={isViewer}>
+                            <legend className="form-legend">📱 Tích hợp Zalo OA — Gửi thông báo</legend>
+                            <div className="space-y-4 mt-2">
+                                <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+                                    <div>
+                                        <h4 className="font-semibold text-sm">Kích hoạt Zalo OA</h4>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">Bật để gửi thông báo vắng mặt và học phí qua Zalo</p>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                                        <input
+                                            type="checkbox"
+                                            name="zaloOaEnabled"
+                                            checked={settings.zaloOaEnabled || false}
+                                            onChange={handleChange}
+                                            className="sr-only peer"
+                                        />
+                                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-500"></div>
+                                    </label>
+                                </div>
+
+                                {(settings.zaloOaEnabled) && (
+                                    <>
+                                        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                                            <p className="font-semibold">Hướng dẫn lấy thông tin:</p>
+                                            <ol className="list-decimal pl-4 space-y-1">
+                                                <li>Đăng ký OA tại <a href="https://oa.zalo.me" target="_blank" rel="noreferrer" className="underline font-medium">oa.zalo.me</a></li>
+                                                <li>Tạo ứng dụng tại <a href="https://developers.zalo.me" target="_blank" rel="noreferrer" className="underline font-medium">developers.zalo.me</a></li>
+                                                <li>Lấy App ID và Secret Key từ trang ứng dụng</li>
+                                                <li>Lấy Refresh Token qua OAuth flow của Zalo</li>
+                                            </ol>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium">App ID <span className="text-red-500">*</span></label>
+                                                <input type="text" name="zaloAppId" value={settings.zaloAppId || ''} onChange={handleChange} className="form-input mt-1" placeholder="Nhập App ID" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium">Secret Key <span className="text-red-500">*</span></label>
+                                                <input type="password" name="zaloSecretKey" value={settings.zaloSecretKey || ''} onChange={handleChange} className="form-input mt-1" placeholder="Nhập Secret Key" />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium">Refresh Token <span className="text-red-500">*</span></label>
+                                            <input type="password" name="zaloRefreshToken" value={settings.zaloRefreshToken || ''} onChange={handleChange} className="form-input mt-1" placeholder="Nhập Refresh Token" />
+                                            <p className="text-xs text-gray-500 mt-1">Token sẽ tự động làm mới khi hết hạn</p>
+                                        </div>
+
+                                        <div className="flex items-center gap-3">
+                                            <Button type="button" variant="secondary" onClick={async () => {
+                                                if (!settings.zaloAppId || !settings.zaloSecretKey || !settings.zaloRefreshToken) {
+                                                    toast.error('Vui lòng nhập đủ App ID, Secret Key và Refresh Token');
+                                                    return;
+                                                }
+                                                try {
+                                                    const result = await zaloTestConnection(settings.zaloAppId, settings.zaloSecretKey, settings.zaloRefreshToken);
+                                                    if (result.success) {
+                                                        toast.success(result.message || 'Kết nối thành công!');
+                                                        if (result.newRefreshToken) {
+                                                            setSettings(prev => ({ ...prev, zaloRefreshToken: result.newRefreshToken }));
+                                                        }
+                                                    } else {
+                                                        toast.error(result.error || 'Kết nối thất bại');
+                                                    }
+                                                } catch (e: any) {
+                                                    toast.error(e.message || 'Lỗi kết nối');
+                                                }
+                                            }}>🔗 Test kết nối OA</Button>
+                                        </div>
+
+                                        <hr className="dark:border-gray-700" />
+
+                                        <h4 className="font-semibold text-sm">Mẫu tin nhắn (có thể chỉnh sửa)</h4>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">Các biến: <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{'}parentName{'}'}</code>, <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{'}studentName{'}'}</code>, <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{'}className{'}'}</code>, <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{'}date{'}'}</code>, <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{'}centerName{'}'}</code>, <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{'}amount{'}'}</code></p>
+
+                                        <div>
+                                            <label className="block text-sm font-medium">Mẫu thông báo vắng mặt</label>
+                                            <textarea 
+                                                name="zaloAbsenceTemplate" 
+                                                value={settings.zaloAbsenceTemplate || 'Kính gửi PH {parentName},\n\nTrung tâm {centerName} xin thông báo: Học viên {studentName} đã vắng mặt tại lớp {className} ngày {date}.\n\nVui lòng liên hệ trung tâm nếu cần thêm thông tin.\nTrân trọng!'} 
+                                                onChange={(e) => setSettings(prev => ({ ...prev, zaloAbsenceTemplate: e.target.value }))}
+                                                className="form-input mt-1" 
+                                                rows={4}
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium">Mẫu nhắc học phí</label>
+                                            <textarea 
+                                                name="zaloTuitionTemplate" 
+                                                value={settings.zaloTuitionTemplate || 'Kính gửi PH {parentName},\n\nTrung tâm {centerName} xin thông báo: Học viên {studentName} hiện có học phí chưa thanh toán: {amount}.\n\nVui lòng thanh toán để đảm bảo quyền lợi học tập.\nTrân trọng!'} 
+                                                onChange={(e) => setSettings(prev => ({ ...prev, zaloTuitionTemplate: e.target.value }))}
+                                                className="form-input mt-1" 
+                                                rows={4}
+                                            />
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </fieldset>
                     </div>

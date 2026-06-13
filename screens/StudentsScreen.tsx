@@ -13,6 +13,7 @@ import { Pagination } from '../components/common/Pagination';
 import { ResetPasswordModal } from '../components/auth/ChangePasswordModal';
 import { PaymentModal } from '../components/finance/PaymentModal';
 import { downloadAsCSV } from '../services/csvExport';
+import { zaloSendTuition } from '../services/api';
 
 const removeAccents = (str: string) => {
   if (!str) return '';
@@ -225,6 +226,11 @@ const StudentForm: React.FC<{
                     <div>
                         <label className="block text-sm font-medium">Tên phụ huynh</label>
                         <input type="text" name="parentName" value={formData.parentName} onChange={handleChange} className="form-input mt-1" />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium">📱 SĐT Zalo Phụ huynh</label>
+                        <input type="tel" name="parentPhone" value={formData.parentPhone || ''} onChange={handleChange} className="form-input mt-1" placeholder="SĐT đăng ký Zalo của PH" />
+                        <p className="text-xs text-gray-400 mt-0.5">Để nhận thông báo vắng/học phí qua Zalo</p>
                     </div>
                     <div>
                         <label className="block text-sm font-medium">Mật khẩu</label>
@@ -716,9 +722,26 @@ export const StudentsScreen: React.FC = () => {
                         {(canManage || student.balance < 0) && (
                             <div className="mt-3 border-t border-gray-100 dark:border-gray-700 pt-3 flex justify-end items-center space-x-1">
                                 {student.balance < 0 && (
-                                    <button onClick={() => setPaymentModalState({ isOpen: true, student: student })} className="p-2 rounded-full text-green-600 hover:bg-green-100 dark:hover:bg-green-900/50" title="Ghi nhận thanh toán">
-                                        {React.cloneElement(ICONS.finance as React.ReactElement, {width: 20, height: 20})}
-                                    </button>
+                                    <>
+                                        <button onClick={() => setPaymentModalState({ isOpen: true, student: student })} className="p-2 rounded-full text-green-600 hover:bg-green-100 dark:hover:bg-green-900/50" title="Ghi nhận thanh toán">
+                                            {React.cloneElement(ICONS.finance as React.ReactElement, {width: 20, height: 20})}
+                                        </button>
+                                        {state.settings.zaloOaEnabled && student.parentPhone && (
+                                            <button 
+                                                onClick={async () => {
+                                                    try {
+                                                        const result = await zaloSendTuition(student.name, student.parentName || 'Phụ huynh', student.parentPhone || '', student.balance, state.settings.name || '');
+                                                        if (result.success) toast.success(result.message);
+                                                        else toast.error(result.error || 'Lỗi gửi Zalo');
+                                                    } catch (e: any) { toast.error(e.message || 'Lỗi gửi Zalo'); }
+                                                }}
+                                                className="p-2 rounded-full text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/50" 
+                                                title="Nhắc học phí qua Zalo"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                            </button>
+                                        )}
+                                    </>
                                 )}
                                 {canManage && (
                                     <>

@@ -49,6 +49,7 @@ interface BasePerson {
 export interface Student extends BasePerson {
   dob: string;
   parentName: string;
+  parentPhone?: string; // SĐT Zalo phụ huynh để nhận thông báo
   email: string;
   balance: number; // Student's account balance. Positive = credit, Negative = debt.
   discountPercentage?: number; // Discount percentage (0-100)
@@ -194,6 +195,15 @@ export interface CenterSettings {
   loginHeaderContent?: string;
   taxId?: string;
   taxSignatureUrl?: string;
+  // Zalo OA Integration
+  zaloOaEnabled?: boolean;
+  zaloAppId?: string;
+  zaloSecretKey?: string;
+  zaloRefreshToken?: string;
+  zaloAccessToken?: string;
+  zaloTokenExpiresAt?: number;
+  zaloAbsenceTemplate?: string; // Mẫu tin nhắn vắng mặt
+  zaloTuitionTemplate?: string; // Mẫu tin nhắn học phí
 }
 
 export interface PayrollClassDetail {

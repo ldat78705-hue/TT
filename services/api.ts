@@ -192,3 +192,41 @@ export async function exportFullData() {
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
 }
+
+// ===== Zalo OA API =====
+
+export async function zaloTestConnection(appId: string, secretKey: string, refreshToken: string) {
+    const response = await fetch('/api/zalo', {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ action: 'test_connection', appId, secretKey, refreshToken }),
+    });
+    return response.json();
+}
+
+export async function zaloSendAbsence(students: { name: string; parentName: string; parentPhone: string }[], className: string, date: string, centerName: string) {
+    const response = await fetch('/api/zalo', {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ action: 'send_absence', students, className, date, centerName }),
+    });
+    return response.json();
+}
+
+export async function zaloSendTuition(studentName: string, parentName: string, parentPhone: string, amount: number, centerName: string) {
+    const response = await fetch('/api/zalo', {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ action: 'send_tuition', studentName, parentName, parentPhone, amount, centerName }),
+    });
+    return response.json();
+}
+
+export async function zaloGetFollowers() {
+    const response = await fetch('/api/zalo', {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ action: 'get_followers' }),
+    });
+    return response.json();
+}
