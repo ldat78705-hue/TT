@@ -1,11 +1,13 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Legacy collection (backward compatible)
     match /db_core_v2_secure_9a8b7c6d5e4f3g2h1/{document=**} {
       allow read, write: if request.auth != null && request.auth.token.email == 'server_admin@educenter.local';
     }
-    match /{document=**} {
-      allow read, write: if false;
+    // Multi-tenant: all center_* collections + registry
+    match /{collection}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.token.email == 'server_admin@educenter.local';
     }
   }
 }
