@@ -22,3 +22,25 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Backup & data files
+*.json.bak
+EduCenterPro_Backup_*.json
+*.zip
+
+# System files
+desktop.ini
+Thumbs.db
+
+# Env files
+.env
+.env.local
+.env.production
+
+# Test/dev files
+test-*.ts
+log.txt
+runs.json
+migrate.js
+fetch_logs.cjs
+
