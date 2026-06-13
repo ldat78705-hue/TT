@@ -224,7 +224,30 @@ fun DashboardScreen(
                     elevation = CardDefaults.cardElevation(2.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text("📊 Doanh thu 6 tháng gần nhất", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onBackground)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("📊 Doanh thu 6 tháng gần nhất", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onBackground)
+                            // Growth badge
+                            if (uiState.revenueGrowth != 0.0) {
+                                val isPositive = uiState.revenueGrowth > 0
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(if (isPositive) Color(0xFF10B981).copy(alpha = 0.1f) else Color(0xFFEF4444).copy(alpha = 0.1f))
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Text(
+                                        "${if (isPositive) "↑" else "↓"} ${"%.1f".format(kotlin.math.abs(uiState.revenueGrowth))}%",
+                                        color = if (isPositive) Color(0xFF10B981) else Color(0xFFEF4444),
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
                         Spacer(modifier = Modifier.height(16.dp))
 
                         val maxRevenue = uiState.revenueChartData.maxOfOrNull { it.second } ?: 1.0

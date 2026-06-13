@@ -439,6 +439,60 @@ class DataRepository @Inject constructor(
         } catch (e: Exception) { e.printStackTrace(); throw e }
     }
 
+    // ============ CHANGE PASSWORD ============
+
+    fun getLoggedInUserEmail(): String {
+        return prefs.getString("user_email", null) ?: ""
+    }
+
+    suspend fun changePassword(currentPassword: String, newPassword: String) = withContext(Dispatchers.IO) {
+        // Verify current password by attempting a login
+        try {
+            val email = getLoggedInUserEmail()
+            if (email.isBlank()) throw Exception("Không tìm thấy thông tin đăng nhập")
+
+            // Find current user's ID from app data
+            val data = _appData.value ?: throw Exception("Chưa tải dữ liệu")
+            val role = _currentUserRole.value
+
+            // Find user in the appropriate list based on role
+            val userId = when (role) {
+                com.educenter.pro.data.model.UserRole.ADMIN,
+                com.educenter.pro.data.model.UserRole.MANAGER,
+                com.educenter.pro.data.model.UserRole.ACCOUNTANT,
+                com.educenter.pro.data.model.UserRole.VIEWER -> {
+                    data.staff.find { it.email == email }?.id
+                        ?: data.teachers.find { it.email == email }?.id
+                        ?: throw Exception("Không tìm thấy tài khoản")
+                }
+                com.educenter.pro.data.model.UserRole.TEACHER -> {
+                    data.teachers.find { it.email == email }?.id
+                        ?: throw Exception("Không tìm thấy tài khoản giáo viên")
+                }
+                else -> throw Exception("Vai trò không hỗ trợ đổi mật khẩu")
+            }
+
+            // Map role to the format expected by the server
+            val roleStr = when (role) {
+                com.educenter.pro.data.model.UserRole.TEACHER -> "TEACHER"
+                else -> role.name
+            }
+
+            val payload = mapOf(
+                "userId" to userId,
+                "role" to roleStr,
+                "newPassword" to newPassword,
+                "currentPassword" to currentPassword
+            )
+
+            val updatedData = apiService.executeOperation(OperationPayload("updateUserPassword", payload))
+            saveAndCache(updatedData)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw e
+        }
+    }
+
     // ============ OFFLINE SYNC ============
 
     suspend fun refreshPendingCount() = withContext(Dispatchers.IO) {

@@ -199,6 +199,61 @@ private fun OverviewTab(uiState: FinanceUiState, fmt: NumberFormat) {
                 }
             }
         }
+
+        // Expense Breakdown by Category
+        if (uiState.expenseList.isNotEmpty()) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("📊 Phân loại chi phí", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onBackground)
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        val categoryMap = mapOf(
+                            "SALARY" to ("💰 Lương" to Color(0xFF3B82F6)),
+                            "RENT" to ("🏠 Thuê mặt bằng" to Color(0xFF8B5CF6)),
+                            "UTILITIES" to ("💡 Điện nước" to Color(0xFFF59E0B)),
+                            "MARKETING" to ("📢 Marketing" to Color(0xFFEC4899)),
+                            "SUPPLIES" to ("📦 Vật tư" to Color(0xFF10B981)),
+                            "OTHER" to ("📋 Khác" to Color(0xFF6B7280))
+                        )
+
+                        val totalExp = uiState.expenseList.sumOf { it.amount }
+                        val grouped = uiState.expenseList.groupBy { it.category }.mapValues { it.value.sumOf { e -> e.amount } }
+                            .entries.sortedByDescending { it.value }
+
+                        grouped.forEach { (cat, amount) ->
+                            val (label, color) = categoryMap[cat] ?: ("📋 $cat" to Color(0xFF6B7280))
+                            val pct = if (totalExp > 0) (amount / totalExp * 100) else 0.0
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(label, fontSize = 13.sp, modifier = Modifier.width(120.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Box(
+                                    modifier = Modifier.weight(1f).height(8.dp).clip(RoundedCornerShape(4.dp)).background(Color(0xFFE2E8F0))
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxHeight()
+                                            .fillMaxWidth(pct.toFloat() / 100f)
+                                            .clip(RoundedCornerShape(4.dp))
+                                            .background(color)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("${"%.0f".format(pct)}%", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = color, modifier = Modifier.width(40.dp))
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -446,14 +501,52 @@ private fun PaymentDialog(
 
                 // Result feedback
                 if (paymentResult?.isSuccess == true) {
+                    val context = androidx.compose.ui.platform.LocalContext.current
                     Card(
                         shape = RoundedCornerShape(12.dp),
                         colors = CardDefaults.cardColors(containerColor = Color(0xFFDCFCE7))
                     ) {
-                        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF10B981))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(paymentResult.message, color = Color(0xFF166534), fontWeight = FontWeight.SemiBold)
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF10B981))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(paymentResult.message, color = Color(0xFF166534), fontWeight = FontWeight.SemiBold)
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            // Share Receipt button
+                            val parsedAmt = amountText.toDoubleOrNull() ?: 0.0
+                            Button(
+                                onClick = {
+                                    val dateDisplay = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
+                                    val receipt = buildString {
+                                        appendLine("📄 PHIẾU THU HỌC PHÍ")
+                                        appendLine("━━━━━━━━━━━━━━━━━━")
+                                        appendLine("🏫 EduCenter Pro")
+                                        appendLine("📅 Ngày: $dateDisplay")
+                                        appendLine("━━━━━━━━━━━━━━━━━━")
+                                        appendLine("👤 Học viên: ${student.name}")
+                                        appendLine("💰 Số tiền: ${fmt.format(parsedAmt)}")
+                                        appendLine("💳 Hình thức: ${if (paymentMethod == "cash") "Tiền mặt" else "Chuyển khoản"}")
+                                        appendLine("━━━━━━━━━━━━━━━━━━")
+                                        appendLine("✅ Trạng thái: ĐÃ THANH TOÁN")
+                                        appendLine()
+                                        appendLine("Cảm ơn quý phụ huynh!")
+                                    }
+                                    val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(android.content.Intent.EXTRA_SUBJECT, "Phiếu thu HP - ${student.name}")
+                                        putExtra(android.content.Intent.EXTRA_TEXT, receipt)
+                                    }
+                                    context.startActivity(android.content.Intent.createChooser(intent, "Chia sẻ phiếu thu"))
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6))
+                            ) {
+                                Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("📤 Chia sẻ Phiếu thu", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            }
                         }
                     }
                 }

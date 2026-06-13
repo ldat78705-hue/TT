@@ -64,6 +64,8 @@ sealed class Screen(val route: String, val title: String? = null, val icon: Imag
     object Staff : Screen("staff", "Nhân viên")
     object ProgressReport : Screen("progress_report", "Nhận xét HS")
     object More : Screen("more", "Thêm", Icons.Filled.MoreHoriz)
+    object MyPayslip : Screen("my_payslip", "Bảng lương")
+    object TeacherCalendar : Screen("teacher_calendar", "Lịch dạy")
 }
 
 // Bottom nav: 4 tabs for clean UX
@@ -110,7 +112,7 @@ fun AppNavigation() {
                     visibleNavItems.forEach { screen ->
                         val isSelected = if (screen == Screen.More) {
                             // "More" is selected when on More, Profile, Finance, Announcements, etc.
-                            val moreRoutes = setOf(Screen.More.route, Screen.Profile.route, Screen.Finance.route, Screen.Announcements.route, Screen.Reports.route, Screen.Classes.route, Screen.Teachers.route)
+                            val moreRoutes = setOf(Screen.More.route, Screen.Profile.route, Screen.Finance.route, Screen.Announcements.route, Screen.Reports.route, Screen.Classes.route, Screen.Teachers.route, Screen.MyPayslip.route)
                             moreRoutes.contains(currentDestination?.route)
                         } else {
                             currentDestination?.hierarchy?.any { it.route == screen.route } == true
@@ -281,6 +283,11 @@ fun AppNavigation() {
                     onBack = { navController.popBackStack() }
                 )
             }
+            composable(Screen.MyPayslip.route) {
+                com.educenter.pro.ui.screens.payslip.MyPayslipScreen(
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
     }
 }
@@ -304,6 +311,16 @@ fun MoreScreen(
     val versionName = try {
         context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0"
     } catch (e: Exception) { "1.0" }
+
+    // Change Password state
+    var showChangePwd by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    var currentPwd by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
+    var newPwd by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
+    var confirmPwd by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
+    var pwdError by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
+    var pwdSuccess by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    var pwdLoading by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
 
     Column(
         modifier = Modifier
@@ -366,6 +383,11 @@ fun MoreScreen(
 
             MoreMenuItem(Icons.Default.Campaign, "Thông báo", Color(0xFFEC4899)) { onNavigateTo(Screen.Announcements.route) }
 
+            // Teacher: My Payslip
+            if (currentUserRole == UserRole.TEACHER) {
+                MoreMenuItem(Icons.Default.Receipt, "Bảng lương của tôi", Color(0xFF10B981)) { onNavigateTo("my_payslip") }
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
             Text("Tài khoản", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 4.dp, bottom = 2.dp))
 
@@ -378,6 +400,9 @@ fun MoreScreen(
             ) { profileViewModel.manualSync() }
 
             MoreMenuItem(Icons.Default.Receipt, "Lịch sử Thu / Chi", Color(0xFF10B981)) { onNavigateTo(Screen.Transactions.route) }
+
+            // Change Password
+            MoreMenuItem(Icons.Default.Lock, "Đổi mật khẩu", Color(0xFFF97316)) { showChangePwd = true }
 
             // Dark mode toggle
             Card(
@@ -441,6 +466,100 @@ fun MoreScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
         }
+    }
+
+    // ===== CHANGE PASSWORD DIALOG =====
+    if (showChangePwd) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = {
+                showChangePwd = false; currentPwd = ""; newPwd = ""; confirmPwd = ""; pwdError = null; pwdSuccess = false
+            },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Lock, contentDescription = null, tint = Color(0xFFF97316), modifier = Modifier.size(24.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Đổi mật khẩu", fontWeight = FontWeight.Bold)
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    if (pwdSuccess) {
+                        Text("✅ Đổi mật khẩu thành công!", color = Color(0xFF10B981), fontWeight = FontWeight.Bold)
+                    } else {
+                        if (pwdError != null) {
+                            Text(pwdError!!, color = Color(0xFFEF4444), fontSize = 13.sp)
+                        }
+                        OutlinedTextField(
+                            value = currentPwd,
+                            onValueChange = { currentPwd = it; pwdError = null },
+                            label = { Text("Mật khẩu hiện tại") },
+                            singleLine = true,
+                            visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        OutlinedTextField(
+                            value = newPwd,
+                            onValueChange = { newPwd = it; pwdError = null },
+                            label = { Text("Mật khẩu mới") },
+                            singleLine = true,
+                            visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        OutlinedTextField(
+                            value = confirmPwd,
+                            onValueChange = { confirmPwd = it; pwdError = null },
+                            label = { Text("Xác nhận mật khẩu mới") },
+                            singleLine = true,
+                            visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                if (!pwdSuccess) {
+                    Button(
+                        onClick = {
+                            when {
+                                currentPwd.isBlank() -> pwdError = "Vui lòng nhập mật khẩu hiện tại"
+                                newPwd.length < 6 -> pwdError = "Mật khẩu mới phải có ít nhất 6 ký tự"
+                                newPwd != confirmPwd -> pwdError = "Mật khẩu xác nhận không khớp"
+                                else -> {
+                                    pwdLoading = true
+                                    coroutineScope.launch {
+                                        try {
+                                            profileViewModel.changePassword(currentPwd, newPwd)
+                                            pwdSuccess = true
+                                            pwdLoading = false
+                                        } catch (e: Exception) {
+                                            pwdError = e.message ?: "Đổi mật khẩu thất bại"
+                                            pwdLoading = false
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        enabled = !pwdLoading,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6))
+                    ) {
+                        if (pwdLoading) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White, strokeWidth = 2.dp)
+                        } else {
+                            Text("Xác nhận", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showChangePwd = false; currentPwd = ""; newPwd = ""; confirmPwd = ""; pwdError = null; pwdSuccess = false
+                }) { Text(if (pwdSuccess) "Đóng" else "Hủy") }
+            }
+        )
     }
 }
 

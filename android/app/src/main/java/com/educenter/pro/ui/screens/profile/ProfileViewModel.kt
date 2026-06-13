@@ -45,4 +45,8 @@ class ProfileViewModel @Inject constructor(
             _isSyncing.value = false
         }
     }
+
+    suspend fun changePassword(currentPassword: String, newPassword: String) {
+        dataRepository.changePassword(currentPassword, newPassword)
+    }
 }

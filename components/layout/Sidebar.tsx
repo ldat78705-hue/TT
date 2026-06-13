@@ -28,6 +28,7 @@ const managerNavLinks = [
   { to: ROUTES.CLASSES, icon: ICONS.classes, label: 'Lớp học' },
   { to: ROUTES.ROOMS, icon: ICONS.rooms, label: 'Phòng học' },
   { to: ROUTES.ATTENDANCE_HUB, icon: ICONS.calendar, label: 'Lịch điểm danh' },
+  { to: ROUTES.FINANCE, icon: ICONS.finance, label: 'Tài chính' },
   { to: ROUTES.ANNOUNCEMENTS, icon: ICONS.announcement, label: 'Thông báo' },
   { to: ROUTES.REPORTS, icon: ICONS.reports, label: 'Báo cáo' },
 ];

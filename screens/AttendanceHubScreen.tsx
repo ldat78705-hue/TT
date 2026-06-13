@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from 'react';
 import { useData } from '../hooks/useDataContext';
 import { Calendar } from '../components/common/Calendar';
-import { ClassSchedule } from '../types';
+import { ClassSchedule, Class as ClassModel } from '../types';
 import { ROUTES, ICONS } from '../constants';
 import { Link } from 'react-router-dom';
 import { AbsentStudentsModal } from '../components/attendance/AbsentStudentsModal';
@@ -214,10 +214,17 @@ export const AttendanceHubScreen: React.FC = () => {
                                 ))}
                             </div>
                         ) : (
-                            <div className="flex items-center justify-center h-full text-center py-10">
-                                <p className="text-gray-500">Không có lịch trình</p>
+                            <div className="flex items-center justify-center text-center py-6">
+                                <p className="text-gray-500">Không có lịch học vào ngày này</p>
                             </div>
                         )}
+
+                        {/* Unscheduled Classes - Attend any class on any day */}
+                        <UnscheduledClassesSection
+                            relevantClasses={relevantClasses}
+                            eventsForSelectedDay={eventsForSelectedDay}
+                            selectedDate={formatDateString(normalizedSelectedDate)}
+                        />
                     </div>
                 </div>
             </div>
@@ -230,6 +237,67 @@ export const AttendanceHubScreen: React.FC = () => {
                 isOpen={showQRModal}
                 onClose={() => setShowQRModal(false)}
             />
+        </div>
+    );
+};
+
+// Expandable section for unscheduled classes
+const UnscheduledClassesSection: React.FC<{
+    relevantClasses: ClassModel[];
+    eventsForSelectedDay: CalendarEvent[];
+    selectedDate: string;
+}> = ({ relevantClasses, eventsForSelectedDay, selectedDate }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    // Find classes NOT in today's scheduled events
+    const scheduledClassIds = new Set(eventsForSelectedDay.map(e => {
+        // Extract classId from link: /attendance/:classId/:date
+        const parts = e.link.split('/');
+        return parts[2]; // classId
+    }));
+
+    const unscheduledClasses = relevantClasses.filter(cls => !scheduledClassIds.has(cls.id));
+
+    if (unscheduledClasses.length === 0) return null;
+
+    return (
+        <div className="mt-4">
+            <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="w-full flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-600/30 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-500/30 transition-colors"
+            >
+                <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">
+                    📋 Tất cả lớp học ({unscheduledClasses.length})
+                </span>
+                <svg className={`w-4 h-4 text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+            {isExpanded && (
+                <div className="space-y-2 mt-2">
+                    {unscheduledClasses.map(cls => (
+                        <Link
+                            key={cls.id}
+                            to={ROUTES.ATTENDANCE_DETAIL.replace(':classId', cls.id).replace(':date', selectedDate)}
+                            state={{ returnTo: ROUTES.ATTENDANCE_HUB }}
+                            className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-600/30 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-500/30 transition-colors group"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="w-1 h-8 rounded-full bg-gray-300 dark:bg-gray-600 shrink-0"></div>
+                                <div>
+                                    <h4 className="font-semibold text-sm text-gray-800 dark:text-gray-200">{cls.name}</h4>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                        {cls.studentIds?.length || 0} học viên • Ngoài lịch
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="text-gray-400 group-hover:text-primary transition-colors">
+                                {ICONS.chevronRight}
+                            </div>
+                        </Link>
+                    ))}
+                </div>
+            )}
         </div>
     );
 };

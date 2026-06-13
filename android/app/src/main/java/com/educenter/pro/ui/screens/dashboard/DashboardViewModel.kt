@@ -54,6 +54,19 @@ class DashboardViewModel @Inject constructor(
                         .filter { it.date.startsWith(currentMonthPrefix) && it.type == "PAYMENT" }
                         .sumOf { it.amount }
 
+                    // Last month revenue for comparison
+                    val lastMonthCal = Calendar.getInstance()
+                    lastMonthCal.add(Calendar.MONTH, -1)
+                    val lastMonthPrefix = SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(lastMonthCal.time)
+                    val lastMonthRevenue = appData.transactions
+                        .filter { it.date.startsWith(lastMonthPrefix) && it.type == "PAYMENT" }
+                        .sumOf { it.amount }
+
+                    // Revenue growth percentage
+                    val revenueGrowth = if (lastMonthRevenue > 0) {
+                        ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue * 100)
+                    } else if (currentMonthRevenue > 0) 100.0 else 0.0
+
                     // Uncollected fees: sum of negative balances
                     val totalUncollected = appData.students
                         .filter { it.balance < 0 && it.status.name == "ACTIVE" }
@@ -135,6 +148,8 @@ class DashboardViewModel @Inject constructor(
                         totalClasses = appData.classes.size,
                         totalTeachers = appData.teachers.size,
                         monthlyRevenue = currentMonthRevenue,
+                        lastMonthRevenue = lastMonthRevenue,
+                        revenueGrowth = revenueGrowth,
                         totalUncollected = totalUncollected,
                         topDebtors = topDebtors,
                         topAbsent = topAbsent,
@@ -159,6 +174,8 @@ data class DashboardUiState(
     val totalClasses: Int = 0,
     val totalTeachers: Int = 0,
     val monthlyRevenue: Double = 0.0,
+    val lastMonthRevenue: Double = 0.0,
+    val revenueGrowth: Double = 0.0,
     val totalUncollected: Double = 0.0,
     val topDebtors: List<StudentDebt> = emptyList(),
     val topAbsent: List<StudentAbsent> = emptyList(),
