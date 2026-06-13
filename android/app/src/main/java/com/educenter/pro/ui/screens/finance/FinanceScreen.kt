@@ -77,7 +77,7 @@ fun FinanceScreen(
                 0 -> OverviewTab(uiState, fmt)
                 1 -> DebtTab(uiState, fmt, onCollectFee = { paymentStudent = it })
                 2 -> TransactionsTab(uiState, fmt)
-                3 -> IncomeExpenseTab(uiState, fmt)
+                3 -> IncomeExpenseTab(uiState, fmt, viewModel)
                 4 -> PayrollTab(uiState, fmt)
             }
         }
@@ -501,10 +501,18 @@ private fun PaymentDialog(
 }
 
 @Composable
-private fun IncomeExpenseTab(uiState: FinanceUiState, fmt: NumberFormat) {
+private fun IncomeExpenseTab(uiState: FinanceUiState, fmt: NumberFormat, viewModel: FinanceViewModel) {
     val totalIncome = uiState.incomeList.sumOf { it.amount }
     val totalExpense = uiState.expenseList.sumOf { it.amount }
-    
+    val currentUserRole by viewModel.currentUserRole.collectAsState()
+    val canManage = currentUserRole == com.educenter.pro.data.model.UserRole.ADMIN ||
+            currentUserRole == com.educenter.pro.data.model.UserRole.MANAGER ||
+            currentUserRole == com.educenter.pro.data.model.UserRole.ACCOUNTANT
+
+    var showAddDialog by remember { mutableStateOf(false) }
+    var deleteTarget by remember { mutableStateOf<Pair<String, String>?>(null) } // Pair(id, type: "income"/"expense")
+
+    Box(modifier = Modifier.fillMaxSize()) {
     LazyColumn(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -544,6 +552,11 @@ private fun IncomeExpenseTab(uiState: FinanceUiState, fmt: NumberFormat) {
                             Text("${income.date.take(10)} • ${income.category}", fontSize = 12.sp, color = Color(0xFF94A3B8))
                         }
                         Text("+${fmt.format(income.amount)}", color = Color(0xFF10B981), fontWeight = FontWeight.Bold)
+                        if (canManage) {
+                            IconButton(onClick = { deleteTarget = Pair(income.id, "income") }, modifier = Modifier.size(32.dp)) {
+                                Icon(Icons.Default.Delete, contentDescription = "Xóa", tint = Color(0xFFEF4444), modifier = Modifier.size(16.dp))
+                            }
+                        }
                     }
                 }
             }
@@ -553,6 +566,7 @@ private fun IncomeExpenseTab(uiState: FinanceUiState, fmt: NumberFormat) {
         if (uiState.expenseList.isNotEmpty()) {
             item { Text("📉 Chi phí", fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(top = 8.dp)) }
             items(uiState.expenseList) { expense ->
+                val isAutoPayroll = expense.id.startsWith("EXP-PAY-")
                 Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), elevation = CardDefaults.cardElevation(1.dp)) {
                     Row(modifier = Modifier.padding(12.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
@@ -560,6 +574,11 @@ private fun IncomeExpenseTab(uiState: FinanceUiState, fmt: NumberFormat) {
                             Text("${expense.date.take(10)} • ${expense.category}", fontSize = 12.sp, color = Color(0xFF94A3B8))
                         }
                         Text("-${fmt.format(expense.amount)}", color = Color(0xFFEF4444), fontWeight = FontWeight.Bold)
+                        if (canManage && !isAutoPayroll) {
+                            IconButton(onClick = { deleteTarget = Pair(expense.id, "expense") }, modifier = Modifier.size(32.dp)) {
+                                Icon(Icons.Default.Delete, contentDescription = "Xóa", tint = Color(0xFFEF4444), modifier = Modifier.size(16.dp))
+                            }
+                        }
                     }
                 }
             }
@@ -572,6 +591,112 @@ private fun IncomeExpenseTab(uiState: FinanceUiState, fmt: NumberFormat) {
                 }
             }
         }
+    }
+
+    // FAB
+    if (canManage) {
+        FloatingActionButton(
+            onClick = { showAddDialog = true },
+            containerColor = Color(0xFF3B82F6),
+            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
+        ) {
+            Icon(Icons.Default.Add, contentDescription = "Thêm Thu/Chi", tint = Color.White)
+        }
+    }
+    } // Box
+
+    // Delete confirmation
+    if (deleteTarget != null) {
+        val (id, type) = deleteTarget!!
+        AlertDialog(
+            onDismissRequest = { deleteTarget = null },
+            title = { Text("Xóa khoản ${if (type == "income") "thu" else "chi"}?") },
+            text = { Text("Bạn có chắc muốn xóa khoản này?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (type == "income") viewModel.deleteIncome(id)
+                        else viewModel.deleteExpense(id)
+                        deleteTarget = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444))
+                ) { Text("Xóa") }
+            },
+            dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text("Hủy") } }
+        )
+    }
+
+    // Add dialog
+    if (showAddDialog) {
+        var isIncome by remember { mutableStateOf(true) }
+        var description by remember { mutableStateOf("") }
+        var amountText by remember { mutableStateOf("") }
+        var category by remember { mutableStateOf("") }
+        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+
+        AlertDialog(
+            onDismissRequest = { showAddDialog = false },
+            title = { Text("➕ Thêm khoản Thu/Chi", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(
+                            selected = isIncome,
+                            onClick = { isIncome = true },
+                            label = { Text("Thu nhập") },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = Color(0xFF10B981),
+                                selectedLabelColor = Color.White
+                            )
+                        )
+                        FilterChip(
+                            selected = !isIncome,
+                            onClick = { isIncome = false },
+                            label = { Text("Chi phí") },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = Color(0xFFEF4444),
+                                selectedLabelColor = Color.White
+                            )
+                        )
+                    }
+                    OutlinedTextField(
+                        value = description, onValueChange = { description = it },
+                        label = { Text("Mô tả *") }, singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp)
+                    )
+                    OutlinedTextField(
+                        value = amountText, onValueChange = { amountText = it.filter { c -> c.isDigit() || c == '.' } },
+                        label = { Text("Số tiền *") }, singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+                    OutlinedTextField(
+                        value = category, onValueChange = { category = it },
+                        label = { Text("Danh mục") }, singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val amount = amountText.toDoubleOrNull() ?: 0.0
+                        if (description.isNotBlank() && amount > 0) {
+                            if (isIncome) viewModel.addIncome(description, amount, category.ifBlank { "Khác" }, today)
+                            else viewModel.addExpense(description, amount, category.ifBlank { "Khác" }, today)
+                            showAddDialog = false
+                        }
+                    },
+                    enabled = description.isNotBlank() && (amountText.toDoubleOrNull() ?: 0.0) > 0,
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = if (isIncome) Color(0xFF10B981) else Color(0xFFEF4444))
+                ) { Text("Lưu", fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = { TextButton(onClick = { showAddDialog = false }) { Text("Hủy") } }
+        )
     }
 }
 

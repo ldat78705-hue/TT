@@ -341,7 +341,49 @@ class DataRepository @Inject constructor(
 
     suspend fun deleteProgressReport(reportId: String) = withContext(Dispatchers.IO) {
         try {
-            val updatedData = apiService.executeOperation(OperationPayload("deleteProgressReport", mapOf("id" to reportId)))
+            val updatedData = apiService.executeOperation(OperationPayload("deleteProgressReport", mapOf("reportId" to reportId)))
+            saveAndCache(updatedData)
+        } catch (e: Exception) { e.printStackTrace(); throw e }
+    }
+
+    // ============ INCOME / EXPENSE ============
+
+    suspend fun addIncome(description: String, amount: Double, category: String, date: String) = withContext(Dispatchers.IO) {
+        try {
+            val payload = mapOf(
+                "description" to description,
+                "amount" to amount,
+                "category" to category,
+                "date" to date
+            )
+            val updatedData = apiService.executeOperation(OperationPayload("addIncome", payload))
+            saveAndCache(updatedData)
+        } catch (e: Exception) { e.printStackTrace(); throw e }
+    }
+
+    suspend fun deleteIncome(itemId: String) = withContext(Dispatchers.IO) {
+        try {
+            val updatedData = apiService.executeOperation(OperationPayload("deleteIncome", mapOf("itemId" to itemId)))
+            saveAndCache(updatedData)
+        } catch (e: Exception) { e.printStackTrace(); throw e }
+    }
+
+    suspend fun addExpense(description: String, amount: Double, category: String, date: String) = withContext(Dispatchers.IO) {
+        try {
+            val payload = mapOf(
+                "description" to description,
+                "amount" to amount,
+                "category" to category,
+                "date" to date
+            )
+            val updatedData = apiService.executeOperation(OperationPayload("addExpense", payload))
+            saveAndCache(updatedData)
+        } catch (e: Exception) { e.printStackTrace(); throw e }
+    }
+
+    suspend fun deleteExpense(itemId: String) = withContext(Dispatchers.IO) {
+        try {
+            val updatedData = apiService.executeOperation(OperationPayload("deleteExpense", mapOf("itemId" to itemId)))
             saveAndCache(updatedData)
         } catch (e: Exception) { e.printStackTrace(); throw e }
     }

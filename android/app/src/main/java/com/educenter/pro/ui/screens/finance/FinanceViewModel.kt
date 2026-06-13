@@ -118,11 +118,41 @@ class FinanceViewModel @Inject constructor(
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing = _isRefreshing.asStateFlow()
 
+    val currentUserRole = dataRepository.currentUserRole
+
     fun refresh() {
         viewModelScope.launch {
             _isRefreshing.value = true
             try { dataRepository.syncData() } catch (_: Exception) { }
             _isRefreshing.value = false
+        }
+    }
+
+    fun addIncome(description: String, amount: Double, category: String, date: String) {
+        viewModelScope.launch {
+            try { dataRepository.addIncome(description, amount, category, date) }
+            catch (e: Exception) { e.printStackTrace() }
+        }
+    }
+
+    fun deleteIncome(itemId: String) {
+        viewModelScope.launch {
+            try { dataRepository.deleteIncome(itemId) }
+            catch (e: Exception) { e.printStackTrace() }
+        }
+    }
+
+    fun addExpense(description: String, amount: Double, category: String, date: String) {
+        viewModelScope.launch {
+            try { dataRepository.addExpense(description, amount, category, date) }
+            catch (e: Exception) { e.printStackTrace() }
+        }
+    }
+
+    fun deleteExpense(itemId: String) {
+        viewModelScope.launch {
+            try { dataRepository.deleteExpense(itemId) }
+            catch (e: Exception) { e.printStackTrace() }
         }
     }
 }
