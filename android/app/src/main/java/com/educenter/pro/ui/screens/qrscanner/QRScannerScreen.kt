@@ -1,5 +1,8 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@file:Suppress("DEPRECATION")
 package com.educenter.pro.ui.screens.qrscanner
+
+import android.annotation.SuppressLint
 
 import android.util.Log
 import android.util.Size
@@ -211,6 +214,7 @@ private fun ClassSelector(
     }
 }
 
+@SuppressLint("UnsafeOptInUsageError")
 @Composable
 private fun ScanningView(
     uiState: QRScannerUiState,
@@ -221,7 +225,7 @@ private fun ScanningView(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val scannedSet = remember { mutableSetOf<String>() }
-    var lastProcessedTime by remember { mutableLongStateOf(0L) }
+    var lastProcessedTime by remember { mutableStateOf(0L) }
 
     Column(modifier = Modifier.fillMaxSize()) {
         // Progress header
