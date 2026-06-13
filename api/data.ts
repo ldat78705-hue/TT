@@ -20,6 +20,16 @@ try {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 
+// Multi-tenant: collection name per center
+const LEGACY_COLLECTION = 'db_core_v2_secure_9a8b7c6d5e4f3g2h1';
+const DEFAULT_CENTER_ID = 'thanhdat';
+
+function getCollectionName(centerId?: string): string {
+    if (!centerId || centerId === '_legacy') return LEGACY_COLLECTION;
+    return `center_${centerId}`;
+}
+
+
 const BASE_COLLECTIONS = [
     'students', 'teachers', 'staff', 'classes', 'attendance', 
     'invoices', 'progressReports', 'transactions', 'income', 
@@ -88,32 +98,51 @@ function shardAppData(data: Omit<AppData, 'loading'>): Record<string, any> {
     return shards;
 }
 
-// In-memory cache and lock for extreme performance
-let cachedData: Omit<AppData, 'loading'> | null = null;
-let rawShardStrings: Record<string, string> = {};
-let fetchPromise: Promise<Omit<AppData, 'loading'>> | null = null;
+// In-memory cache and lock for extreme performance - PER CENTER
+interface CenterCache {
+    cachedData: Omit<AppData, 'loading'> | null;
+    rawShardStrings: Record<string, string>;
+    fetchPromise: Promise<Omit<AppData, 'loading'>> | null;
+    localSyncId: string;
+    syncListenerSetup: boolean;
+}
+const centerCaches = new Map<string, CenterCache>();
+
+function getCenterCache(centerId: string): CenterCache {
+    if (!centerCaches.has(centerId)) {
+        centerCaches.set(centerId, {
+            cachedData: null,
+            rawShardStrings: {},
+            fetchPromise: null,
+            localSyncId: '',
+            syncListenerSetup: false
+        });
+    }
+    return centerCaches.get(centerId)!;
+}
+
 let isLocked = false;
-let localSyncId = '';
 
 // Listen to _sync document changes in the background to invalidate cache across instances
-let syncListenerSetup = false;
-function setupSyncListener() {
-    if (syncListenerSetup) return;
-    syncListenerSetup = true;
-    onSnapshot(doc(db, 'db_core_v2_secure_9a8b7c6d5e4f3g2h1', '_sync'), (docSnap) => {
+function setupSyncListener(centerId: string) {
+    const cache = getCenterCache(centerId);
+    if (cache.syncListenerSetup) return;
+    cache.syncListenerSetup = true;
+    const colName = getCollectionName(centerId);
+    onSnapshot(doc(db, colName, '_sync'), (docSnap) => {
         if (docSnap.exists()) {
             const data = docSnap.data();
-            const remoteSyncId = data.syncId || data.lastUpdatedAt?.toString(); // Fallback for old data
-            if (remoteSyncId && remoteSyncId !== localSyncId) {
-                console.log("Remote sync detected, invalidating cache...");
-                localSyncId = remoteSyncId;
-                cachedData = null; // Force refresh on next request
-                fetchPromise = null;
+            const remoteSyncId = data.syncId || data.lastUpdatedAt?.toString();
+            if (remoteSyncId && remoteSyncId !== cache.localSyncId) {
+                console.log(`Remote sync detected for center ${centerId}, invalidating cache...`);
+                cache.localSyncId = remoteSyncId;
+                cache.cachedData = null;
+                cache.fetchPromise = null;
             }
         }
     }, (error) => {
-        console.error("Sync listener error:", error);
-        syncListenerSetup = false; // Allow retry
+        console.error(`Sync listener error for center ${centerId}:`, error);
+        cache.syncListenerSetup = false;
     });
 }
 
@@ -136,14 +165,17 @@ async function getAuthPayload(req: any) {
     return await verifyToken(token);
 }
 
-export async function getSplitData(forceRefresh = false): Promise<Omit<AppData, 'loading'>> {
-    if (cachedData && !forceRefresh) return cachedData;
-    if (fetchPromise && !forceRefresh) return fetchPromise;
+export async function getSplitData(centerId: string = '_legacy', forceRefresh = false): Promise<Omit<AppData, 'loading'>> {
+    const cache = getCenterCache(centerId);
+    const colName = getCollectionName(centerId);
+    
+    if (cache.cachedData && !forceRefresh) return cache.cachedData;
+    if (cache.fetchPromise && !forceRefresh) return cache.fetchPromise;
 
-    fetchPromise = (async () => {
+    cache.fetchPromise = (async () => {
         try {
             await authenticateServer();
-            setupSyncListener();
+            setupSyncListener(centerId);
             const defaultState = getMockDataState();
             const data: any = {
                 students: [], teachers: [], staff: [], classes: [], attendance: [],
@@ -155,7 +187,7 @@ export async function getSplitData(forceRefresh = false): Promise<Omit<AppData, 
             let hasData = false;
             const newRawStrings: Record<string, string> = {};
 
-            const querySnapshot = await getDocs(collection(db, 'db_core_v2_secure_9a8b7c6d5e4f3g2h1'));
+            const querySnapshot = await getDocs(collection(db, colName));
             
             querySnapshot.forEach((docSnap) => {
                 const id = docSnap.id;
@@ -182,7 +214,7 @@ export async function getSplitData(forceRefresh = false): Promise<Omit<AppData, 
             });
 
             if (!hasData) {
-                console.log("Firestore is empty. Seeding with initial mock data.");
+                console.log(`Firestore collection ${colName} is empty. Seeding with initial mock data.`);
                 
                 // Hash passwords in defaultState
                 if (defaultState.settings?.adminPassword) {
@@ -206,26 +238,26 @@ export async function getSplitData(forceRefresh = false): Promise<Omit<AppData, 
 
                 const batch = writeBatch(db);
                 BASE_COLLECTIONS.forEach(col => {
-                    batch.set(doc(db, 'db_core_v2_secure_9a8b7c6d5e4f3g2h1', col), { data: defaultState[col] });
+                    batch.set(doc(db, colName, col), { data: defaultState[col] });
                     data[col] = defaultState[col];
                     newRawStrings[col] = JSON.stringify(defaultState[col]);
                 });
                 const newSyncId = Date.now().toString() + '_' + Math.random().toString(36).substring(2);
-                batch.set(doc(db, 'db_core_v2_secure_9a8b7c6d5e4f3g2h1', '_sync'), { syncId: newSyncId, lastUpdatedAt: Date.now() });
+                batch.set(doc(db, colName, '_sync'), { syncId: newSyncId, lastUpdatedAt: Date.now() });
                 await batch.commit();
-                localSyncId = newSyncId;
+                cache.localSyncId = newSyncId;
             }
 
-            rawShardStrings = newRawStrings;
-            cachedData = data as Omit<AppData, 'loading'>;
-            return cachedData;
+            cache.rawShardStrings = newRawStrings;
+            cache.cachedData = data as Omit<AppData, 'loading'>;
+            return cache.cachedData;
         } catch (error) {
-            fetchPromise = null;
+            cache.fetchPromise = null;
             throw error;
         }
     })();
 
-    return fetchPromise;
+    return cache.fetchPromise;
 }
 
 function applySmartWindowFilter(data: any) {
@@ -286,11 +318,13 @@ function applySmartWindowFilter(data: any) {
     return filtered;
 }
 
-export async function executeOperationInternal(operation: { op: string, payload: any }) {
+export async function executeOperationInternal(operation: { op: string, payload: any }, centerId: string = '_legacy') {
     await acquireLock();
     try {
         await authenticateServer();
-        const currentData = await getSplitData();
+        const cache = getCenterCache(centerId);
+        const colName = getCollectionName(centerId);
+        const currentData = await getSplitData(centerId);
         const dataClone = structuredClone(currentData);
         const updatedData = applyOperation(dataClone, operation);
         const updatedShards = shardAppData(updatedData);
@@ -300,18 +334,18 @@ export async function executeOperationInternal(operation: { op: string, payload:
         const pendingRawStringsUpdates: Record<string, string | null> = {};
         
         Object.keys(updatedShards).forEach(key => {
-            const oldStr = rawShardStrings[key];
+            const oldStr = cache.rawShardStrings[key];
             const newStr = JSON.stringify(updatedShards[key]);
             if (oldStr !== newStr) {
-                batch.set(doc(db, 'db_core_v2_secure_9a8b7c6d5e4f3g2h1', key), { data: updatedShards[key] });
+                batch.set(doc(db, colName, key), { data: updatedShards[key] });
                 hasChanges = true;
                 pendingRawStringsUpdates[key] = newStr;
             }
         });
 
-        Object.keys(rawShardStrings).forEach(key => {
+        Object.keys(cache.rawShardStrings).forEach(key => {
             if (key !== '_sync' && updatedShards[key] === undefined) {
-                batch.delete(doc(db, 'db_core_v2_secure_9a8b7c6d5e4f3g2h1', key));
+                batch.delete(doc(db, colName, key));
                 hasChanges = true;
                 pendingRawStringsUpdates[key] = null;
             }
@@ -319,20 +353,20 @@ export async function executeOperationInternal(operation: { op: string, payload:
 
         if (hasChanges) {
             const newSyncId = Date.now().toString() + '_' + Math.random().toString(36).substring(2);
-            batch.set(doc(db, 'db_core_v2_secure_9a8b7c6d5e4f3g2h1', '_sync'), { syncId: newSyncId, lastUpdatedAt: Date.now() });
+            batch.set(doc(db, colName, '_sync'), { syncId: newSyncId, lastUpdatedAt: Date.now() });
             
-            cachedData = updatedData;
-            localSyncId = newSyncId;
+            cache.cachedData = updatedData;
+            cache.localSyncId = newSyncId;
             
             try {
                 await batch.commit();
                 Object.keys(pendingRawStringsUpdates).forEach(key => {
                     const val = pendingRawStringsUpdates[key];
-                    if (val === null) delete rawShardStrings[key];
-                    else rawShardStrings[key] = val;
+                    if (val === null) delete cache.rawShardStrings[key];
+                    else cache.rawShardStrings[key] = val;
                 });
             } catch (err) {
-                cachedData = null; 
+                cache.cachedData = null; 
                 throw err;
             }
         }
@@ -342,10 +376,12 @@ export async function executeOperationInternal(operation: { op: string, payload:
     }
 }
 
-export async function executeAttendanceTransaction(payload: any) {
+export async function executeAttendanceTransaction(payload: any, centerId: string = '_legacy') {
     await acquireLock();
     try {
         await authenticateServer();
+        const cache = getCenterCache(centerId);
+        const colName = getCollectionName(centerId);
         const records: any[] = payload;
         
         // Group by shard key
@@ -359,7 +395,7 @@ export async function executeAttendanceTransaction(payload: any) {
         shardsAffected.add('classes');
 
         await runTransaction(db, async (transaction) => {
-            const shardRefs = Array.from(shardsAffected).map(k => doc(db, 'db_core_v2_secure_9a8b7c6d5e4f3g2h1', k));
+            const shardRefs = Array.from(shardsAffected).map(k => doc(db, colName, k));
             const snapshots = await Promise.all(shardRefs.map(ref => transaction.get(ref)));
             
             const currentData: any = {};
@@ -413,38 +449,40 @@ export async function executeAttendanceTransaction(payload: any) {
 
             // Write back
             Object.keys(updatedShardsData).forEach(sKey => {
-                const ref = doc(db, 'db_core_v2_secure_9a8b7c6d5e4f3g2h1', sKey);
+                const ref = doc(db, colName, sKey);
                 transaction.set(ref, { data: updatedShardsData[sKey] });
             });
 
-            const syncRef = doc(db, 'db_core_v2_secure_9a8b7c6d5e4f3g2h1', '_sync');
+            const syncRef = doc(db, colName, '_sync');
             const newSyncId = Date.now().toString() + '_' + Math.random().toString(36).substring(2);
             transaction.set(syncRef, { syncId: newSyncId, lastUpdatedAt: Date.now() });
         });
         
         // Force full refresh next time
-        cachedData = null;
-        fetchPromise = null;
+        cache.cachedData = null;
+        cache.fetchPromise = null;
         
         // Return latest full data
-        return applySmartWindowFilter(await getSplitData());
+        return applySmartWindowFilter(await getSplitData(centerId));
     } finally {
         releaseLock();
     }
 }
 
-export async function executeTuitionTransaction(payload: any) {
+export async function executeTuitionTransaction(payload: any, centerId: string = '_legacy') {
     await acquireLock();
     try {
         await authenticateServer();
+        const cache = getCenterCache(centerId);
+        const colName = getCollectionName(centerId);
         const { studentId, amount, date, description, type, paymentMethod } = payload;
         const finalAmount = type === 'CREDIT' ? amount : -amount;
         
         const shardKey = getShardKey({ date }, 'transactions');
         
         await runTransaction(db, async (transaction) => {
-            const txRef = doc(db, 'db_core_v2_secure_9a8b7c6d5e4f3g2h1', shardKey);
-            const studentsRef = doc(db, 'db_core_v2_secure_9a8b7c6d5e4f3g2h1', 'students');
+            const txRef = doc(db, colName, shardKey);
+            const studentsRef = doc(db, colName, 'students');
             
             const [txSnap, studentsSnap] = await Promise.all([transaction.get(txRef), transaction.get(studentsRef)]);
             
@@ -473,15 +511,15 @@ export async function executeTuitionTransaction(payload: any) {
             transaction.set(txRef, { data: transactions });
             transaction.set(studentsRef, { data: students });
             
-            const syncRef = doc(db, 'db_core_v2_secure_9a8b7c6d5e4f3g2h1', '_sync');
+            const syncRef = doc(db, colName, '_sync');
             const newSyncId = Date.now().toString() + '_' + Math.random().toString(36).substring(2);
             transaction.set(syncRef, { syncId: newSyncId, lastUpdatedAt: Date.now() });
         });
         
-        cachedData = null;
-        fetchPromise = null;
+        cache.cachedData = null;
+        cache.fetchPromise = null;
         
-        return applySmartWindowFilter(await getSplitData());
+        return applySmartWindowFilter(await getSplitData(centerId));
     } finally {
         releaseLock();
     }
@@ -492,10 +530,12 @@ export default async function handler(req: any, res: any) {
     if (!authPayload) {
         return res.status(401).json({ success: false, error: 'Không có quyền truy cập: Chỉ quản trị viên mới được thao tác' });
     }
+    // Extract centerId from JWT - backward compatible with old tokens
+    const centerId = (authPayload as any).centerId || '_legacy';
 
     if (req.method === 'GET') {
         try {
-            const data = await getSplitData();
+            const data = await getSplitData(centerId);
             const responseData = applySmartWindowFilter(data);
 
             res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -582,6 +622,7 @@ export default async function handler(req: any, res: any) {
             await acquireLock();
             try {
                 await authenticateServer();
+                const colName = getCollectionName(centerId);
                 if (role !== UserRole.ADMIN) {
                     throw new Error('Từ chối: Chỉ quản trị viên mới có thể khôi phục dữ liệu');
                 }
@@ -591,7 +632,7 @@ export default async function handler(req: any, res: any) {
                 const batch = writeBatch(db);
 
                 // 1. Delete all existing documents to ensure a clean slate
-                const querySnapshot = await getDocs(collection(db, 'db_core_v2_secure_9a8b7c6d5e4f3g2h1'));
+                const querySnapshot = await getDocs(collection(db, colName));
                 querySnapshot.forEach(docSnap => {
                     batch.delete(docSnap.ref);
                 });
@@ -599,21 +640,23 @@ export default async function handler(req: any, res: any) {
                 // 2. Set new shards from the backup
                 const newRawStrings: Record<string, string> = {};
                 Object.keys(restoredShards).forEach(key => {
-                    batch.set(doc(db, 'db_core_v2_secure_9a8b7c6d5e4f3g2h1', key), { data: restoredShards[key] });
+                    batch.set(doc(db, colName, key), { data: restoredShards[key] });
                     newRawStrings[key] = JSON.stringify(restoredShards[key]);
                 });
                 
                 const newSyncId = Date.now().toString() + '_' + Math.random().toString(36).substring(2);
-                batch.set(doc(db, 'db_core_v2_secure_9a8b7c6d5e4f3g2h1', '_sync'), { syncId: newSyncId, lastUpdatedAt: Date.now() });
+                batch.set(doc(db, colName, '_sync'), { syncId: newSyncId, lastUpdatedAt: Date.now() });
                 
                 try {
                     await batch.commit();
-                    cachedData = restoredDataFromFile;
-                    localSyncId = newSyncId;
-                    rawShardStrings = newRawStrings; // Update memory state
+                    const cache = getCenterCache(centerId);
+                    cache.cachedData = restoredDataFromFile;
+                    cache.localSyncId = newSyncId;
+                    cache.rawShardStrings = newRawStrings;
                 } catch (err) {
                     console.error("Restore commit failed:", err);
-                    cachedData = null;
+                    const cache = getCenterCache(centerId);
+                    cache.cachedData = null;
                     throw err;
                 }
 
@@ -632,11 +675,11 @@ export default async function handler(req: any, res: any) {
             try {
                 let responseData: any;
                 if (operation.op === 'updateAttendance') {
-                    responseData = await executeAttendanceTransaction(operation.payload);
+                    responseData = await executeAttendanceTransaction(operation.payload, centerId);
                 } else if (operation.op === 'addAdjustment') {
-                    responseData = await executeTuitionTransaction(operation.payload);
+                    responseData = await executeTuitionTransaction(operation.payload, centerId);
                 } else {
-                    responseData = await executeOperationInternal(operation);
+                    responseData = await executeOperationInternal(operation, centerId);
                 }
 
                 // === AUDIT LOG ===
@@ -646,7 +689,7 @@ export default async function handler(req: any, res: any) {
                     const auditEntry = buildAuditEntry(operation.op, operation.payload, userId, userName);
                     if (auditEntry) {
                         // Fire-and-forget: don't block response for logging
-                        executeOperationInternal({ op: 'addAuditLog', payload: auditEntry }).catch(() => {});
+                        executeOperationInternal({ op: 'addAuditLog', payload: auditEntry }, centerId).catch(() => {});
                     }
                 } catch (logErr) { /* silently ignore audit failures */ }
 

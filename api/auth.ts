@@ -18,11 +18,19 @@ try {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 
-async function getAuthData() {
+const LEGACY_COLLECTION = 'db_core_v2_secure_9a8b7c6d5e4f3g2h1';
+
+function getCollectionName(centerId?: string): string {
+    if (!centerId || centerId === '_legacy') return LEGACY_COLLECTION;
+    return `center_${centerId}`;
+}
+
+async function getAuthData(centerId?: string) {
     await authenticateServer();
+    const colName = getCollectionName(centerId);
     // Fetch only the collections needed for authentication
     const collections = ['settings', 'teachers', 'staff', 'students'];
-    const promises = collections.map(col => getDoc(doc(db, 'db_core_v2_secure_9a8b7c6d5e4f3g2h1', col)));
+    const promises = collections.map(col => getDoc(doc(db, colName, col)));
     const snapshots = await Promise.all(promises);
     
     const defaultState = getMockDataState();
@@ -45,13 +53,15 @@ export default async function handler(req: any, res: any) {
         if (typeof body === 'string') {
             try { body = JSON.parse(body); } catch (e) {}
         }
-        const { identifier, password } = body;
+        const { identifier, password, centerId } = body;
 
         if (!identifier || !password) {
             return res.status(400).json({ error: 'Thiếu thông tin đăng nhập' });
         }
 
-        const data = await getAuthData();
+        // Use centerId from request, default to _legacy for backward compatibility
+        const effectiveCenterId = centerId || '_legacy';
+        const data = await getAuthData(effectiveCenterId);
         const upperIdentifier = identifier.toUpperCase();
         let user = null;
         let role = null;
@@ -104,14 +114,14 @@ export default async function handler(req: any, res: any) {
         }
 
         if (user && role) {
-            // Generate JWT
-            const token = await signToken({ userId: user.id, role, name: user.name || user.username || user.id });
+            // Generate JWT with centerId
+            const token = await signToken({ userId: user.id, role, name: user.name || user.username || user.id, centerId: effectiveCenterId });
             
             // Remove sensitive info before sending back to client
             const safeUser = { ...user };
             delete safeUser.password;
 
-            return res.status(200).json({ token, user: safeUser, role });
+            return res.status(200).json({ token, user: safeUser, role, centerId: effectiveCenterId });
         }
 
         return res.status(401).json({ error: 'Thông tin đăng nhập không hợp lệ' });
