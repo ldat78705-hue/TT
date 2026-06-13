@@ -191,7 +191,8 @@ const ClassForm: React.FC<{
 
     const handleScheduleChange = (index: number, field: keyof ClassSchedule, value: string) => {
         const newSchedule = [...formData.schedule];
-        newSchedule[index] = { ...newSchedule[index], [field]: value };
+        const finalValue = field === 'roomId' && value === '' ? undefined : value;
+        newSchedule[index] = { ...newSchedule[index], [field]: finalValue };
         setFormData(prev => ({ ...prev, schedule: newSchedule }));
     };
 
