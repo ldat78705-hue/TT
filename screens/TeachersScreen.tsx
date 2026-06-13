@@ -14,7 +14,7 @@ import { Pagination } from '../components/common/Pagination';
 import { ListItemCard } from '../components/common/ListItemCard';
 import { ResetPasswordModal } from '../components/auth/ChangePasswordModal';
 
-const TeacherForm: React.FC<{ teacher?: Teacher; onSubmit: (teacher: Teacher) => void; onCancel: () => void; }> = ({ teacher, onSubmit, onCancel }) => {
+const TeacherForm: React.FC<{ teacher?: Teacher; onSubmit: (teacher: Teacher) => void; onCancel: () => void; allTeachers: Teacher[]; allStaff: any[]; allStudents: any[] }> = ({ teacher, onSubmit, onCancel, allTeachers, allStaff, allStudents }) => {
     const [formData, setFormData] = useState<Partial<Teacher>>({
         id: '',
         name: '',
@@ -33,11 +33,22 @@ const TeacherForm: React.FC<{ teacher?: Teacher; onSubmit: (teacher: Teacher) =>
         ...teacher,
     });
     const [errors, setErrors] = useState<Partial<Record<keyof Teacher, string>>>({});
+    const [idWarning, setIdWarning] = useState('');
     const idInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         idInputRef.current?.focus();
     }, []);
+
+    const checkDuplicateId = (id: string) => {
+        if (!id.trim() || (teacher && teacher.id === id)) { setIdWarning(''); return; }
+        const upper = id.toUpperCase();
+        if (upper === 'ADMIN' || upper === 'VIEWER') { setIdWarning('⚠️ Đây là tài khoản hệ thống, không thể sử dụng.'); return; }
+        if (allTeachers.some(t => t.id.toUpperCase() === upper && t.id !== teacher?.id)) { setIdWarning('⚠️ Mã này đã được sử dụng cho giáo viên khác.'); return; }
+        if (allStaff.some(s => s.id.toUpperCase() === upper)) { setIdWarning('⚠️ Mã này đã được sử dụng cho nhân viên.'); return; }
+        if (allStudents.some(s => s.id.toUpperCase() === upper)) { setIdWarning('⚠️ Mã này đã được sử dụng cho học viên.'); return; }
+        setIdWarning('');
+    };
     
     const validate = () => {
         const newErrors: Partial<Record<keyof Teacher, string>> = {};
@@ -48,6 +59,7 @@ const TeacherForm: React.FC<{ teacher?: Teacher; onSubmit: (teacher: Teacher) =>
         if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
             newErrors.email = "Email không hợp lệ.";
         }
+        if (idWarning) newErrors.id = idWarning;
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -56,6 +68,7 @@ const TeacherForm: React.FC<{ teacher?: Teacher; onSubmit: (teacher: Teacher) =>
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+        if (name === 'id') checkDuplicateId(value);
     };
 
     const handleRateChange = (amount: number) => {
@@ -80,8 +93,9 @@ const TeacherForm: React.FC<{ teacher?: Teacher; onSubmit: (teacher: Teacher) =>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
                     <div>
                         <label className="block text-sm font-medium">Mã Giáo viên <span className="text-red-500">*</span></label>
-                        <input ref={idInputRef} type="text" name="id" value={formData.id} onChange={handleChange} className="form-input mt-1" />
+                        <input ref={idInputRef} type="text" name="id" value={formData.id} onChange={handleChange} className={`form-input mt-1 ${idWarning ? 'border-orange-400 ring-1 ring-orange-400' : ''}`} />
                         {errors.id && <p className="text-red-500 text-xs mt-1">{errors.id}</p>}
+                        {idWarning && !errors.id && <p className="text-orange-500 text-xs mt-1 font-medium">{idWarning}</p>}
                     </div>
                     <div>
                         <label className="block text-sm font-medium">Họ tên <span className="text-red-500">*</span></label>
@@ -394,7 +408,7 @@ export const TeachersScreen: React.FC = () => {
             )}
            
             <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingTeacher ? 'Chỉnh sửa Giáo viên' : 'Thêm Giáo viên mới'}>
-                <TeacherForm teacher={editingTeacher} onSubmit={handleSubmit} onCancel={handleCloseModal} />
+                <TeacherForm teacher={editingTeacher} onSubmit={handleSubmit} onCancel={handleCloseModal} allTeachers={state.teachers} allStaff={state.staff} allStudents={state.students} />
             </Modal>
             <ConfirmationModal
                 isOpen={confirmModalState.isOpen}

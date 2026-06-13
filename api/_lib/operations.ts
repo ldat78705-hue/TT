@@ -91,7 +91,11 @@ export function applyOperation(
         // STUDENT OPERATIONS
         case 'addStudent': {
             const { student, classIds } = payload;
-            if (data.students.some(s => s.id === student.id)) throw new Error(`Học viên với mã '${student.id}' đã tồn tại.`);
+            const newStudentId = student.id?.toUpperCase();
+            if (data.students.some(s => s.id.toUpperCase() === newStudentId)) throw new Error(`Học viên với mã '${student.id}' đã tồn tại.`);
+            if (data.teachers.some(t => t.id.toUpperCase() === newStudentId)) throw new Error(`Mã '${student.id}' đã được sử dụng cho giáo viên. Vui lòng chọn mã khác.`);
+            if (data.staff.some(s => s.id.toUpperCase() === newStudentId)) throw new Error(`Mã '${student.id}' đã được sử dụng cho nhân viên. Vui lòng chọn mã khác.`);
+            if (newStudentId === 'ADMIN' || newStudentId === 'VIEWER') throw new Error(`Mã '${student.id}' là tài khoản hệ thống, không thể sử dụng.`);
             const now = getVietnamTime();
             const newStudent = { 
                 ...student, 
@@ -163,7 +167,11 @@ export function applyOperation(
         
         // TEACHER OPERATIONS
         case 'addTeacher': {
-            if (data.teachers.some(item => item.id === payload.id)) throw new Error(`Giáo viên với mã '${payload.id}' đã tồn tại.`);
+            const newId = payload.id?.toUpperCase();
+            if (data.teachers.some(item => item.id.toUpperCase() === newId)) throw new Error(`Giáo viên với mã '${payload.id}' đã tồn tại.`);
+            if (data.staff.some(item => item.id.toUpperCase() === newId)) throw new Error(`Mã '${payload.id}' đã được sử dụng cho nhân viên. Vui lòng chọn mã khác.`);
+            if (data.students.some(item => item.id.toUpperCase() === newId)) throw new Error(`Mã '${payload.id}' đã được sử dụng cho học viên. Vui lòng chọn mã khác.`);
+            if (newId === 'ADMIN' || newId === 'VIEWER') throw new Error(`Mã '${payload.id}' là tài khoản hệ thống, không thể sử dụng.`);
             data.teachers.push({ ...payload, createdAt: getVietnamTime().split('T')[0] });
             break;
         }
@@ -234,7 +242,11 @@ export function applyOperation(
 
         // STAFF OPERATIONS
         case 'addStaff': {
-            if (data.staff.some(item => item.id === payload.id)) throw new Error(`Nhân viên với mã '${payload.id}' đã tồn tại.`);
+            const newStaffId = payload.id?.toUpperCase();
+            if (data.staff.some(item => item.id.toUpperCase() === newStaffId)) throw new Error(`Nhân viên với mã '${payload.id}' đã tồn tại.`);
+            if (data.teachers.some(item => item.id.toUpperCase() === newStaffId)) throw new Error(`Mã '${payload.id}' đã được sử dụng cho giáo viên. Vui lòng chọn mã khác.`);
+            if (data.students.some(item => item.id.toUpperCase() === newStaffId)) throw new Error(`Mã '${payload.id}' đã được sử dụng cho học viên. Vui lòng chọn mã khác.`);
+            if (newStaffId === 'ADMIN' || newStaffId === 'VIEWER') throw new Error(`Mã '${payload.id}' là tài khoản hệ thống, không thể sử dụng.`);
             data.staff.push({ ...payload, createdAt: getVietnamTime().split('T')[0] });
             break;
         }
