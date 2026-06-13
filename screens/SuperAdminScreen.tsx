@@ -231,23 +231,6 @@ const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
         }
     };
 
-    const handleChangeCenterAdminPwd = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!creds.centerAdminPassword) {
-            setMessage('❌ Vui lòng nhập mật khẩu mới');
-            return;
-        }
-        try {
-            await apiCall('change_center_admin_password', { slug: credTarget.slug, newAdminPassword: creds.centerAdminPassword });
-            setMessage(`✅ Đã đổi mật khẩu quản trị nội bộ cho "${credTarget.name}"`);
-            setCredTarget(null);
-            setCreds({ loginUsername: '', loginPassword: '' });
-            refresh();
-        } catch (err: any) {
-            setMessage('❌ ' + err.message);
-        }
-    };
-
     const loadCenterAccounts = async (slug: string) => {
         setIsLoadingAccounts(true);
         try {

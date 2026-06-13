@@ -22,7 +22,6 @@ const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 
 // Multi-tenant: collection name per center
 const LEGACY_COLLECTION = 'db_core_v2_secure_9a8b7c6d5e4f3g2h1';
-const DEFAULT_CENTER_ID = 'thanhdat';
 
 function getCollectionName(centerId?: string): string {
     if (!centerId || centerId === '_legacy') return LEGACY_COLLECTION;

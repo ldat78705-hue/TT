@@ -50,7 +50,7 @@ export default async function handler(req: any, res: any) {
     }
 
     // Use centerId from token to target the correct collection
-    const centerId = authPayload.centerId;
+    const centerId = (authPayload as any).centerId as string | undefined;
     const colName = getCollectionName(centerId);
 
     if (req.method === 'POST') {

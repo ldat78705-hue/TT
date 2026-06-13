@@ -61,23 +61,6 @@ async function refreshZaloToken(appId: string, secretKey: string, refreshToken: 
     return await res.json();
 }
 
-async function getZaloUserByPhone(accessToken: string, phone: string) {
-    // Normalize Vietnamese phone: 0xxx -> 84xxx
-    let normalizedPhone = phone.replace(/\s+/g, '').replace(/-/g, '');
-    if (normalizedPhone.startsWith('0')) {
-        normalizedPhone = '84' + normalizedPhone.substring(1);
-    }
-    
-    const res = await fetch(`${ZALO_OA_API}/getprofile?data={"user_id_by_app":"${normalizedPhone}"}`, {
-        headers: { 'access_token': accessToken },
-    });
-    
-    // Fallback: Try using phone search via OA follower list
-    // Zalo OA API doesn't directly lookup by phone — we use quota API
-    // The proper way is getting followers and matching phone
-    return await res.json();
-}
-
 async function sendZaloMessage(accessToken: string, userId: string, message: string) {
     const res = await fetch(`${ZALO_OA_API}/message/cs`, {
         method: 'POST',

@@ -1,5 +1,4 @@
 import { signToken } from './_lib/jwt.js';
-import { getMockDataState } from './_lib/mockData.js';
 import { UserRole } from '../types.js';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, doc, getDoc, getDocs, collection } from 'firebase/firestore';

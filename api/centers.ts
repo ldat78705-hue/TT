@@ -1,5 +1,4 @@
 import { verifyToken } from './_lib/jwt.js';
-import { UserRole } from '../types.js';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, doc, getDoc, setDoc, getDocs, collection, deleteDoc, updateDoc } from 'firebase/firestore';
 import { authenticateServer } from './_lib/serverAuth.js';
