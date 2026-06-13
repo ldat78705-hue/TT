@@ -109,6 +109,8 @@ const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
     const [message, setMessage] = useState('');
     const [showChangePassword, setShowChangePassword] = useState(false);
     const [passwords, setPasswords] = useState({ current: '', newPass: '', confirm: '' });
+    const [credTarget, setCredTarget] = useState<any>(null);
+    const [creds, setCreds] = useState({ loginUsername: '', loginPassword: '' });
 
     const refresh = async () => {
         setIsLoading(true);
@@ -192,6 +194,23 @@ const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
             setMessage('✅ Đã đổi mật khẩu Super Admin');
             setShowChangePassword(false);
             setPasswords({ current: '', newPass: '', confirm: '' });
+        } catch (err: any) {
+            setMessage('❌ ' + err.message);
+        }
+    };
+
+    const handleSetCredentials = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!creds.loginUsername || !creds.loginPassword) {
+            setMessage('❌ Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu');
+            return;
+        }
+        try {
+            await apiCall('set_credentials', { slug: credTarget.slug, ...creds });
+            setMessage(`✅ Đã cập nhật tài khoản cho "${credTarget.name}": tên đăng nhập = ${creds.loginUsername}`);
+            setCredTarget(null);
+            setCreds({ loginUsername: '', loginPassword: '' });
+            refresh();
         } catch (err: any) {
             setMessage('❌ ' + err.message);
         }
@@ -355,8 +374,20 @@ const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                                                 </span>
                                                 {center.expiresAt && <span>🗓️ Hết hạn: {new Date(center.expiresAt).toLocaleDateString('vi-VN')}</span>}
                                             </div>
+                                            <div className="mt-1 text-xs">
+                                                {center.loginUsername ? (
+                                                    <span className="text-emerald-600 dark:text-emerald-400">🔑 Tài khoản: <code className="bg-emerald-100 dark:bg-emerald-900/30 px-1 rounded">{center.loginUsername}</code></span>
+                                                ) : (
+                                                    <span className="text-orange-500">⚠️ Chưa cấp tài khoản đăng nhập</span>
+                                                )}
+                                            </div>
+                                            </div>
                                         </div>
-                                        <div className="flex gap-2 flex-shrink-0">
+                                        <div className="flex gap-2 flex-shrink-0 flex-wrap">
+                                            <button onClick={() => { setCredTarget(center); setCreds({ loginUsername: center.loginUsername || '', loginPassword: '' }); }}
+                                                className="px-3 py-1.5 text-sm bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors">
+                                                🔑 Tài khoản
+                                            </button>
                                             <button onClick={() => { setExtendTarget(center); setExtendDays(30); }}
                                                 className="px-3 py-1.5 text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors">
                                                 ⏳ Gia hạn
@@ -403,6 +434,37 @@ const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                             <Button variant="secondary" onClick={() => setExtendTarget(null)}>Hủy</Button>
                             <Button onClick={handleExtend}>Xác nhận gia hạn</Button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Credentials Modal */}
+            {credTarget && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                    <div className="bg-white dark:bg-slate-800 rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+                        <h3 className="text-lg font-bold mb-2">🔑 Tài khoản đăng nhập: {credTarget.name}</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                            Cấp tên đăng nhập & mật khẩu riêng cho trung tâm này. Trung tâm sẽ dùng thông tin này để đăng nhập trực tiếp.
+                        </p>
+                        <form onSubmit={handleSetCredentials} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Tên đăng nhập</label>
+                                <input type="text" value={creds.loginUsername}
+                                    onChange={e => setCreds({...creds, loginUsername: e.target.value})}
+                                    className="form-input" placeholder="VD: trungtam_abc" required />
+                                <p className="text-xs text-gray-500 mt-1">Duy nhất, không trùng với trung tâm khác</p>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Mật khẩu</label>
+                                <input type="text" value={creds.loginPassword}
+                                    onChange={e => setCreds({...creds, loginPassword: e.target.value})}
+                                    className="form-input" placeholder="Nhập mật khẩu mới" required />
+                            </div>
+                            <div className="flex justify-end gap-3">
+                                <Button type="button" variant="secondary" onClick={() => setCredTarget(null)}>Hủy</Button>
+                                <Button type="submit">Lưu tài khoản</Button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

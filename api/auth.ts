@@ -59,19 +59,65 @@ export default async function handler(req: any, res: any) {
             return res.status(400).json({ error: 'Thiếu thông tin đăng nhập' });
         }
 
-        // Use centerId from request, default to _legacy for backward compatibility
-        const effectiveCenterId = centerId || '_legacy';
+        // Step 0: Check if identifier matches a center's loginUsername
+        // This allows each center to have unique login, no need to select center
+        let effectiveCenterId = centerId || '_legacy';
+        let centerLoginMatched = false;
+
+        if (!centerId) {
+            await authenticateServer();
+            const { getDocs, collection: col } = await import('firebase/firestore');
+            const allCenters = await getDocs(col(db, 'centers_registry'));
+            allCenters.forEach((docSnap: any) => {
+                const data = docSnap.data();
+                if (data.loginUsername && data.loginUsername.toUpperCase() === identifier.toUpperCase()) {
+                    effectiveCenterId = docSnap.id;
+                    centerLoginMatched = true;
+                }
+            });
+
+            // If matched center login, verify center password first
+            if (centerLoginMatched) {
+                const centerDoc = allCenters.docs.find((d: any) => d.id === effectiveCenterId);
+                const centerData = centerDoc?.data();
+                
+                if (centerData?.status === 'LOCKED') {
+                    return res.status(403).json({ error: 'Trung tâm này đã bị khóa. Vui lòng liên hệ quản trị viên hệ thống.' });
+                }
+                if (centerData?.expiresAt && new Date(centerData.expiresAt) < new Date()) {
+                    return res.status(403).json({ error: 'Trung tâm này đã hết hạn sử dụng. Vui lòng liên hệ quản trị viên hệ thống để gia hạn.' });
+                }
+
+                // Verify center login password
+                const hashedInput = hashPassword(password);
+                if (centerData?.loginPassword !== hashedInput) {
+                    return res.status(401).json({ error: 'Mật khẩu không đúng' });
+                }
+
+                // Center login successful → log in as admin of that center
+                const token = await signToken({
+                    userId: 'ADMIN_USER',
+                    role: UserRole.ADMIN,
+                    name: centerData?.name || 'Admin',
+                    centerId: effectiveCenterId
+                });
+                return res.status(200).json({
+                    token,
+                    user: { id: 'ADMIN_USER', name: centerData?.name || 'Admin', role: UserRole.ADMIN },
+                    role: UserRole.ADMIN,
+                    centerId: effectiveCenterId
+                });
+            }
+        }
 
         // Check center status & expiry (skip for legacy)
         if (effectiveCenterId !== '_legacy') {
             const centerDoc = await getDoc(doc(db, 'centers_registry', effectiveCenterId));
             if (centerDoc.exists()) {
                 const centerData = centerDoc.data();
-                // Check if locked
                 if (centerData.status === 'LOCKED') {
                     return res.status(403).json({ error: 'Trung tâm này đã bị khóa. Vui lòng liên hệ quản trị viên hệ thống.' });
                 }
-                // Check if expired
                 if (centerData.expiresAt && new Date(centerData.expiresAt) < new Date()) {
                     return res.status(403).json({ error: 'Trung tâm này đã hết hạn sử dụng. Vui lòng liên hệ quản trị viên hệ thống để gia hạn.' });
                 }

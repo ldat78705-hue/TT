@@ -33,6 +33,7 @@ function isSuperAdmin(payload: any): boolean {
 }
 
 export default async function handler(req: any, res: any) {
+  try {
     await authenticateServer();
 
     // === SUPER ADMIN LOGIN ===
@@ -205,6 +206,39 @@ export default async function handler(req: any, res: any) {
             return res.status(200).json({ success: true, message: 'Đã đổi mật khẩu Super Admin' });
         }
 
+        // Set center login credentials
+        if (body.action === 'set_credentials') {
+            const { slug, loginUsername, loginPassword } = body;
+            if (!slug || !loginUsername || !loginPassword) {
+                return res.status(400).json({ error: 'Thiếu mã trung tâm, tên đăng nhập hoặc mật khẩu' });
+            }
+
+            // Check if loginUsername already used by another center
+            const allCenters = await getDocs(collection(db, REGISTRY_COLLECTION));
+            let conflict = false;
+            allCenters.forEach((docSnap) => {
+                const data = docSnap.data();
+                if (docSnap.id !== slug && data.loginUsername === loginUsername) {
+                    conflict = true;
+                }
+            });
+            if (conflict) {
+                return res.status(409).json({ error: `Tên đăng nhập "${loginUsername}" đã được sử dụng bởi trung tâm khác` });
+            }
+
+            const centerRef = doc(db, REGISTRY_COLLECTION, slug);
+            const centerDoc = await getDoc(centerRef);
+            if (!centerDoc.exists()) {
+                return res.status(404).json({ error: 'Trung tâm không tồn tại' });
+            }
+
+            await updateDoc(centerRef, {
+                loginUsername,
+                loginPassword: hashPassword(loginPassword)
+            });
+            return res.status(200).json({ success: true, message: `Đã cập nhật tài khoản cho trung tâm "${slug}"` });
+        }
+
         return res.status(400).json({ error: 'Action không hợp lệ' });
     }
 
@@ -235,4 +269,8 @@ export default async function handler(req: any, res: any) {
     }
 
     return res.status(405).json({ error: 'Method Not Allowed' });
+  } catch (error: any) {
+    console.error('Centers API Error:', error);
+    return res.status(500).json({ error: 'A server error occurred: ' + (error.message || 'Unknown') });
+  }
 }
