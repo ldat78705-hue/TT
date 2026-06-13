@@ -239,6 +239,47 @@ export default async function handler(req: any, res: any) {
             return res.status(200).json({ success: true, message: `Đã cập nhật tài khoản cho trung tâm "${slug}"` });
         }
 
+        // Remove center login credentials
+        if (body.action === 'remove_credentials') {
+            const { slug } = body;
+            if (!slug) return res.status(400).json({ error: 'Thiếu mã trung tâm' });
+
+            const centerRef = doc(db, REGISTRY_COLLECTION, slug);
+            const centerDoc = await getDoc(centerRef);
+            if (!centerDoc.exists()) {
+                return res.status(404).json({ error: 'Trung tâm không tồn tại' });
+            }
+
+            await updateDoc(centerRef, {
+                loginUsername: '',
+                loginPassword: ''
+            });
+            return res.status(200).json({ success: true, message: `Đã xóa tài khoản đăng nhập của trung tâm "${slug}"` });
+        }
+
+        // Change center's internal admin password
+        if (body.action === 'change_center_admin_password') {
+            const { slug, newAdminPassword } = body;
+            if (!slug || !newAdminPassword) {
+                return res.status(400).json({ error: 'Thiếu mã trung tâm hoặc mật khẩu mới' });
+            }
+
+            // Update admin password in center's settings collection
+            const colName = `center_${slug}`;
+            const settingsRef = doc(db, colName, 'settings');
+            const settingsDoc = await getDoc(settingsRef);
+            if (!settingsDoc.exists()) {
+                return res.status(404).json({ error: `Không tìm thấy dữ liệu của trung tâm "${slug}"` });
+            }
+
+            const settingsData = settingsDoc.data();
+            const currentSettings = settingsData.data || {};
+            currentSettings.adminPassword = hashPassword(newAdminPassword);
+
+            await updateDoc(settingsRef, { data: currentSettings });
+            return res.status(200).json({ success: true, message: `Đã đổi mật khẩu quản trị nội bộ cho trung tâm "${slug}"` });
+        }
+
         return res.status(400).json({ error: 'Action không hợp lệ' });
     }
 
