@@ -1,8 +1,0 @@
-2026-06-13T16:54:20.5010000Z Job is waiting for a hosted runner to come online.
-2026-06-13T16:54:20.4980000Z Evaluating build.if
-2026-06-13T16:54:20.4980000Z Evaluating: success()
-2026-06-13T16:54:20.4980000Z Result: true
-2026-06-13T16:54:20.5010000Z Job is about to start running on the hosted runner: GitHub Actions 1000000154
-2026-06-13T16:54:20.4990000Z Requested labels: ubuntu-latest
-2026-06-13T16:54:20.4990000Z Job defined at: ldat78705-hue/TT/.github/workflows/build-apk.yml@refs/tags/v1.5.1
-2026-06-13T16:54:20.4990000Z Waiting for a runner to pick up this job...
