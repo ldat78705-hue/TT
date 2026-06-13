@@ -322,6 +322,30 @@ class DataRepository @Inject constructor(
         } catch (e: Exception) { e.printStackTrace(); throw e }
     }
 
+    // ============ PROGRESS REPORTS ============
+
+    suspend fun addProgressReport(classId: String, studentId: String, date: String, score: Double?, comments: String) = withContext(Dispatchers.IO) {
+        try {
+            val payload = mutableMapOf<String, Any>(
+                "classId" to classId,
+                "studentId" to studentId,
+                "date" to date,
+                "comments" to comments,
+                "createdBy" to getLoggedInUserName()
+            )
+            if (score != null) payload["score"] = score
+            val updatedData = apiService.executeOperation(OperationPayload("addProgressReport", payload))
+            saveAndCache(updatedData)
+        } catch (e: Exception) { e.printStackTrace(); throw e }
+    }
+
+    suspend fun deleteProgressReport(reportId: String) = withContext(Dispatchers.IO) {
+        try {
+            val updatedData = apiService.executeOperation(OperationPayload("deleteProgressReport", mapOf("id" to reportId)))
+            saveAndCache(updatedData)
+        } catch (e: Exception) { e.printStackTrace(); throw e }
+    }
+
     // ============ PAYMENTS / ADJUSTMENTS ============
 
     suspend fun addAdjustment(

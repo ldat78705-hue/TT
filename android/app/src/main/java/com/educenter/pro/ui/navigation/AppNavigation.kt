@@ -41,6 +41,7 @@ import com.educenter.pro.ui.screens.finance.FinanceScreen
 import com.educenter.pro.ui.screens.announcements.AnnouncementsScreen
 import com.educenter.pro.ui.screens.qrscanner.QRScannerScreen
 import com.educenter.pro.ui.screens.staff.StaffScreen
+import com.educenter.pro.ui.screens.progress.ProgressReportScreen
 import com.educenter.pro.data.model.UserRole
 
 import androidx.compose.runtime.collectAsState
@@ -61,6 +62,7 @@ sealed class Screen(val route: String, val title: String? = null, val icon: Imag
     object Announcements : Screen("announcements", "Thông báo", Icons.Filled.Campaign)
     object QRScanner : Screen("qr_scanner", "Quét QR")
     object Staff : Screen("staff", "Nhân viên")
+    object ProgressReport : Screen("progress_report", "Nhận xét HS")
     object More : Screen("more", "Thêm", Icons.Filled.MoreHoriz)
 }
 
@@ -274,6 +276,11 @@ fun AppNavigation() {
                     onBack = { navController.popBackStack() }
                 )
             }
+            composable(Screen.ProgressReport.route) {
+                ProgressReportScreen(
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
     }
 }
@@ -348,6 +355,10 @@ fun MoreScreen(
             Text("Tính năng", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 4.dp, bottom = 2.dp))
 
             MoreMenuItem(Icons.Default.Assessment, "Báo cáo", Color(0xFF0EA5E9)) { onNavigateTo(Screen.Reports.route) }
+
+            if (currentUserRole == UserRole.ADMIN || currentUserRole == UserRole.MANAGER || currentUserRole == UserRole.TEACHER) {
+                MoreMenuItem(Icons.Default.RateReview, "Nhận xét Học viên", Color(0xFF8B5CF6)) { onNavigateTo(Screen.ProgressReport.route) }
+            }
 
             if (currentUserRole != UserRole.TEACHER) {
                 MoreMenuItem(Icons.Default.Payments, "Tài chính", Color(0xFFF59E0B)) { onNavigateTo(Screen.Finance.route) }
