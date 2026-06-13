@@ -578,28 +578,37 @@ export const ClassDetailScreen: React.FC = () => {
                             <h2 className="text-xl font-semibold">Danh sách học viên</h2>
                             {sortedClassStudents.length > 0 && (
                                 <Button variant="secondary" onClick={() => {
+                                    const cardsPerPage = 10;
                                     const cards = sortedClassStudents.map(s => {
-                                        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(s.id)}&format=png`;
-                                        return `<div style="width:65mm;height:40mm;border:1px solid #ccc;border-radius:8px;padding:6px;display:inline-flex;align-items:center;gap:8px;margin:4px;page-break-inside:avoid;background:white;">
-                                            <img src="${qrUrl}" style="width:32mm;height:32mm;" />
-                                            <div style="flex:1;overflow:hidden;">
-                                                <div style="font-weight:bold;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</div>
+                                        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(s.id)}&format=png`;
+                                        return `<div style="width:88mm;height:42mm;border:1px solid #ccc;border-radius:8px;padding:5px;display:inline-flex;align-items:center;gap:6px;background:white;page-break-inside:avoid;box-sizing:border-box;">
+                                            <img src="${qrUrl}" style="width:34mm;height:34mm;flex-shrink:0;" />
+                                            <div style="flex:1;overflow:hidden;min-width:0;">
+                                                <div style="font-weight:bold;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</div>
                                                 <div style="font-size:10px;color:#666;font-family:monospace;">${s.id}</div>
-                                                <div style="font-size:9px;color:#999;margin-top:2px;">${cls.name}</div>
+                                                <div style="font-size:9px;color:#999;margin-top:1px;">${cls.name}</div>
                                             </div>
                                         </div>`;
-                                    }).join('');
+                                    });
+                                    const pages: string[] = [];
+                                    for (let i = 0; i < cards.length; i += cardsPerPage) {
+                                        pages.push(`<div style="display:flex;flex-wrap:wrap;gap:3mm;justify-content:center;align-content:flex-start;width:190mm;min-height:277mm;page-break-after:always;">${cards.slice(i, i + cardsPerPage).join('')}</div>`);
+                                    }
                                     const pw = window.open('', '_blank');
                                     if (!pw) return;
                                     pw.document.write(`<!DOCTYPE html><html><head><title>Thẻ QR - ${cls.name}</title>
-                                        <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',sans-serif;padding:10mm}
-                                        @media print{body{-webkit-print-color-adjust:exact}}</style>
+                                        <style>
+                                            *{margin:0;padding:0;box-sizing:border-box}
+                                            body{font-family:'Segoe UI',Arial,sans-serif}
+                                            @page{size:A4;margin:10mm}
+                                            @media print{body{-webkit-print-color-adjust:exact}}
+                                            .page-container > div:last-child{page-break-after:avoid}
+                                        </style>
                                     </head><body>
-                                        <h2 style="text-align:center;margin-bottom:8mm;font-size:16px;">Thẻ QR Điểm danh - ${cls.name}</h2>
-                                        <div style="display:flex;flex-wrap:wrap;justify-content:center;">${cards}</div>
+                                        <div class="page-container">${pages.join('')}</div>
                                     </body></html>`);
                                     pw.document.close();
-                                    setTimeout(() => pw.print(), 800);
+                                    setTimeout(() => pw.print(), 1000);
                                 }}>
                                     🖨️ In thẻ QR cả lớp ({sortedClassStudents.length})
                                 </Button>
@@ -612,19 +621,20 @@ export const ClassDetailScreen: React.FC = () => {
                                     { header: 'QR', accessor: (item: Student) => (
                                         <button
                                             onClick={() => {
-                                                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(item.id)}&format=png`;
+                                                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(item.id)}&format=png`;
                                                 const pw = window.open('', '_blank');
                                                 if (!pw) return;
                                                 pw.document.write(`<!DOCTYPE html><html><head><title>Thẻ QR - ${item.name}</title>
-                                                    <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',sans-serif;padding:20mm;display:flex;justify-content:center}
+                                                    <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;display:flex;justify-content:center;padding:20mm}
+                                                    @page{size:A4;margin:10mm}
                                                     @media print{body{-webkit-print-color-adjust:exact}}</style>
                                                 </head><body>
-                                                    <div style="width:65mm;height:40mm;border:1px solid #ccc;border-radius:8px;padding:6px;display:inline-flex;align-items:center;gap:8px;background:white;">
-                                                        <img src="${qrUrl}" style="width:32mm;height:32mm;" />
-                                                        <div style="flex:1;overflow:hidden;">
-                                                            <div style="font-weight:bold;font-size:12px;">${item.name}</div>
+                                                    <div style="width:88mm;height:42mm;border:1px solid #ccc;border-radius:8px;padding:5px;display:inline-flex;align-items:center;gap:6px;background:white;box-sizing:border-box;">
+                                                        <img src="${qrUrl}" style="width:34mm;height:34mm;flex-shrink:0;" />
+                                                        <div style="flex:1;overflow:hidden;min-width:0;">
+                                                            <div style="font-weight:bold;font-size:13px;">${item.name}</div>
                                                             <div style="font-size:10px;color:#666;font-family:monospace;">${item.id}</div>
-                                                            <div style="font-size:9px;color:#999;margin-top:2px;">${cls.name}</div>
+                                                            <div style="font-size:9px;color:#999;margin-top:1px;">${cls.name}</div>
                                                         </div>
                                                     </div>
                                                 </body></html>`);
@@ -655,19 +665,20 @@ export const ClassDetailScreen: React.FC = () => {
                                     actions={
                                         <button
                                             onClick={() => {
-                                                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(student.id)}&format=png`;
+                                                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(student.id)}&format=png`;
                                                 const pw = window.open('', '_blank');
                                                 if (!pw) return;
                                                 pw.document.write(`<!DOCTYPE html><html><head><title>Thẻ QR - ${student.name}</title>
-                                                    <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',sans-serif;padding:20mm;display:flex;justify-content:center}
+                                                    <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;display:flex;justify-content:center;padding:20mm}
+                                                    @page{size:A4;margin:10mm}
                                                     @media print{body{-webkit-print-color-adjust:exact}}</style>
                                                 </head><body>
-                                                    <div style="width:65mm;height:40mm;border:1px solid #ccc;border-radius:8px;padding:6px;display:inline-flex;align-items:center;gap:8px;background:white;">
-                                                        <img src="${qrUrl}" style="width:32mm;height:32mm;" />
-                                                        <div style="flex:1;overflow:hidden;">
-                                                            <div style="font-weight:bold;font-size:12px;">${student.name}</div>
+                                                    <div style="width:88mm;height:42mm;border:1px solid #ccc;border-radius:8px;padding:5px;display:inline-flex;align-items:center;gap:6px;background:white;box-sizing:border-box;">
+                                                        <img src="${qrUrl}" style="width:34mm;height:34mm;flex-shrink:0;" />
+                                                        <div style="flex:1;overflow:hidden;min-width:0;">
+                                                            <div style="font-weight:bold;font-size:13px;">${student.name}</div>
                                                             <div style="font-size:10px;color:#666;font-family:monospace;">${student.id}</div>
-                                                            <div style="font-size:9px;color:#999;margin-top:2px;">${cls.name}</div>
+                                                            <div style="font-size:9px;color:#999;margin-top:1px;">${cls.name}</div>
                                                         </div>
                                                     </div>
                                                 </body></html>`);

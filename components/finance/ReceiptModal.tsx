@@ -27,6 +27,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ isOpen, onClose, tra
                 <style>
                     * { margin: 0; padding: 0; box-sizing: border-box; }
                     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+                    @page { size: A4; margin: 15mm; }
                     @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
                     .bg-white { background: white; }
                     .bg-gray-50 { background: #f9fafb; }

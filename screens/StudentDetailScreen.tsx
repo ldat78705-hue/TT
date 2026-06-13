@@ -621,7 +621,8 @@ export const StudentDetailScreen: React.FC = () => {
                                     const pw = window.open('', '_blank');
                                     if (!pw) return;
                                     pw.document.write(`<!DOCTYPE html><html><head><title>Sổ cái - ${student.name}</title>
-                                        <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',sans-serif;padding:15mm}
+                                        <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;padding:15mm}
+                                        @page{size:A4;margin:15mm}
                                         table{border-collapse:collapse;width:100%}th{background:#f3f4f6;font-weight:600}
                                         @media print{body{-webkit-print-color-adjust:exact}}</style>
                                     </head><body>
