@@ -1,8 +1,10 @@
 import { verifyToken } from './_lib/jwt.js';
 import { UserRole } from '../types.js';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, doc, getDoc, setDoc, getDocs, collection, deleteDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, getDocs, collection, deleteDoc, updateDoc } from 'firebase/firestore';
 import { authenticateServer } from './_lib/serverAuth.js';
+import { hashPassword, verifyPassword } from './_lib/crypto.js';
+import { signToken } from './_lib/jwt.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -17,9 +19,7 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 
 const REGISTRY_COLLECTION = 'centers_registry';
-
-// Super admin email - only this user can manage centers
-const SUPER_ADMIN_USERS = ['ADMIN_USER'];
+const SUPER_ADMIN_COLLECTION = 'super_admin';
 
 async function getAuthPayload(req: any) {
     const authHeader = req.headers.authorization || req.headers['authorization'];
@@ -28,100 +28,210 @@ async function getAuthPayload(req: any) {
     return await verifyToken(token);
 }
 
+function isSuperAdmin(payload: any): boolean {
+    return payload?.isSuperAdmin === true;
+}
+
 export default async function handler(req: any, res: any) {
-    const authPayload = await getAuthPayload(req);
-    if (!authPayload) {
-        return res.status(401).json({ error: 'Không có quyền truy cập' });
-    }
-
-    const role = (authPayload as any).role;
-    const userId = (authPayload as any).userId;
-
-    // Only ADMIN can manage centers
-    if (role !== UserRole.ADMIN || !SUPER_ADMIN_USERS.includes(userId)) {
-        return res.status(403).json({ error: 'Chỉ Super Admin mới có quyền quản lý trung tâm' });
-    }
-
     await authenticateServer();
 
-    // GET: List all centers
-    if (req.method === 'GET') {
-        try {
-            const querySnapshot = await getDocs(collection(db, REGISTRY_COLLECTION));
-            const centers: any[] = [];
-            querySnapshot.forEach((docSnap) => {
-                centers.push({ id: docSnap.id, ...docSnap.data() });
-            });
-            return res.status(200).json({ centers });
-        } catch (error) {
-            console.error('Centers GET Error:', error);
-            return res.status(500).json({ error: 'Lỗi đọc danh sách trung tâm' });
-        }
-    }
-
-    // POST: Create a new center
+    // === SUPER ADMIN LOGIN ===
     if (req.method === 'POST') {
-        try {
-            let body = req.body || {};
-            if (typeof body === 'string') {
-                try { body = JSON.parse(body); } catch (e) {}
+        let body = req.body || {};
+        if (typeof body === 'string') {
+            try { body = JSON.parse(body); } catch (e) {}
+        }
+
+        // Login action
+        if (body.action === 'login') {
+            const { username, password } = body;
+            if (!username || !password) {
+                return res.status(400).json({ error: 'Thiếu tên đăng nhập hoặc mật khẩu' });
             }
 
-            const { slug, name, address, phone, owner } = body;
+            try {
+                const adminDoc = await getDoc(doc(db, SUPER_ADMIN_COLLECTION, 'credentials'));
+                if (!adminDoc.exists()) {
+                    // First-time setup: create default super admin
+                    const defaultUsername = 'superadmin';
+                    const defaultPassword = 'SuperAdmin@2026';
+                    const hashed = hashPassword(defaultPassword);
+                    await setDoc(doc(db, SUPER_ADMIN_COLLECTION, 'credentials'), {
+                        username: defaultUsername,
+                        password: hashed,
+                        createdAt: new Date().toISOString()
+                    });
+
+                    if (username === defaultUsername && password === defaultPassword) {
+                        const token = await signToken({
+                            userId: 'SUPER_ADMIN',
+                            role: 'SUPER_ADMIN',
+                            isSuperAdmin: true,
+                            name: 'Super Admin'
+                        });
+                        return res.status(200).json({ token, role: 'SUPER_ADMIN', isSuperAdmin: true });
+                    }
+                    return res.status(401).json({ error: 'Thông tin đăng nhập không hợp lệ' });
+                }
+
+                const adminData = adminDoc.data();
+                if (username !== adminData.username) {
+                    return res.status(401).json({ error: 'Thông tin đăng nhập không hợp lệ' });
+                }
+                if (!verifyPassword(password, adminData.password)) {
+                    return res.status(401).json({ error: 'Mật khẩu không đúng' });
+                }
+
+                const token = await signToken({
+                    userId: 'SUPER_ADMIN',
+                    role: 'SUPER_ADMIN',
+                    isSuperAdmin: true,
+                    name: 'Super Admin'
+                });
+                return res.status(200).json({ token, role: 'SUPER_ADMIN', isSuperAdmin: true });
+            } catch (error) {
+                console.error('Super Admin Login Error:', error);
+                return res.status(500).json({ error: 'Lỗi đăng nhập' });
+            }
+        }
+
+        // === ALL OTHER POST ACTIONS REQUIRE SUPER ADMIN AUTH ===
+        const authPayload = await getAuthPayload(req);
+        if (!authPayload || !isSuperAdmin(authPayload)) {
+            return res.status(403).json({ error: 'Chỉ Super Admin mới có quyền thực hiện thao tác này' });
+        }
+
+        // Create center
+        if (body.action === 'create') {
+            const { slug, name, address, phone, expiresAt } = body;
             if (!slug || !name) {
-                return res.status(400).json({ error: 'Thiếu slug hoặc tên trung tâm' });
+                return res.status(400).json({ error: 'Thiếu mã hoặc tên trung tâm' });
             }
 
-            // Check if center already exists
             const existing = await getDoc(doc(db, REGISTRY_COLLECTION, slug));
             if (existing.exists()) {
-                return res.status(409).json({ error: `Trung tâm với slug "${slug}" đã tồn tại` });
+                return res.status(409).json({ error: `Trung tâm "${slug}" đã tồn tại` });
             }
+
+            // Default: 30 days trial
+            const defaultExpiry = new Date();
+            defaultExpiry.setDate(defaultExpiry.getDate() + 30);
 
             const centerData = {
                 name,
                 slug,
                 address: address || '',
                 phone: phone || '',
-                owner: owner || userId,
                 plan: 'free',
                 status: 'ACTIVE',
                 createdAt: new Date().toISOString(),
+                expiresAt: expiresAt || defaultExpiry.toISOString(),
                 collectionName: `center_${slug}`
             };
 
             await setDoc(doc(db, REGISTRY_COLLECTION, slug), centerData);
-
-            return res.status(201).json({ 
-                success: true, 
-                center: { id: slug, ...centerData },
-                message: `Trung tâm "${name}" đã được tạo thành công. Collection: center_${slug}`
-            });
-        } catch (error) {
-            console.error('Centers POST Error:', error);
-            return res.status(500).json({ error: 'Lỗi tạo trung tâm' });
+            return res.status(201).json({ success: true, center: { id: slug, ...centerData } });
         }
-    }
 
-    // DELETE: Remove a center (registry only, NOT data)
-    if (req.method === 'DELETE') {
-        try {
-            let body = req.body || {};
-            if (typeof body === 'string') {
-                try { body = JSON.parse(body); } catch (e) {}
-            }
-
-            const { slug } = body;
+        // Extend center
+        if (body.action === 'extend') {
+            const { slug, days, expiresAt: customExpiry } = body;
             if (!slug) {
-                return res.status(400).json({ error: 'Thiếu slug trung tâm' });
+                return res.status(400).json({ error: 'Thiếu mã trung tâm' });
             }
+
+            const centerRef = doc(db, REGISTRY_COLLECTION, slug);
+            const centerDoc = await getDoc(centerRef);
+            if (!centerDoc.exists()) {
+                return res.status(404).json({ error: 'Trung tâm không tồn tại' });
+            }
+
+            let newExpiry: string;
+            if (customExpiry) {
+                newExpiry = customExpiry;
+            } else {
+                const currentExpiry = new Date(centerDoc.data().expiresAt || new Date());
+                const baseDate = currentExpiry > new Date() ? currentExpiry : new Date();
+                baseDate.setDate(baseDate.getDate() + (days || 30));
+                newExpiry = baseDate.toISOString();
+            }
+
+            await updateDoc(centerRef, { expiresAt: newExpiry, status: 'ACTIVE' });
+            return res.status(200).json({
+                success: true,
+                message: `Đã gia hạn trung tâm "${slug}" đến ${new Date(newExpiry).toLocaleDateString('vi-VN')}`,
+                expiresAt: newExpiry
+            });
+        }
+
+        // Toggle status (lock/unlock)
+        if (body.action === 'toggle_status') {
+            const { slug, status } = body;
+            if (!slug) return res.status(400).json({ error: 'Thiếu mã trung tâm' });
+
+            const centerRef = doc(db, REGISTRY_COLLECTION, slug);
+            await updateDoc(centerRef, { status: status || 'LOCKED' });
+            return res.status(200).json({ success: true, status: status || 'LOCKED' });
+        }
+
+        // Delete center
+        if (body.action === 'delete') {
+            const { slug } = body;
+            if (!slug) return res.status(400).json({ error: 'Thiếu mã trung tâm' });
 
             await deleteDoc(doc(db, REGISTRY_COLLECTION, slug));
-            return res.status(200).json({ success: true, message: `Đã xóa trung tâm "${slug}" khỏi registry` });
-        } catch (error) {
-            console.error('Centers DELETE Error:', error);
-            return res.status(500).json({ error: 'Lỗi xóa trung tâm' });
+            return res.status(200).json({ success: true, message: `Đã xóa trung tâm "${slug}"` });
         }
+
+        // Change super admin password
+        if (body.action === 'change_password') {
+            const { currentPassword, newPassword } = body;
+            if (!currentPassword || !newPassword) {
+                return res.status(400).json({ error: 'Thiếu mật khẩu' });
+            }
+
+            const adminDoc = await getDoc(doc(db, SUPER_ADMIN_COLLECTION, 'credentials'));
+            if (!adminDoc.exists()) {
+                return res.status(404).json({ error: 'Chưa thiết lập Super Admin' });
+            }
+
+            if (!verifyPassword(currentPassword, adminDoc.data().password)) {
+                return res.status(401).json({ error: 'Mật khẩu hiện tại không đúng' });
+            }
+
+            await updateDoc(doc(db, SUPER_ADMIN_COLLECTION, 'credentials'), {
+                password: hashPassword(newPassword)
+            });
+            return res.status(200).json({ success: true, message: 'Đã đổi mật khẩu Super Admin' });
+        }
+
+        return res.status(400).json({ error: 'Action không hợp lệ' });
+    }
+
+    // === GET: List centers (requires super admin) ===
+    if (req.method === 'GET') {
+        const authPayload = await getAuthPayload(req);
+        if (!authPayload || !isSuperAdmin(authPayload)) {
+            return res.status(403).json({ error: 'Chỉ Super Admin mới xem được' });
+        }
+
+        const querySnapshot = await getDocs(collection(db, REGISTRY_COLLECTION));
+        const centers: any[] = [];
+        const now = new Date();
+
+        querySnapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            // Auto-lock expired centers
+            const isExpired = data.expiresAt && new Date(data.expiresAt) < now;
+            centers.push({
+                id: docSnap.id,
+                ...data,
+                isExpired,
+                effectiveStatus: isExpired ? 'EXPIRED' : data.status
+            });
+        });
+
+        return res.status(200).json({ centers });
     }
 
     return res.status(405).json({ error: 'Method Not Allowed' });

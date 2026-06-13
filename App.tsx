@@ -38,6 +38,7 @@ const AuditLogScreen = React.lazy(() => import('./screens/AuditLogScreen').then(
 const ParentDashboardScreen = React.lazy(() => import('./screens/parent/ParentDashboardScreen').then(m => ({ default: m.ParentDashboardScreen })));
 const ParentReportsScreen = React.lazy(() => import('./screens/parent/ParentReportsScreen').then(m => ({ default: m.ParentReportsScreen })));
 const ParentFinanceScreen = React.lazy(() => import('./screens/parent/ParentFinanceScreen').then(m => ({ default: m.ParentFinanceScreen })));
+const SuperAdminScreen = React.lazy(() => import('./screens/SuperAdminScreen').then(m => ({ default: m.SuperAdminScreen })));
 
 
 import { UserRole } from './types';
@@ -188,6 +189,11 @@ const AppRoutes: React.FC = () => {
         <>
             <ThemeStyle themeColor={state.settings.themeColor} sidebarColor={state.settings.sidebarColor} />
             <Routes>
+                <Route path="/super-admin" element={
+                    <React.Suspense fallback={<div className="flex h-screen w-screen items-center justify-center bg-slate-900">{ICONS.loading}</div>}>
+                        <SuperAdminScreen />
+                    </React.Suspense>
+                } />
                 <Route path={ROUTES.LOGIN} element={
                     <React.Suspense fallback={<div className="flex h-screen w-screen items-center justify-center bg-slate-50 dark:bg-slate-900">{ICONS.loading}</div>}>
                         <LoginScreen />

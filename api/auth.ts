@@ -61,6 +61,23 @@ export default async function handler(req: any, res: any) {
 
         // Use centerId from request, default to _legacy for backward compatibility
         const effectiveCenterId = centerId || '_legacy';
+
+        // Check center status & expiry (skip for legacy)
+        if (effectiveCenterId !== '_legacy') {
+            const centerDoc = await getDoc(doc(db, 'centers_registry', effectiveCenterId));
+            if (centerDoc.exists()) {
+                const centerData = centerDoc.data();
+                // Check if locked
+                if (centerData.status === 'LOCKED') {
+                    return res.status(403).json({ error: 'Trung tâm này đã bị khóa. Vui lòng liên hệ quản trị viên hệ thống.' });
+                }
+                // Check if expired
+                if (centerData.expiresAt && new Date(centerData.expiresAt) < new Date()) {
+                    return res.status(403).json({ error: 'Trung tâm này đã hết hạn sử dụng. Vui lòng liên hệ quản trị viên hệ thống để gia hạn.' });
+                }
+            }
+        }
+
         const data = await getAuthData(effectiveCenterId);
         const upperIdentifier = identifier.toUpperCase();
         let user = null;
