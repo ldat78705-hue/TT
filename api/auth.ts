@@ -2,7 +2,7 @@ import { signToken } from './_lib/jwt.js';
 import { getMockDataState } from './_lib/mockData.js';
 import { UserRole } from '../types.js';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, getDocs, collection } from 'firebase/firestore';
 import { hashPassword } from './_lib/crypto.js';
 import { authenticateServer } from './_lib/serverAuth.js';
 import fs from 'fs';
@@ -26,21 +26,69 @@ function getCollectionName(centerId?: string): string {
 }
 
 async function getAuthData(centerId?: string) {
-    await authenticateServer();
     const colName = getCollectionName(centerId);
-    // Fetch only the collections needed for authentication
     const collections = ['settings', 'teachers', 'staff', 'students'];
     const promises = collections.map(col => getDoc(doc(db, colName, col)));
     const snapshots = await Promise.all(promises);
     
-    const defaultState = getMockDataState();
-    
     return {
-        settings: snapshots[0].exists() ? snapshots[0].data().data : defaultState.settings,
-        teachers: snapshots[1].exists() ? snapshots[1].data().data : defaultState.teachers,
-        staff: snapshots[2].exists() ? snapshots[2].data().data : defaultState.staff,
-        students: snapshots[3].exists() ? snapshots[3].data().data : defaultState.students,
+        settings: snapshots[0].exists() ? snapshots[0].data().data : null,
+        teachers: snapshots[1].exists() ? snapshots[1].data().data : [],
+        staff: snapshots[2].exists() ? snapshots[2].data().data : [],
+        students: snapshots[3].exists() ? snapshots[3].data().data : [],
     };
+}
+
+// Try to authenticate a user within a specific center's data
+function tryAuthInData(data: any, identifier: string, password: string, hashedPassword: string): { user: any, role: string } | null {
+    const upperIdentifier = identifier.toUpperCase();
+
+    // 1. Admin
+    if (upperIdentifier === 'ADMIN' || upperIdentifier === 'ADMIN_USER') {
+        const adminPassword = data.settings?.adminPassword || '123456';
+        if (password === adminPassword || hashedPassword === adminPassword) {
+            return { user: { id: 'ADMIN_USER', name: 'Admin', role: UserRole.ADMIN }, role: UserRole.ADMIN };
+        }
+        return null;
+    }
+
+    // 2. Viewer
+    if (upperIdentifier === 'VIEWER' || upperIdentifier === 'VIEWER_USER') {
+        if (data.settings?.viewerAccountActive !== false && (password === 'viewer123' || hashedPassword === 'viewer123')) {
+            return { user: { id: 'VIEWER_USER', name: 'Viewer', role: UserRole.VIEWER }, role: UserRole.VIEWER };
+        }
+        return null;
+    }
+
+    // 3. Teacher
+    if (data.teachers) {
+        const teacher = data.teachers.find((t: any) => t.id && t.id.toUpperCase() === upperIdentifier);
+        if (teacher && (teacher.password === password || teacher.password === hashedPassword)) {
+            return { user: teacher, role: teacher.role || UserRole.TEACHER };
+        }
+    }
+
+    // 4. Staff
+    if (data.staff) {
+        const staffMember = data.staff.find((s: any) => s.id && s.id.toUpperCase() === upperIdentifier);
+        if (staffMember && (staffMember.password === password || staffMember.password === hashedPassword)) {
+            return { user: staffMember, role: staffMember.role || UserRole.MANAGER };
+        }
+    }
+
+    // 5. Student (Parent)
+    if (data.students) {
+        const student = data.students.find((s: any) => s.id && s.id.toUpperCase() === upperIdentifier);
+        if (student) {
+            const dobPassword = student.dob ? student.dob.split('-').reverse().join('') : null;
+            const correctPassword = student.password || dobPassword;
+            if (password === correctPassword || hashedPassword === correctPassword) {
+                return { user: student, role: UserRole.PARENT };
+            }
+        }
+    }
+
+    return null;
 }
 
 export default async function handler(req: any, res: any) {
@@ -59,15 +107,17 @@ export default async function handler(req: any, res: any) {
             return res.status(400).json({ error: 'Thiếu thông tin đăng nhập' });
         }
 
+        await authenticateServer();
+        const hashedInputPassword = hashPassword(password);
+
         // Step 0: Check if identifier matches a center's loginUsername
-        // This allows each center to have unique login, no need to select center
-        let effectiveCenterId = centerId || '_legacy';
+        let effectiveCenterId = centerId || null;
         let centerLoginMatched = false;
 
         if (!centerId) {
-            await authenticateServer();
-            const { getDocs, collection: col } = await import('firebase/firestore');
-            const allCenters = await getDocs(col(db, 'centers_registry'));
+            const allCenters = await getDocs(collection(db, 'centers_registry'));
+            
+            // Check center login
             allCenters.forEach((docSnap: any) => {
                 const data = docSnap.data();
                 if (data.loginUsername && data.loginUsername.toUpperCase() === identifier.toUpperCase()) {
@@ -76,8 +126,8 @@ export default async function handler(req: any, res: any) {
                 }
             });
 
-            // If matched center login, verify center password first
-            if (centerLoginMatched) {
+            // If matched center login, verify center password
+            if (centerLoginMatched && effectiveCenterId) {
                 const centerDoc = allCenters.docs.find((d: any) => d.id === effectiveCenterId);
                 const centerData = centerDoc?.data();
                 
@@ -88,13 +138,12 @@ export default async function handler(req: any, res: any) {
                     return res.status(403).json({ error: 'Trung tâm này đã hết hạn sử dụng. Vui lòng liên hệ quản trị viên hệ thống để gia hạn.' });
                 }
 
-                // Verify center login password
                 const hashedInput = hashPassword(password);
                 if (centerData?.loginPassword !== hashedInput) {
                     return res.status(401).json({ error: 'Mật khẩu không đúng' });
                 }
 
-                // Center login successful → log in as admin of that center
+                // Center login → admin
                 const token = await signToken({
                     userId: 'ADMIN_USER',
                     role: UserRole.ADMIN,
@@ -108,86 +157,67 @@ export default async function handler(req: any, res: any) {
                     centerId: effectiveCenterId
                 });
             }
+
+            // NOT a center login → search across ALL active centers for GV/NV/Student
+            const now = new Date();
+            for (const docSnap of allCenters.docs) {
+                const cData = docSnap.data();
+                if (cData.status === 'LOCKED') continue;
+                if (cData.expiresAt && new Date(cData.expiresAt) < now) continue;
+
+                const cId = docSnap.id;
+                try {
+                    const authData = await getAuthData(cId);
+                    const result = tryAuthInData(authData, identifier, password, hashedInputPassword);
+                    if (result) {
+                        const token = await signToken({
+                            userId: result.user.id,
+                            role: result.role,
+                            name: result.user.name || result.user.id,
+                            centerId: cId
+                        });
+                        const safeUser = { ...result.user };
+                        delete safeUser.password;
+                        return res.status(200).json({ token, user: safeUser, role: result.role, centerId: cId });
+                    }
+                } catch (e) {
+                    console.error(`Error checking center ${cId}:`, e);
+                }
+            }
+
+            return res.status(401).json({ error: 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.' });
         }
 
-        // Check center status & expiry (skip for legacy)
-        if (effectiveCenterId !== '_legacy') {
+        // Has explicit centerId → authenticate within that center only
+        if (effectiveCenterId && effectiveCenterId !== '_legacy') {
             const centerDoc = await getDoc(doc(db, 'centers_registry', effectiveCenterId));
             if (centerDoc.exists()) {
                 const centerData = centerDoc.data();
                 if (centerData.status === 'LOCKED') {
-                    return res.status(403).json({ error: 'Trung tâm này đã bị khóa. Vui lòng liên hệ quản trị viên hệ thống.' });
+                    return res.status(403).json({ error: 'Trung tâm này đã bị khóa.' });
                 }
                 if (centerData.expiresAt && new Date(centerData.expiresAt) < new Date()) {
-                    return res.status(403).json({ error: 'Trung tâm này đã hết hạn sử dụng. Vui lòng liên hệ quản trị viên hệ thống để gia hạn.' });
+                    return res.status(403).json({ error: 'Trung tâm này đã hết hạn sử dụng.' });
                 }
             }
         }
 
-        const data = await getAuthData(effectiveCenterId);
-        const upperIdentifier = identifier.toUpperCase();
-        let user = null;
-        let role = null;
-        const hashedInputPassword = hashPassword(password);
+        const data = await getAuthData(effectiveCenterId || '_legacy');
+        const result = tryAuthInData(data, identifier, password, hashedInputPassword);
 
-        // 1. Check Admin
-        if (upperIdentifier === 'ADMIN' || upperIdentifier === 'ADMIN_USER') {
-            const adminPassword = data.settings?.adminPassword || '123456';
-            if (password === adminPassword || hashedInputPassword === adminPassword) {
-                user = { id: 'ADMIN_USER', name: 'Admin', role: UserRole.ADMIN };
-                role = UserRole.ADMIN;
-            }
-        }
-        // 2. Check Viewer
-        else if (upperIdentifier === 'VIEWER' || upperIdentifier === 'VIEWER_USER') {
-            if (data.settings?.viewerAccountActive !== false && (password === 'viewer123' || hashedInputPassword === 'viewer123')) {
-                user = { id: 'VIEWER_USER', name: 'Viewer', role: UserRole.VIEWER };
-                role = UserRole.VIEWER;
-            }
-        }
-        // 3. Check Teacher
-        else if (data.teachers) {
-            const teacher = data.teachers.find((t: any) => t.id.toUpperCase() === upperIdentifier);
-            if (teacher && (teacher.password === password || teacher.password === hashedInputPassword)) {
-                user = teacher;
-                role = teacher.role;
-            }
-        }
-        
-        // 4. Check Staff
-        if (!user && data.staff) {
-            const staffMember = data.staff.find((s: any) => s.id.toUpperCase() === upperIdentifier);
-            if (staffMember && (staffMember.password === password || staffMember.password === hashedInputPassword)) {
-                user = staffMember;
-                role = staffMember.role;
-            }
-        }
-
-        // 5. Check Student (Parent)
-        if (!user && data.students) {
-            const student = data.students.find((s: any) => s.id.toUpperCase() === upperIdentifier);
-            if (student) {
-                const dobPassword = student.dob ? student.dob.split('-').reverse().join('') : null;
-                const correctPassword = student.password || dobPassword;
-                if (password === correctPassword || hashedInputPassword === correctPassword) {
-                    user = student;
-                    role = UserRole.PARENT;
-                }
-            }
-        }
-
-        if (user && role) {
-            // Generate JWT with centerId
-            const token = await signToken({ userId: user.id, role, name: user.name || user.username || user.id, centerId: effectiveCenterId });
-            
-            // Remove sensitive info before sending back to client
-            const safeUser = { ...user };
+        if (result) {
+            const token = await signToken({
+                userId: result.user.id,
+                role: result.role,
+                name: result.user.name || result.user.id,
+                centerId: effectiveCenterId || '_legacy'
+            });
+            const safeUser = { ...result.user };
             delete safeUser.password;
-
-            return res.status(200).json({ token, user: safeUser, role, centerId: effectiveCenterId });
+            return res.status(200).json({ token, user: safeUser, role: result.role, centerId: effectiveCenterId || '_legacy' });
         }
 
-        return res.status(401).json({ error: 'Thông tin đăng nhập không hợp lệ' });
+        return res.status(401).json({ error: 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.' });
 
     } catch (error) {
         console.error('Auth Error:', error);
