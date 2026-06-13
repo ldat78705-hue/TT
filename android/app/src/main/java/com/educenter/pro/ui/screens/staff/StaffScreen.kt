@@ -31,17 +31,21 @@ fun StaffScreen(
     viewModel: StaffViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val currentUserRole by viewModel.currentUserRole.collectAsState()
+    val canManage = currentUserRole == UserRole.ADMIN
     var showAddDialog by remember { mutableStateOf(false) }
     var deleteTarget by remember { mutableStateOf<Staff?>(null) }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Quản lý Nhân viên") }) },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showAddDialog = true },
-                containerColor = Color(0xFF3B82F6)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Thêm nhân viên", tint = Color.White)
+            if (canManage) {
+                FloatingActionButton(
+                    onClick = { showAddDialog = true },
+                    containerColor = Color(0xFF3B82F6)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Thêm nhân viên", tint = Color.White)
+                }
             }
         }
     ) { padding ->
@@ -74,7 +78,7 @@ fun StaffScreen(
                         Text("${uiState.staffList.size} nhân viên", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
                     }
                     itemsIndexed(uiState.staffList) { index, staff ->
-                        StaffCard(staff = staff, onDelete = { deleteTarget = staff })
+                        StaffCard(staff = staff, canManage = canManage, onDelete = { deleteTarget = staff })
                     }
                 }
             }
@@ -113,7 +117,7 @@ fun StaffScreen(
 }
 
 @Composable
-private fun StaffCard(staff: Staff, onDelete: () -> Unit) {
+private fun StaffCard(staff: Staff, canManage: Boolean = false, onDelete: () -> Unit) {
     val roleColor = when (staff.role) {
         UserRole.ADMIN -> Color(0xFFEF4444)
         UserRole.MANAGER -> Color(0xFF8B5CF6)
@@ -161,8 +165,10 @@ private fun StaffCard(staff: Staff, onDelete: () -> Unit) {
                     Text(roleLabel, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = roleColor)
                 }
             }
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Xóa", tint = Color(0xFFEF4444))
+            if (canManage) {
+                IconButton(onClick = onDelete) {
+                    Icon(Icons.Default.Delete, contentDescription = "Xóa", tint = Color(0xFFEF4444))
+                }
             }
         }
     }

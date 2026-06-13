@@ -29,6 +29,8 @@ class StaffViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(StaffUiState())
     val uiState: StateFlow<StaffUiState> = _uiState.asStateFlow()
 
+    val currentUserRole = repository.currentUserRole
+
     init {
         loadData()
     }
