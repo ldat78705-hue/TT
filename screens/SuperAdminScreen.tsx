@@ -493,11 +493,7 @@ const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                         <div className="flex border-b dark:border-slate-600 mb-4 overflow-x-auto">
                             <button onClick={() => setCredTab('set')}
                                 className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${credTab === 'set' ? 'border-purple-500 text-purple-600 dark:text-purple-400' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
-                                Tài khoản đăng nhập
-                            </button>
-                            <button onClick={() => setCredTab('admin')}
-                                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${credTab === 'admin' ? 'border-purple-500 text-purple-600 dark:text-purple-400' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
-                                Mật khẩu Admin
+                                🔑 Tài khoản đăng nhập
                             </button>
                             <button onClick={() => { setCredTab('accounts' as any); loadCenterAccounts(credTarget.slug); }}
                                 className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${credTab === 'accounts' as any ? 'border-purple-500 text-purple-600 dark:text-purple-400' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
@@ -531,26 +527,6 @@ const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                                     <div className="flex justify-end gap-3">
                                         <Button type="button" variant="secondary" onClick={() => setCredTarget(null)}>Hủy</Button>
                                         <Button type="submit">{credTarget.loginUsername ? 'Cập nhật' : 'Cấp tài khoản'}</Button>
-                                    </div>
-                                </form>
-                            </>
-                        )}
-
-                        {credTab === 'admin' && (
-                            <>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                                    Đổi mật khẩu tài khoản "admin" bên trong trung tâm (dùng để đăng nhập quản trị).
-                                </p>
-                                <form onSubmit={handleChangeCenterAdminPwd} className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1">Mật khẩu Admin mới</label>
-                                        <input type="text" value={creds.centerAdminPassword || ''}
-                                            onChange={e => setCreds({...creds, centerAdminPassword: e.target.value})}
-                                            className="form-input" placeholder="Nhập mật khẩu mới" required />
-                                    </div>
-                                    <div className="flex justify-end gap-3">
-                                        <Button type="button" variant="secondary" onClick={() => setCredTarget(null)}>Hủy</Button>
-                                        <Button type="submit">Đổi mật khẩu</Button>
                                     </div>
                                 </form>
                             </>
