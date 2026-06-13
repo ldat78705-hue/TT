@@ -65,12 +65,13 @@ fun FinanceScreen(
         ) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Tabs
-            TabRow(selectedTabIndex = selectedTab) {
-                Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("Tổng quan") })
-                Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("Công nợ") })
-                Tab(selected = selectedTab == 2, onClick = { selectedTab = 2 }, text = { Text("Giao dịch") })
-                Tab(selected = selectedTab == 3, onClick = { selectedTab = 3 }, text = { Text("Thu/Chi") })
-                Tab(selected = selectedTab == 4, onClick = { selectedTab = 4 }, text = { Text("Lương") })
+            ScrollableTabRow(selectedTabIndex = selectedTab, edgePadding = 8.dp) {
+                Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("Tổng quan", fontSize = 13.sp) })
+                Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("Công nợ", fontSize = 13.sp) })
+                Tab(selected = selectedTab == 2, onClick = { selectedTab = 2 }, text = { Text("Giao dịch", fontSize = 13.sp) })
+                Tab(selected = selectedTab == 3, onClick = { selectedTab = 3 }, text = { Text("Thu/Chi", fontSize = 13.sp) })
+                Tab(selected = selectedTab == 4, onClick = { selectedTab = 4 }, text = { Text("Lương", fontSize = 13.sp) })
+                Tab(selected = selectedTab == 5, onClick = { selectedTab = 5 }, text = { Text("Hóa đơn", fontSize = 13.sp) })
             }
 
             when (selectedTab) {
@@ -79,6 +80,7 @@ fun FinanceScreen(
                 2 -> TransactionsTab(uiState, fmt)
                 3 -> IncomeExpenseTab(uiState, fmt, viewModel)
                 4 -> PayrollTab(uiState, fmt)
+                5 -> InvoicesTab(uiState, fmt)
             }
         }
         } // PullRefreshWrapper
@@ -749,6 +751,117 @@ private fun PayrollTab(uiState: FinanceUiState, fmt: NumberFormat) {
                             Text(fmt.format(payroll.totalSalary), fontWeight = FontWeight.ExtraBold, fontSize = 17.sp, color = Color(0xFF3B82F6))
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun InvoicesTab(uiState: FinanceUiState, fmt: NumberFormat) {
+    val paid = uiState.invoices.filter { it.status == "PAID" }
+    val unpaid = uiState.invoices.filter { it.status == "UNPAID" }
+    val totalPaid = paid.sumOf { it.amount }
+    val totalUnpaid = unpaid.sumOf { it.amount }
+
+    LazyColumn(
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // Summary
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Card(modifier = Modifier.weight(1f), shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF0FDF4))
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("Đã thanh toán", fontSize = 13.sp, color = Color(0xFF059669))
+                        Text(fmt.format(totalPaid), fontWeight = FontWeight.Bold, color = Color(0xFF059669), fontSize = 15.sp)
+                        Text("${paid.size} hóa đơn", fontSize = 12.sp, color = Color(0xFF94A3B8))
+                    }
+                }
+                Card(modifier = Modifier.weight(1f), shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF2F2))
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("Chưa thanh toán", fontSize = 13.sp, color = Color(0xFFDC2626))
+                        Text(fmt.format(totalUnpaid), fontWeight = FontWeight.Bold, color = Color(0xFFDC2626), fontSize = 15.sp)
+                        Text("${unpaid.size} hóa đơn", fontSize = 12.sp, color = Color(0xFF94A3B8))
+                    }
+                }
+            }
+        }
+
+        if (uiState.invoices.isEmpty()) {
+            item {
+                Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("🧾", fontSize = 48.sp)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Chưa có hóa đơn nào", color = Color(0xFF94A3B8))
+                    }
+                }
+            }
+        }
+
+        // Unpaid first
+        if (unpaid.isNotEmpty()) {
+            item { Text("⏳ Chưa thanh toán (${unpaid.size})", fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(top = 8.dp)) }
+            items(unpaid) { inv ->
+                InvoiceCard(inv, fmt)
+            }
+        }
+
+        // Paid
+        if (paid.isNotEmpty()) {
+            item { Text("✅ Đã thanh toán (${paid.size})", fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(top = 8.dp)) }
+            items(paid) { inv ->
+                InvoiceCard(inv, fmt)
+            }
+        }
+    }
+}
+
+@Composable
+private fun InvoiceCard(invoice: com.educenter.pro.data.model.Invoice, fmt: NumberFormat) {
+    val isPaid = invoice.status == "PAID"
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(1.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isPaid) MaterialTheme.colorScheme.surface else Color(0xFFFFFBEB)
+        )
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp).fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(invoice.studentName.ifBlank { invoice.studentId }, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                Text("Tháng ${invoice.month}", fontSize = 12.sp, color = Color(0xFF64748B))
+                if (invoice.details.isNotBlank()) {
+                    Text(invoice.details, fontSize = 11.sp, color = Color(0xFF94A3B8), maxLines = 1)
+                }
+                Text(
+                    "Tạo: ${invoice.generatedDate.take(10)}${if (invoice.paidDate != null) " • TT: ${invoice.paidDate.take(10)}" else ""}",
+                    fontSize = 11.sp, color = Color(0xFFCBD5E1)
+                )
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(fmt.format(invoice.amount), fontWeight = FontWeight.Bold, fontSize = 15.sp, color = if (isPaid) Color(0xFF10B981) else Color(0xFFEF4444))
+                Spacer(modifier = Modifier.height(4.dp))
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(if (isPaid) Color(0xFFD1FAE5) else Color(0xFFFEF3C7))
+                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                ) {
+                    Text(
+                        if (isPaid) "Đã TT" else "Chưa TT",
+                        fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                        color = if (isPaid) Color(0xFF059669) else Color(0xFFD97706)
+                    )
                 }
             }
         }

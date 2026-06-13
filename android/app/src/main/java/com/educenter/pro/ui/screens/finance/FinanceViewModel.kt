@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.educenter.pro.data.model.Student
 import com.educenter.pro.data.model.Transaction
 import com.educenter.pro.data.model.Income
+import com.educenter.pro.data.model.Invoice
 import com.educenter.pro.data.model.Expense
 import com.educenter.pro.data.model.Payroll
 import com.educenter.pro.data.repository.DataRepository
@@ -26,6 +27,7 @@ data class FinanceUiState(
     val incomeList: List<Income> = emptyList(),
     val expenseList: List<Expense> = emptyList(),
     val payrolls: List<Payroll> = emptyList(),
+    val invoices: List<Invoice> = emptyList(),
     val isLoading: Boolean = true
 )
 
@@ -78,6 +80,7 @@ class FinanceViewModel @Inject constructor(
                     incomeList = appData.income.sortedByDescending { it.date },
                     expenseList = appData.expenses.sortedByDescending { it.date },
                     payrolls = appData.payrolls.sortedByDescending { it.month },
+                    invoices = appData.invoices.sortedByDescending { it.generatedDate },
                     isLoading = false
                 )
             }

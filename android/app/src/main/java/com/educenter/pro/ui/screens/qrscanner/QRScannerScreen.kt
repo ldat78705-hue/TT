@@ -3,7 +3,12 @@
 package com.educenter.pro.ui.screens.qrscanner
 
 import android.annotation.SuppressLint
-
+import android.media.ToneGenerator
+import android.media.AudioManager
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.util.Log
 import android.util.Size
 import androidx.camera.core.CameraSelector
@@ -226,6 +231,55 @@ private fun ScanningView(
     val lifecycleOwner = LocalLifecycleOwner.current
     val scannedSet = remember { mutableSetOf<String>() }
     var lastProcessedTime by remember { mutableStateOf(0L) }
+
+    // Haptic + Sound feedback when scan status changes
+    val scanLogSize = uiState.scanLog.size
+    val lastStatus = uiState.scanLog.firstOrNull()?.status
+    LaunchedEffect(scanLogSize) {
+        if (scanLogSize > 0 && lastStatus != null) {
+            // Haptic feedback
+            try {
+                val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    val mgr = context.getSystemService(android.content.Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
+                    mgr?.defaultVibrator
+                } else {
+                    @Suppress("DEPRECATION")
+                    context.getSystemService(android.content.Context.VIBRATOR_SERVICE) as? Vibrator
+                }
+                when (lastStatus) {
+                    "success" -> {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            vibrator?.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE))
+                        } else {
+                            @Suppress("DEPRECATION")
+                            vibrator?.vibrate(100)
+                        }
+                    }
+                    "error" -> {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            vibrator?.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 80, 60, 80), -1))
+                        } else {
+                            @Suppress("DEPRECATION")
+                            vibrator?.vibrate(longArrayOf(0, 80, 60, 80), -1)
+                        }
+                    }
+                }
+            } catch (_: Exception) {}
+
+            // Sound feedback
+            try {
+                val toneType = when (lastStatus) {
+                    "success" -> ToneGenerator.TONE_PROP_ACK
+                    "duplicate" -> ToneGenerator.TONE_PROP_PROMPT
+                    else -> ToneGenerator.TONE_PROP_NACK
+                }
+                val toneGen = ToneGenerator(AudioManager.STREAM_NOTIFICATION, 80)
+                toneGen.startTone(toneType, 150)
+                kotlinx.coroutines.delay(200)
+                toneGen.release()
+            } catch (_: Exception) {}
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         // Progress header
