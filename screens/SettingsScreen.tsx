@@ -681,14 +681,14 @@ export const SettingsScreen: React.FC = () => {
                                     </div>
                                     <label className="relative inline-flex items-center cursor-pointer">
                                         <input type="checkbox" className="sr-only peer"
-                                            checked={formSettings.webhookEnabled ?? false}
-                                            onChange={(e) => setFormSettings(prev => ({ ...prev, webhookEnabled: e.target.checked }))}
+                                            checked={settings.webhookEnabled ?? false}
+                                            onChange={(e) => setSettings(prev => ({ ...prev, webhookEnabled: e.target.checked }))}
                                         />
                                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:bg-green-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
                                     </label>
                                 </div>
                                 
-                                {formSettings.webhookEnabled && (
+                                {settings.webhookEnabled && (
                                     <>
                                         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm">
                                             <p className="font-medium text-blue-800 dark:text-blue-300 mb-1">🔗 URL Webhook của bạn:</p>
@@ -703,8 +703,8 @@ export const SettingsScreen: React.FC = () => {
                                         <div>
                                             <label className="block text-sm font-medium">Prefix mã học viên trong nội dung CK</label>
                                             <input type="text" 
-                                                value={formSettings.webhookStudentIdPrefix ?? 'HS'} 
-                                                onChange={e => setFormSettings(prev => ({...prev, webhookStudentIdPrefix: e.target.value}))}
+                                                value={settings.webhookStudentIdPrefix ?? 'HS'} 
+                                                onChange={e => setSettings(prev => ({...prev, webhookStudentIdPrefix: e.target.value}))}
                                                 className="form-input mt-1" 
                                                 placeholder="HS" 
                                             />
@@ -717,8 +717,8 @@ export const SettingsScreen: React.FC = () => {
                                         <div>
                                             <label className="block text-sm font-medium">Nguồn nhận diện</label>
                                             <input type="text" 
-                                                value={formSettings.webhookBankKeyword ?? 'MBBank'} 
-                                                onChange={e => setFormSettings(prev => ({...prev, webhookBankKeyword: e.target.value}))}
+                                                value={settings.webhookBankKeyword ?? 'MBBank'} 
+                                                onChange={e => setSettings(prev => ({...prev, webhookBankKeyword: e.target.value}))}
                                                 className="form-input mt-1" 
                                                 placeholder="MBBank" 
                                             />
@@ -728,8 +728,8 @@ export const SettingsScreen: React.FC = () => {
                                         <div>
                                             <label className="block text-sm font-medium">Mẫu mô tả giao dịch</label>
                                             <input type="text" 
-                                                value={formSettings.webhookAutoDescription ?? 'Thanh toán HP tự động'} 
-                                                onChange={e => setFormSettings(prev => ({...prev, webhookAutoDescription: e.target.value}))}
+                                                value={settings.webhookAutoDescription ?? 'Thanh toán HP tự động'} 
+                                                onChange={e => setSettings(prev => ({...prev, webhookAutoDescription: e.target.value}))}
                                                 className="form-input mt-1" 
                                                 placeholder="Thanh toán HP tự động" 
                                             />
@@ -739,7 +739,7 @@ export const SettingsScreen: React.FC = () => {
                                         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-sm">
                                             <p className="font-medium text-amber-800 dark:text-amber-300 mb-1">📌 Cú pháp chuyển khoản mẫu cho phụ huynh:</p>
                                             <p className="font-mono bg-white dark:bg-black/30 p-2 rounded text-center text-lg font-bold">
-                                                HOC PHI {formSettings.webhookStudentIdPrefix || 'HS'}001
+                                                HOC PHI {settings.webhookStudentIdPrefix || 'HS'}001
                                             </p>
                                         </div>
                                     </>
