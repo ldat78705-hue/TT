@@ -545,9 +545,12 @@ export const ClassDetailScreen: React.FC = () => {
                             <span className="bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300 px-3 py-1 rounded-full font-semibold">GV: {teacherNames}</span>
                         </div>
                         <div className="mt-4 text-sm text-gray-600 dark:text-gray-300 flex flex-wrap gap-x-4 gap-y-1">
-                            {(cls.schedule || []).map((s, i) => (
-                                <div key={i} className="font-semibold">{`${dayMap[s.dayOfWeek]}: ${s.startTime} - ${s.endTime}`}</div>
-                            ))}
+                            {(cls.schedule || []).map((s, i) => {
+                                const room = state.rooms?.find((r: any) => r.id === s.roomId);
+                                return (
+                                    <div key={i} className="font-semibold">{`${dayMap[s.dayOfWeek]}: ${s.startTime} - ${s.endTime}`}{room ? <span className="ml-1 text-xs font-normal text-indigo-600 dark:text-indigo-400">({room.name})</span> : null}</div>
+                                );
+                            })}
                         </div>
                     </div>
                     {canManage && (
@@ -571,10 +574,70 @@ export const ClassDetailScreen: React.FC = () => {
             <div className="card-base">
                 {activeTab === 'students' && (
                     <>
-                        <h2 className="text-xl font-semibold mb-4">Danh sách học viên</h2>
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+                            <h2 className="text-xl font-semibold">Danh sách học viên</h2>
+                            {sortedClassStudents.length > 0 && (
+                                <Button variant="secondary" onClick={() => {
+                                    const cards = sortedClassStudents.map(s => {
+                                        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(s.id)}&format=png`;
+                                        return `<div style="width:65mm;height:40mm;border:1px solid #ccc;border-radius:8px;padding:6px;display:inline-flex;align-items:center;gap:8px;margin:4px;page-break-inside:avoid;background:white;">
+                                            <img src="${qrUrl}" style="width:32mm;height:32mm;" />
+                                            <div style="flex:1;overflow:hidden;">
+                                                <div style="font-weight:bold;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</div>
+                                                <div style="font-size:10px;color:#666;font-family:monospace;">${s.id}</div>
+                                                <div style="font-size:9px;color:#999;margin-top:2px;">${cls.name}</div>
+                                            </div>
+                                        </div>`;
+                                    }).join('');
+                                    const pw = window.open('', '_blank');
+                                    if (!pw) return;
+                                    pw.document.write(`<!DOCTYPE html><html><head><title>Thẻ QR - ${cls.name}</title>
+                                        <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',sans-serif;padding:10mm}
+                                        @media print{body{-webkit-print-color-adjust:exact}}</style>
+                                    </head><body>
+                                        <h2 style="text-align:center;margin-bottom:8mm;font-size:16px;">Thẻ QR Điểm danh - ${cls.name}</h2>
+                                        <div style="display:flex;flex-wrap:wrap;justify-content:center;">${cards}</div>
+                                    </body></html>`);
+                                    pw.document.close();
+                                    setTimeout(() => pw.print(), 800);
+                                }}>
+                                    🖨️ In thẻ QR cả lớp ({sortedClassStudents.length})
+                                </Button>
+                            )}
+                        </div>
                         <div className="hidden md:block">
                             <Table<Student>
-                                columns={studentColumns}
+                                columns={[
+                                    ...studentColumns,
+                                    { header: 'QR', accessor: (item: Student) => (
+                                        <button
+                                            onClick={() => {
+                                                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(item.id)}&format=png`;
+                                                const pw = window.open('', '_blank');
+                                                if (!pw) return;
+                                                pw.document.write(`<!DOCTYPE html><html><head><title>Thẻ QR - ${item.name}</title>
+                                                    <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',sans-serif;padding:20mm;display:flex;justify-content:center}
+                                                    @media print{body{-webkit-print-color-adjust:exact}}</style>
+                                                </head><body>
+                                                    <div style="width:65mm;height:40mm;border:1px solid #ccc;border-radius:8px;padding:6px;display:inline-flex;align-items:center;gap:8px;background:white;">
+                                                        <img src="${qrUrl}" style="width:32mm;height:32mm;" />
+                                                        <div style="flex:1;overflow:hidden;">
+                                                            <div style="font-weight:bold;font-size:12px;">${item.name}</div>
+                                                            <div style="font-size:10px;color:#666;font-family:monospace;">${item.id}</div>
+                                                            <div style="font-size:9px;color:#999;margin-top:2px;">${cls.name}</div>
+                                                        </div>
+                                                    </div>
+                                                </body></html>`);
+                                                pw.document.close();
+                                                setTimeout(() => pw.print(), 800);
+                                            }}
+                                            className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 text-xs underline whitespace-nowrap"
+                                            title="In thẻ QR cho học viên này"
+                                        >
+                                            🖨️ In QR
+                                        </button>
+                                    )}
+                                ]}
                                 data={sortedClassStudents}
                                 sortConfig={studentSortConfig}
                                 onSort={handleStudentSort}
@@ -589,6 +652,33 @@ export const ClassDetailScreen: React.FC = () => {
                                         { label: "Mã HV", value: student.id },
                                         { label: "Phụ huynh", value: student.parentName }
                                     ]}
+                                    actions={
+                                        <button
+                                            onClick={() => {
+                                                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(student.id)}&format=png`;
+                                                const pw = window.open('', '_blank');
+                                                if (!pw) return;
+                                                pw.document.write(`<!DOCTYPE html><html><head><title>Thẻ QR - ${student.name}</title>
+                                                    <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',sans-serif;padding:20mm;display:flex;justify-content:center}
+                                                    @media print{body{-webkit-print-color-adjust:exact}}</style>
+                                                </head><body>
+                                                    <div style="width:65mm;height:40mm;border:1px solid #ccc;border-radius:8px;padding:6px;display:inline-flex;align-items:center;gap:8px;background:white;">
+                                                        <img src="${qrUrl}" style="width:32mm;height:32mm;" />
+                                                        <div style="flex:1;overflow:hidden;">
+                                                            <div style="font-weight:bold;font-size:12px;">${student.name}</div>
+                                                            <div style="font-size:10px;color:#666;font-family:monospace;">${student.id}</div>
+                                                            <div style="font-size:9px;color:#999;margin-top:2px;">${cls.name}</div>
+                                                        </div>
+                                                    </div>
+                                                </body></html>`);
+                                                pw.document.close();
+                                                setTimeout(() => pw.print(), 800);
+                                            }}
+                                            className="text-xs text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 underline"
+                                        >
+                                            🖨️ In QR
+                                        </button>
+                                    }
                                 />
                             ))}
                         </div>
