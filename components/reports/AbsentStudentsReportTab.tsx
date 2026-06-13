@@ -1,12 +1,10 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useData } from '../../hooks/useDataContext';
-import { downloadAsCSV } from '../../services/csvExport';
 import { PersonStatus, AttendanceStatus } from '../../types';
 import { Table, SortConfig, Column } from '../common/Table';
 import { Pagination } from '../common/Pagination';
 import { ListItemCard } from '../common/ListItemCard';
-import { Button } from '../common/Button';
-import { ICONS } from '../../constants';
+import { ExportButton } from '../common/ExportButton';
 
 const ITEMS_PER_PAGE = 15;
 
@@ -133,23 +131,22 @@ export const AbsentStudentsReportTab: React.FC<AbsentStudentsReportTabProps> = (
         setSortConfig({ key, direction });
     };
     
-    const handleExport = () => {
-        const exportData = sortedData.map(item => ({
-            id: item.id,
-            name: item.name,
-            className: item.className,
-            date: item.date,
-            statusText: item.status === AttendanceStatus.UNEXCUSED_ABSENT ? 'Không phép' : 'Có phép',
-            reason: item.reason || ''
-        }));
-        downloadAsCSV(exportData, {
-            id: 'Mã HV',
-            name: 'Họ tên',
-            className: 'Lớp học',
-            date: 'Ngày nghỉ',
-            statusText: 'Trạng thái',
-            reason: 'Lý do'
-        }, `HocSinhNghiHoc_${startDate}_${endDate}.csv`);
+    const exportData = useMemo(() => sortedData.map(item => ({
+        id: item.id,
+        name: item.name,
+        className: item.className,
+        date: item.date,
+        statusText: item.status === AttendanceStatus.UNEXCUSED_ABSENT ? 'Không phép' : 'Có phép',
+        reason: item.reason || ''
+    })), [sortedData]);
+
+    const exportColumns = {
+        id: 'Mã HV',
+        name: 'Họ tên',
+        className: 'Lớp học',
+        date: 'Ngày nghỉ',
+        statusText: 'Trạng thái',
+        reason: 'Lý do'
     };
 
     const columns: Column<AbsentReportData>[] = [
@@ -174,7 +171,7 @@ export const AbsentStudentsReportTab: React.FC<AbsentStudentsReportTabProps> = (
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
                 <h2 className="text-xl font-semibold">Học sinh nghỉ học theo ngày</h2>
                 <div className="flex flex-wrap gap-2 items-center">
-                    <Button onClick={handleExport} variant="secondary">{ICONS.export} Xuất CSV</Button>
+                    <ExportButton data={exportData} columns={exportColumns} filenameBase={`HocSinhNghiHoc_${startDate}_${endDate}`} />
                 </div>
             </div>
             <input 

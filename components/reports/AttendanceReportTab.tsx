@@ -1,12 +1,12 @@
 
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { useData } from '../../hooks/useDataContext';
-import { downloadAsCSV } from '../../services/csvExport';
 import { PersonStatus, AttendanceStatus } from '../../types';
 import { Table, SortConfig, Column } from '../common/Table';
 import { Pagination } from '../common/Pagination';
 import { ListItemCard } from '../common/ListItemCard';
 import { Button } from '../common/Button';
+import { ExportButton } from '../common/ExportButton';
 import { ICONS } from '../../constants';
 import { PrintableAttendanceReport, AttendanceReportData } from './PrintableAttendanceReport';
 
@@ -134,17 +134,15 @@ export const AttendanceReportTab: React.FC<AttendanceReportTabProps> = ({ startD
         setSortConfig({ key, direction });
     };
     
-    const handleExport = () => {
-        downloadAsCSV(sortedData, {
-            id: 'Mã HV',
-            name: 'Họ tên',
-            classNames: 'Các lớp học',
-            totalSessions: `Tổng số buổi`,
-            presentCount: `Số buổi có mặt`,
-            absentCount: `Nghỉ (Có phép)`,
-            unexcusedAbsentCount: `Nghỉ (Không phép)`
-        }, `BaoCaoChuyenCan_${startDate}_${endDate}.csv`);
-    };
+    const exportColumns = {
+        id: 'Mã HV',
+        name: 'Họ tên',
+        classNames: 'Các lớp học',
+        totalSessions: 'Tổng số buổi',
+        presentCount: 'Số buổi có mặt',
+        absentCount: 'Nghỉ (Có phép)',
+        unexcusedAbsentCount: 'Nghỉ (Không phép)'
+    } as Record<keyof AttendanceReportData, string>;
     
     const handleExportImage = () => {
         if (reportRef.current && window.html2canvas) {
@@ -187,7 +185,7 @@ export const AttendanceReportTab: React.FC<AttendanceReportTabProps> = ({ startD
                         <Button onClick={handleExportImage} variant="secondary" isLoading={isExportingImage}>
                             {ICONS.download} Xuất ảnh
                         </Button>
-                        <Button onClick={handleExport} variant="secondary">{ICONS.export} Xuất CSV</Button>
+                        <ExportButton data={sortedData} columns={exportColumns} filenameBase={`BaoCaoChuyenCan_${startDate}_${endDate}`} />
                     </div>
                 </div>
                 <input 

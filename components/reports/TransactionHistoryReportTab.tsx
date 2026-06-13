@@ -2,10 +2,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useData } from '../../hooks/useDataContext';
 import { Table, SortConfig, Column } from '../common/Table';
-import { Button } from '../common/Button';
-import { ICONS } from '../../constants';
 import { Transaction, TransactionType, Class, Student } from '../../types';
-import { downloadAsCSV } from '../../services/csvExport';
+import { ExportButton } from '../common/ExportButton';
 import { Pagination } from '../common/Pagination';
 import { ListItemCard } from '../common/ListItemCard';
 import { formatVietnamDate } from '../../utils/date';
@@ -117,25 +115,24 @@ export const TransactionHistoryReportTab: React.FC<TransactionHistoryReportTabPr
         setSortConfig({ key, direction });
     };
     
-    const handleExport = () => {
-        const dataToExport = sortedData.map(t => ({
-            date: formatVietnamDate(t.date),
-            studentName: t.studentName,
-            classNames: t.classNames,
-            description: t.description,
-            type: transactionTypeMap[t.type],
-            paymentMethod: t.paymentMethodStr,
-            amount: t.amount,
-        }));
-        downloadAsCSV(dataToExport, {
-            date: 'Ngày',
-            studentName: 'Họ tên',
-            classNames: 'Các lớp học',
-            description: 'Diễn giải',
-            type: 'Loại Giao dịch',
-            paymentMethod: 'Hình thức',
-            amount: `Số tiền`
-        }, `LichSuGiaoDich_${startDate}_${endDate}.csv`);
+    const exportData = useMemo(() => sortedData.map(t => ({
+        date: formatVietnamDate(t.date),
+        studentName: t.studentName,
+        classNames: t.classNames,
+        description: t.description,
+        type: transactionTypeMap[t.type],
+        paymentMethod: t.paymentMethodStr,
+        amount: t.amount,
+    })), [sortedData]);
+
+    const exportColumns = {
+        date: 'Ngày',
+        studentName: 'Họ tên',
+        classNames: 'Các lớp học',
+        description: 'Diễn giải',
+        type: 'Loại Giao dịch',
+        paymentMethod: 'Hình thức',
+        amount: 'Số tiền'
     };
 
     const columns: Column<TransactionWithDetails>[] = [
@@ -161,7 +158,7 @@ export const TransactionHistoryReportTab: React.FC<TransactionHistoryReportTabPr
         <div className="card-base">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
                 <h2 className="text-xl font-semibold">Lịch sử Giao dịch</h2>
-                <Button onClick={handleExport} variant="secondary">{ICONS.export} Xuất CSV</Button>
+                <ExportButton data={exportData} columns={exportColumns} filenameBase={`LichSuGiaoDich_${startDate}_${endDate}`} />
             </div>
             <input 
                 type="text"

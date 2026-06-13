@@ -12,7 +12,7 @@ import { ConfirmationModal } from '../components/common/ConfirmationModal';
 import { Pagination } from '../components/common/Pagination';
 import { ResetPasswordModal } from '../components/auth/ChangePasswordModal';
 import { PaymentModal } from '../components/finance/PaymentModal';
-import { downloadAsCSV } from '../services/csvExport';
+import { ExportButton } from '../components/common/ExportButton';
 import { zaloSendTuition } from '../services/api';
 
 const removeAccents = (str: string) => {
@@ -592,31 +592,29 @@ export const StudentsScreen: React.FC = () => {
     };
 
 
-    const handleExport = () => {
-        const dataToExport = sortedStudents.map(s => {
-            const enrolledClasses = state.classes.filter(c => c.studentIds.includes(s.id)).map(c => c.name).join(', ');
-            return {
-                id: s.id,
-                name: s.name,
-                dob: s.dob || '',
-                phone: s.phone || '',
-                parentName: s.parentName || '',
-                classes: enrolledClasses || 'Chưa xếp lớp',
-                status: s.status === PersonStatus.ACTIVE ? 'Hoạt động' : 'Tạm nghỉ',
-                balance: s.balance
-            };
-        });
+    const exportData = useMemo(() => sortedStudents.map(s => {
+        const enrolledClasses = state.classes.filter(c => c.studentIds.includes(s.id)).map(c => c.name).join(', ');
+        return {
+            id: s.id,
+            name: s.name,
+            dob: s.dob || '',
+            phone: s.phone || '',
+            parentName: s.parentName || '',
+            classes: enrolledClasses || 'Chưa xếp lớp',
+            status: s.status === PersonStatus.ACTIVE ? 'Hoạt động' : 'Tạm nghỉ',
+            balance: s.balance
+        };
+    }), [sortedStudents, state.classes]);
 
-        downloadAsCSV(dataToExport, {
-            id: 'Mã HV',
-            name: 'Họ tên',
-            dob: 'Ngày sinh',
-            phone: 'SĐT',
-            parentName: 'Tên Phụ huynh',
-            classes: 'Lớp học',
-            status: 'Trạng thái',
-            balance: 'Số dư'
-        }, `DanhSachHocVien_${new Date().toISOString().split('T')[0]}.csv`);
+    const exportColumns = {
+        id: 'Mã HV',
+        name: 'Họ tên',
+        dob: 'Ngày sinh',
+        phone: 'SĐT',
+        parentName: 'Tên Phụ huynh',
+        classes: 'Lớp học',
+        status: 'Trạng thái',
+        balance: 'Số dư'
     };
 
     const handleToggleQRSelect = (id: string) => {
@@ -701,9 +699,7 @@ export const StudentsScreen: React.FC = () => {
                                 🖶️ In thẻ QR ({selectedForQR.size})
                             </Button>
                         )}
-                        <Button variant="secondary" onClick={handleExport}>
-                            {ICONS.download} Xuất danh sách
-                        </Button>
+                        <ExportButton data={exportData} columns={exportColumns} filenameBase={`DanhSachHocVien_${new Date().toISOString().split('T')[0]}`} label="Xuất danh sách" />
                         <Button onClick={() => handleOpenModal()}>
                             {ICONS.plus} Thêm học viên
                         </Button>

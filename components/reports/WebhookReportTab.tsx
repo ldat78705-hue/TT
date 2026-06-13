@@ -1,10 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useData } from '../../hooks/useDataContext';
 import { Table, SortConfig, Column } from '../common/Table';
-import { Button } from '../common/Button';
-import { ICONS } from '../../constants';
 import { Transaction, TransactionType, Class, Student } from '../../types';
-import { downloadAsCSV } from '../../services/csvExport';
+import { ExportButton } from '../common/ExportButton';
 import { Pagination } from '../common/Pagination';
 import { ListItemCard } from '../common/ListItemCard';
 import { formatVietnamDate } from '../../utils/date';
@@ -101,23 +99,22 @@ export const WebhookReportTab: React.FC<WebhookReportTabProps> = ({ startDate, e
         setSortConfig({ key, direction });
     };
 
-    const handleExport = () => {
-        const dataToExport = sortedData.map(item => ({
-            date: formatVietnamDate(item.date),
-            studentName: item.studentName,
-            studentId: item.studentId,
-            classNames: item.classNames,
-            amount: item.amount,
-            description: item.description
-        }));
-        downloadAsCSV(dataToExport, {
-            date: 'Ngày',
-            studentName: 'Học viên',
-            studentId: 'Mã Học viện',
-            classNames: 'Lớp học',
-            amount: 'Số tiền (VND)',
-            description: 'Nội dung'
-        }, `Bao_Cao_Webhook_${startDate}_${endDate}.csv`);
+    const exportData = useMemo(() => sortedData.map(item => ({
+        date: formatVietnamDate(item.date),
+        studentName: item.studentName,
+        studentId: item.studentId,
+        classNames: item.classNames,
+        amount: item.amount,
+        description: item.description
+    })), [sortedData]);
+
+    const exportColumns = {
+        date: 'Ngày',
+        studentName: 'Học viên',
+        studentId: 'Mã Học viên',
+        classNames: 'Lớp học',
+        amount: 'Số tiền (VND)',
+        description: 'Nội dung'
     };
 
     const columns: Column<TransactionWithDetails>[] = [
@@ -157,9 +154,7 @@ export const WebhookReportTab: React.FC<WebhookReportTabProps> = ({ startDate, e
                             {totalWebhookAmount.toLocaleString('vi-VN')} ₫
                         </span>
                     </div>
-                    <Button onClick={handleExport} variant="secondary">
-                        {ICONS.download} Xuất CSV
-                    </Button>
+                    <ExportButton data={exportData} columns={exportColumns} filenameBase={`Bao_Cao_Webhook_${startDate}_${endDate}`} />
                 </div>
             </div>
 
