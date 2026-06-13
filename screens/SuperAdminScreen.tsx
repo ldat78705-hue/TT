@@ -381,7 +381,6 @@ const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                                                     <span className="text-orange-500">⚠️ Chưa cấp tài khoản đăng nhập</span>
                                                 )}
                                             </div>
-                                            </div>
                                         </div>
                                         <div className="flex gap-2 flex-shrink-0 flex-wrap">
                                             <button onClick={() => { setCredTarget(center); setCreds({ loginUsername: center.loginUsername || '', loginPassword: '' }); }}
