@@ -9,6 +9,7 @@ import { downloadAsCSV } from '../../services/csvExport';
 import { Pagination } from '../common/Pagination';
 import { ListItemCard } from '../common/ListItemCard';
 import { formatVietnamDate } from '../../utils/date';
+import { ReceiptModal } from '../finance/ReceiptModal';
 
 const ITEMS_PER_PAGE = 15;
 
@@ -37,6 +38,7 @@ export const TransactionHistoryReportTab: React.FC<TransactionHistoryReportTabPr
     const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [sortConfig, setSortConfig] = useState<SortConfig<TransactionWithDetails> | null>({ key: 'date', direction: 'descending' });
+    const [receiptTransaction, setReceiptTransaction] = useState<Transaction | null>(null);
 
     const reportData = useMemo(() => {
         let relevantTransactions = transactions.filter(t => t.date.substring(0, 10) >= startDate && t.date.substring(0, 10) <= endDate);
@@ -148,6 +150,11 @@ export const TransactionHistoryReportTab: React.FC<TransactionHistoryReportTabPr
                 {item.amount.toLocaleString('vi-VN')} ₫
             </span>
         ), sortable: true, sortKey: 'amount' },
+        { header: '', accessor: (item) => (
+            item.type === TransactionType.PAYMENT || item.type === TransactionType.ADJUSTMENT_CREDIT ? (
+                <button onClick={() => setReceiptTransaction(item)} className="text-primary hover:text-primary/80 text-xs font-medium hover:underline" title="In phiếu thu">🧾 Phiếu thu</button>
+            ) : null
+        )},
     ];
 
     return (
@@ -197,7 +204,12 @@ export const TransactionHistoryReportTab: React.FC<TransactionHistoryReportTabPr
                     totalItems={sortedData.length}
                     itemsPerPage={ITEMS_PER_PAGE}
                 />
-            )}
+             )}
+            <ReceiptModal
+                isOpen={!!receiptTransaction}
+                onClose={() => setReceiptTransaction(null)}
+                transaction={receiptTransaction}
+            />
         </div>
     );
 };

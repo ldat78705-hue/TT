@@ -8,6 +8,7 @@ import { PersonStatus, UserRole, Teacher, Announcement, Class, Student, Attendan
 import { Link } from 'react-router-dom';
 import { Button } from '../components/common/Button';
 import { getVietnamTime } from '../utils/date';
+import { OnboardingWizard } from '../components/common/OnboardingWizard';
 
 const toLocalDateString = (date: Date): string => {
     const year = date.getFullYear();
@@ -330,8 +331,58 @@ const AdminDashboard: React.FC = () => {
         );
     };
 
+    const [widgetVisibility, setWidgetVisibility] = useState<Record<string, boolean>>(() => {
+        try {
+            const stored = localStorage.getItem('dashboard_widgets');
+            return stored ? JSON.parse(stored) : { calendar: true, schedule: true, alerts: true };
+        } catch { return { calendar: true, schedule: true, alerts: true }; }
+    });
+    const [showWidgetSettings, setShowWidgetSettings] = useState(false);
+
+    const toggleWidget = (key: string) => {
+        setWidgetVisibility(prev => {
+            const next = { ...prev, [key]: !prev[key] };
+            localStorage.setItem('dashboard_widgets', JSON.stringify(next));
+            return next;
+        });
+    };
+
+    const widgets = [
+        { key: 'calendar', label: '📅 Lịch học tuần' },
+        { key: 'schedule', label: '🕐 Lịch học hôm nay' },
+        { key: 'alerts', label: '🔔 Cảnh báo & Thông báo' },
+    ];
+
     return (
         <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <OnboardingWizard />
+                <div className="relative ml-auto flex-shrink-0">
+                    <button 
+                        onClick={() => setShowWidgetSettings(p => !p)}
+                        className="p-2 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                        title="Tùy chỉnh Dashboard"
+                    >
+                        ⚙️
+                    </button>
+                    {showWidgetSettings && (
+                        <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 p-3 z-30">
+                            <p className="text-xs font-bold text-slate-500 uppercase mb-2">Hiển thị Widget</p>
+                            {widgets.map(w => (
+                                <label key={w.key} className="flex items-center gap-2 py-1.5 text-sm cursor-pointer">
+                                    <input 
+                                        type="checkbox" 
+                                        checked={widgetVisibility[w.key] !== false}
+                                        onChange={() => toggleWidget(w.key)}
+                                        className="rounded border-slate-300 text-primary focus:ring-primary"
+                                    />
+                                    {w.label}
+                                </label>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <Card title="Học viên đang học" value={totalStudents} icon={ICONS.students} color="text-blue-600 dark:text-blue-400" />
                 <Card title="Lớp học hoạt động" value={activeClasses} icon={ICONS.classes} color="text-green-600 dark:text-green-400" />
@@ -344,19 +395,25 @@ const AdminDashboard: React.FC = () => {
             </div>
 
             {/* Weekly Calendar */}
-            <WeeklyCalendarWidget classes={classes} teachers={teachers} />
+            {widgetVisibility.calendar !== false && (
+                <WeeklyCalendarWidget classes={classes} teachers={teachers} />
+            )}
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="lg:col-span-1">
-                     <TodaysScheduleWidget classes={classes} teachers={teachers} />
-                </div>
-                <div className="lg:col-span-1">
-                    <AlertsAndAnnouncementsWidget 
-                        students={students} 
-                        attendance={attendance} 
-                        announcements={announcements} 
-                    />
-                </div>
+                {widgetVisibility.schedule !== false && (
+                    <div className="lg:col-span-1">
+                         <TodaysScheduleWidget classes={classes} teachers={teachers} />
+                    </div>
+                )}
+                {widgetVisibility.alerts !== false && (
+                    <div className="lg:col-span-1">
+                        <AlertsAndAnnouncementsWidget 
+                            students={students} 
+                            attendance={attendance} 
+                            announcements={announcements} 
+                        />
+                    </div>
+                )}
             </div>
         </div>
     );

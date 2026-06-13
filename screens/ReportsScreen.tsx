@@ -11,6 +11,7 @@ import { WebhookReportTab } from '../components/reports/WebhookReportTab';
 import { AbsentStudentsReportTab } from '../components/reports/AbsentStudentsReportTab';
 import { TransactionHistoryReportTab } from '../components/reports/TransactionHistoryReportTab';
 import { TaxReportTab } from '../components/reports/TaxReportTab';
+import { PeriodComparisonTab } from '../components/reports/PeriodComparisonTab';
 
 const toLocalDateString = (date: Date): string => {
     const year = date.getFullYear();
@@ -19,7 +20,7 @@ const toLocalDateString = (date: Date): string => {
     return `${year}-${month}-${day}`;
 };
 
-type ReportTab = 'overview' | 'attendance' | 'absent' | 'transactions' | 'tax' | 'webhook';
+type ReportTab = 'overview' | 'comparison' | 'attendance' | 'absent' | 'transactions' | 'tax' | 'webhook';
 
 import { formatVietnamDate, getVietnamTime } from '../utils/date';
 import { exportFullData } from '../services/api';
@@ -495,10 +496,11 @@ export const ReportsScreen: React.FC = () => {
             <div className="border-b border-gray-200 dark:border-gray-700">
                 <nav className="flex flex-wrap items-center gap-2 pb-2" aria-label="Tabs">
                     <TabButton tabId="overview">Tổng quan Tài chính</TabButton>
+                    <TabButton tabId="comparison">So sánh kỳ</TabButton>
                     <TabButton tabId="attendance">Báo cáo Chuyên cần</TabButton>
                     <TabButton tabId="absent">Học sinh nghỉ học</TabButton>
                     <TabButton tabId="transactions">Lịch sử Giao dịch</TabButton>
-                    <TabButton tabId="webhook">Dòng tiền Webhook</TabButton>
+                    <TabButton tabId="webhook">Thanh toán tự động</TabButton>
                     <TabButton tabId="tax">Báo cáo Thuế</TabButton>
                 </nav>
             </div>
@@ -552,6 +554,9 @@ export const ReportsScreen: React.FC = () => {
                             </div>
                         </div>
                     </div>
+                )}
+                {activeTab === 'comparison' && (
+                    <PeriodComparisonTab />
                 )}
                 {activeTab === 'attendance' && (
                      <AttendanceReportTab 

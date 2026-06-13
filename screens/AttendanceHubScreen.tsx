@@ -7,6 +7,7 @@ import { ClassSchedule } from '../types';
 import { ROUTES, ICONS } from '../constants';
 import { Link } from 'react-router-dom';
 import { AbsentStudentsModal } from '../components/attendance/AbsentStudentsModal';
+import { QRAttendanceModal } from '../components/attendance/QRAttendanceModal';
 import { Button } from '../components/common/Button';
 
 const dayOfWeekToNumber: Record<ClassSchedule['dayOfWeek'], number> = {
@@ -45,6 +46,7 @@ export const AttendanceHubScreen: React.FC = () => {
     const [displayMonth, setDisplayMonth] = useState(() => new Date(getVietnamTime()));
     const [selectedDate, setSelectedDate] = useState(() => new Date(getVietnamTime()));
     const [showAbsentModal, setShowAbsentModal] = useState(false);
+    const [showQRModal, setShowQRModal] = useState(false);
 
     const normalizedSelectedDate = useMemo(() => {
         const d = new Date(selectedDate);
@@ -165,9 +167,14 @@ export const AttendanceHubScreen: React.FC = () => {
                      <div className="px-4 pb-24 md:pb-6">
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-lg font-bold">Lịch học ngày {formatDateString(normalizedSelectedDate)}</h2>
-                            <Button variant="secondary" size="sm" onClick={() => setShowAbsentModal(true)}>
-                                Học sinh nghỉ
-                            </Button>
+                            <div className="flex gap-2">
+                                <Button variant="secondary" size="sm" onClick={() => setShowQRModal(true)}>
+                                    📱 QR
+                                </Button>
+                                <Button variant="secondary" size="sm" onClick={() => setShowAbsentModal(true)}>
+                                    Học sinh nghỉ
+                                </Button>
+                            </div>
                         </div>
                         {eventsForSelectedDay.length > 0 ? (
                             <div className="space-y-3 pt-2">
@@ -205,6 +212,10 @@ export const AttendanceHubScreen: React.FC = () => {
                 isOpen={showAbsentModal} 
                 onClose={() => setShowAbsentModal(false)} 
                 date={formatDateString(normalizedSelectedDate)} 
+            />
+            <QRAttendanceModal
+                isOpen={showQRModal}
+                onClose={() => setShowQRModal(false)}
             />
         </div>
     );

@@ -6,6 +6,7 @@ import { useData } from '../../hooks/useDataContext';
 import { ICONS } from '../../constants';
 import { CenterSettings, UserRole } from '../../types';
 import { GlobalSearch } from '../common/GlobalSearch';
+import { NotificationBell } from './NotificationBell';
 import { ChangePasswordModal } from '../auth/ChangePasswordModal';
 import { Menu } from 'lucide-react';
 
@@ -89,6 +90,7 @@ export const Header: React.FC<HeaderProps> = ({ pageTitle, onMenuClick }) => {
           <div className="hidden lg:block">
             <GlobalSearch />
           </div>
+          <NotificationBell />
           <Clock />
           
           {/* Unified User Menu */}
