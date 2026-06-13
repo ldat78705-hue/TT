@@ -6,7 +6,7 @@ import { useToast } from '../hooks/useToast';
 import { Button } from '../components/common/Button';
 import { Modal } from '../components/common/Modal';
 import { ICONS } from '../constants';
-import { Class, UserRole, FeeType, ClassSchedule, Teacher, Student, PersonStatus } from '../types';
+import { Class, UserRole, FeeType, ClassSchedule, Teacher, Student, Room, PersonStatus } from '../types';
 import { CurrencyInput } from '../components/common/CurrencyInput';
 import { ConfirmationModal } from '../components/common/ConfirmationModal';
 import { ListItemCard } from '../components/common/ListItemCard';
@@ -135,7 +135,8 @@ const ClassForm: React.FC<{
     onCancel: () => void;
     teachers: Teacher[];
     students: Student[];
-}> = ({ cls, onSubmit, onCancel, teachers, students }) => {
+    rooms: Room[];
+}> = ({ cls, onSubmit, onCancel, teachers, students, rooms }) => {
 
     const initialSchedule: ClassSchedule = { dayOfWeek: 'Monday', startTime: '18:00', endTime: '19:30' };
     const [formData, setFormData] = useState<Class>(() => {
@@ -252,13 +253,21 @@ const ClassForm: React.FC<{
                 <legend className="form-legend">Lịch học</legend>
                 <div className="space-y-4 mt-2">
                     {formData.schedule.map((item, index) => (
-                        <div key={index} className="flex items-center gap-2 p-2 rounded-md bg-gray-50 dark:bg-gray-700/50">
+                        <div key={index} className="flex flex-wrap items-center gap-2 p-2 rounded-md bg-gray-50 dark:bg-gray-700/50">
                             <select value={item.dayOfWeek} onChange={e => handleScheduleChange(index, 'dayOfWeek', e.target.value)} className="form-select">
                                 {dayOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                             </select>
                             <input type="time" value={item.startTime} onChange={e => handleScheduleChange(index, 'startTime', e.target.value)} className="form-input" />
                             <span>-</span>
                             <input type="time" value={item.endTime} onChange={e => handleScheduleChange(index, 'endTime', e.target.value)} className="form-input" />
+                            <select 
+                                value={item.roomId || ''} 
+                                onChange={e => handleScheduleChange(index, 'roomId', e.target.value)}
+                                className="form-select flex-1 min-w-[120px]"
+                            >
+                                <option value="">-- Phòng --</option>
+                                {rooms.map(r => <option key={r.id} value={r.id}>{r.name} ({r.capacity} chỗ)</option>)}
+                            </select>
                             <Button type="button" variant="danger" onClick={() => removeScheduleItem(index)} className="p-2 h-10 w-10 !rounded-full">
                                 {ICONS.delete}
                             </Button>
@@ -530,7 +539,7 @@ export const ClassesScreen: React.FC = () => {
             )}
 
             <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingClass ? 'Chỉnh sửa Lớp học' : 'Thêm Lớp học mới'}>
-                <ClassForm cls={editingClass} onSubmit={handleSubmit} onCancel={handleCloseModal} teachers={teachers} students={students} />
+                <ClassForm cls={editingClass} onSubmit={handleSubmit} onCancel={handleCloseModal} teachers={teachers} students={students} rooms={state.rooms || []} />
             </Modal>
             <ConfirmationModal
                 isOpen={confirmModalState.isOpen}

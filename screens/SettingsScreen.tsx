@@ -670,6 +670,83 @@ export const SettingsScreen: React.FC = () => {
                             </div>
                         </fieldset>
 
+                        {/* Thanh toán tự động (Webhook) */}
+                        <fieldset className="form-fieldset" disabled={isViewer}>
+                            <legend className="form-legend">💳 Thanh toán tự động (Webhook)</legend>
+                            <div className="space-y-4 mt-2">
+                                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                                    <div>
+                                        <h4 className="font-semibold text-sm">Kích hoạt thanh toán tự động</h4>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">Tự động ghi nhận thanh toán khi nhận webhook từ ngân hàng</p>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" className="sr-only peer"
+                                            checked={formSettings.webhookEnabled ?? false}
+                                            onChange={(e) => setFormSettings(prev => ({ ...prev, webhookEnabled: e.target.checked }))}
+                                        />
+                                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:bg-green-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                                    </label>
+                                </div>
+                                
+                                {formSettings.webhookEnabled && (
+                                    <>
+                                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm">
+                                            <p className="font-medium text-blue-800 dark:text-blue-300 mb-1">🔗 URL Webhook của bạn:</p>
+                                            <code className="block bg-white dark:bg-black/30 p-2 rounded text-xs font-mono break-all text-blue-700 dark:text-blue-400">
+                                                {window.location.origin}/api/webhook
+                                            </code>
+                                            <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                                                Dán URL này vào SePay, CassVN, hoặc cấu hình MacroDroid/Tasker để tự động gửi thông báo chuyển khoản.
+                                            </p>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium">Prefix mã học viên trong nội dung CK</label>
+                                            <input type="text" 
+                                                value={formSettings.webhookStudentIdPrefix ?? 'HS'} 
+                                                onChange={e => setFormSettings(prev => ({...prev, webhookStudentIdPrefix: e.target.value}))}
+                                                className="form-input mt-1" 
+                                                placeholder="HS" 
+                                            />
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                Khi phụ huynh chuyển khoản ghi "HOC PHI HS001", hệ thống sẽ tìm mã HS001.
+                                                Đổi prefix nếu trung tâm dùng mã khác (VD: "HV", "SV").
+                                            </p>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium">Nguồn nhận diện</label>
+                                            <input type="text" 
+                                                value={formSettings.webhookBankKeyword ?? 'MBBank'} 
+                                                onChange={e => setFormSettings(prev => ({...prev, webhookBankKeyword: e.target.value}))}
+                                                className="form-input mt-1" 
+                                                placeholder="MBBank" 
+                                            />
+                                            <p className="text-xs text-gray-500 mt-1">Tên ngân hàng/nguồn hiển thị trong mô tả giao dịch (VD: MBBank, VCB, Techcombank)</p>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium">Mẫu mô tả giao dịch</label>
+                                            <input type="text" 
+                                                value={formSettings.webhookAutoDescription ?? 'Thanh toán HP tự động'} 
+                                                onChange={e => setFormSettings(prev => ({...prev, webhookAutoDescription: e.target.value}))}
+                                                className="form-input mt-1" 
+                                                placeholder="Thanh toán HP tự động" 
+                                            />
+                                            <p className="text-xs text-gray-500 mt-1">Mô tả sẽ ghi trong lịch sử giao dịch khi webhook ghi nhận tự động</p>
+                                        </div>
+
+                                        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-sm">
+                                            <p className="font-medium text-amber-800 dark:text-amber-300 mb-1">📌 Cú pháp chuyển khoản mẫu cho phụ huynh:</p>
+                                            <p className="font-mono bg-white dark:bg-black/30 p-2 rounded text-center text-lg font-bold">
+                                                HOC PHI {formSettings.webhookStudentIdPrefix || 'HS'}001
+                                            </p>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </fieldset>
+
                         {/* Zalo OA Integration */}
                         <fieldset className="form-fieldset" disabled={isViewer}>
                             <legend className="form-legend">📱 Tích hợp Zalo OA — Gửi thông báo</legend>

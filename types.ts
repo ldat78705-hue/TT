@@ -204,6 +204,12 @@ export interface CenterSettings {
   zaloTokenExpiresAt?: number;
   zaloAbsenceTemplate?: string; // Mẫu tin nhắn vắng mặt
   zaloTuitionTemplate?: string; // Mẫu tin nhắn học phí
+  // Auto Payment / Webhook Settings
+  webhookEnabled?: boolean;
+  webhookStudentIdPrefix?: string; // Prefix mã HV trong nội dung CK (default: 'HS')
+  webhookStudentIdPattern?: string; // Custom regex pattern
+  webhookBankKeyword?: string; // Keyword nhận diện nguồn (default: 'MBBank')
+  webhookAutoDescription?: string; // Template mô tả GD (default: 'Thanh toán HP tự động')
 }
 
 export interface PayrollClassDetail {
