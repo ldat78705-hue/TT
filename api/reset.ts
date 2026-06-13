@@ -18,11 +18,18 @@ try {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 
+const LEGACY_COLLECTION = 'db_core_v2_secure_9a8b7c6d5e4f3g2h1';
+
 const BASE_COLLECTIONS = [
     'students', 'teachers', 'staff', 'classes', 'attendance', 
     'invoices', 'progressReports', 'transactions', 'income', 
     'expenses', 'payrolls', 'announcements', 'settings'
 ] as const;
+
+function getCollectionName(centerId?: string): string {
+    if (!centerId || centerId === '_legacy') return LEGACY_COLLECTION;
+    return `center_${centerId}`;
+}
 
 // Helper to check JWT
 async function getAuthPayload(req: any) {
@@ -41,6 +48,10 @@ export default async function handler(req: any, res: any) {
     if (authPayload.role !== UserRole.ADMIN) {
         return res.status(403).send('Forbidden: Only admins can reset data');
     }
+
+    // Use centerId from token to target the correct collection
+    const centerId = authPayload.centerId;
+    const colName = getCollectionName(centerId);
 
     if (req.method === 'POST') {
         try {
@@ -69,21 +80,21 @@ export default async function handler(req: any, res: any) {
 
             const batch = writeBatch(db);
             
-            // Delete all existing documents (shards) first
-            const querySnapshot = await getDocs(collection(db, 'db_core_v2_secure_9a8b7c6d5e4f3g2h1'));
+            // Delete all existing documents (shards) in THIS center's collection
+            const querySnapshot = await getDocs(collection(db, colName));
             querySnapshot.forEach(docSnap => {
                 batch.delete(docSnap.ref);
             });
 
-            // Set new base collections
+            // Set new base collections for THIS center
             BASE_COLLECTIONS.forEach(col => {
-                batch.set(doc(db, 'db_core_v2_secure_9a8b7c6d5e4f3g2h1', col), { data: mockData[col] });
+                batch.set(doc(db, colName, col), { data: mockData[col] });
             });
-            batch.set(doc(db, 'db_core_v2_secure_9a8b7c6d5e4f3g2h1', '_sync'), { lastUpdatedAt: Date.now() });
+            batch.set(doc(db, colName, '_sync'), { lastUpdatedAt: Date.now() });
             
             await batch.commit();
             
-            // Strip passwords
+            // Strip passwords before returning
             if (mockData.teachers) {
                 mockData.teachers = mockData.teachers.map(t => {
                     const { password, ...rest } = t;
