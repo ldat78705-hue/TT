@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Class
 import androidx.compose.material.icons.filled.EventNote
@@ -106,7 +107,7 @@ fun DashboardScreen(
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
                             IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Default.Warning, contentDescription = "Xóa", tint = Color(0xFF64748B), modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.Close, contentDescription = "Xóa", tint = Color(0xFF64748B), modifier = Modifier.size(18.dp))
                             }
                         }
                     }
@@ -638,7 +639,7 @@ fun DashboardScreen(
             items(uiState.announcements) { announcement ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F3FF)),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
                     shape = RoundedCornerShape(16.dp),
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
@@ -647,7 +648,7 @@ fun DashboardScreen(
                             announcement.title,
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.titleMedium,
-                            color = Color(0xFF4C1D95)
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(

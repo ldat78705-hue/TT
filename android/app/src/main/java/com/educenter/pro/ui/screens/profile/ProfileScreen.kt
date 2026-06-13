@@ -1,4 +1,4 @@
-﻿@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.educenter.pro.ui.screens.profile
 
 import androidx.compose.foundation.background
@@ -30,6 +30,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 fun ProfileScreen(
     onLogoutSuccess: () -> Unit,
     onNavigateToTransactions: () -> Unit,
+    onNavigateToStaff: () -> Unit = {},
+    onNavigateToFinance: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val email by viewModel.userEmail.collectAsState()
@@ -96,6 +98,25 @@ fun ProfileScreen(
                 color = Color(0xFF10B981),
                 onClick = onNavigateToTransactions
             )
+
+            // Admin/Manager-only items
+            if (currentRole == com.educenter.pro.data.model.UserRole.ADMIN || currentRole == com.educenter.pro.data.model.UserRole.MANAGER) {
+                ProfileMenuItem(
+                    icon = Icons.Default.Group,
+                    label = "Quản lý Nhân viên",
+                    color = Color(0xFF8B5CF6),
+                    onClick = onNavigateToStaff
+                )
+            }
+
+            if (currentRole != com.educenter.pro.data.model.UserRole.TEACHER) {
+                ProfileMenuItem(
+                    icon = Icons.Default.Payments,
+                    label = "Quản lý Tài chính",
+                    color = Color(0xFFF59E0B),
+                    onClick = onNavigateToFinance
+                )
+            }
 
             // Dark Mode Toggle
             val isDark by com.educenter.pro.ui.theme.ThemeManager.isDarkMode.collectAsState()

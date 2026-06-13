@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.educenter.pro.data.model.Student
 import com.educenter.pro.data.model.Transaction
+import com.educenter.pro.data.model.Income
+import com.educenter.pro.data.model.Expense
+import com.educenter.pro.data.model.Payroll
 import com.educenter.pro.data.repository.DataRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -20,6 +23,9 @@ data class FinanceUiState(
     val totalCredit: Double = 0.0,
     val debtStudents: List<DebtStudent> = emptyList(),
     val recentTransactions: List<Transaction> = emptyList(),
+    val incomeList: List<Income> = emptyList(),
+    val expenseList: List<Expense> = emptyList(),
+    val payrolls: List<Payroll> = emptyList(),
     val isLoading: Boolean = true
 )
 
@@ -69,6 +75,9 @@ class FinanceViewModel @Inject constructor(
                     totalCredit = totalCredit,
                     debtStudents = debtStudents,
                     recentTransactions = recentTransactions,
+                    incomeList = appData.income.sortedByDescending { it.date },
+                    expenseList = appData.expenses.sortedByDescending { it.date },
+                    payrolls = appData.payrolls.sortedByDescending { it.month },
                     isLoading = false
                 )
             }

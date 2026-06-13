@@ -1,4 +1,4 @@
-﻿@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 package com.educenter.pro.ui.screens.attendance
 
 import android.content.Intent
@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
@@ -56,6 +57,7 @@ private val PrimaryBlue = Color(0xFF3B82F6)
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AttendanceScreen(
+    onNavigateToQR: () -> Unit = {},
     viewModel: AttendanceViewModel = hiltViewModel()
 ) {
     val classes by viewModel.classes.collectAsState()
@@ -129,7 +131,8 @@ fun AttendanceScreen(
                 allClasses = classes,
                 attendedClassIds = attendedClassIds,
                 onDateChange = { viewModel.selectDate(it) },
-                onClassClick = { viewModel.selectClass(it) }
+                onClassClick = { viewModel.selectClass(it) },
+                onNavigateToQR = onNavigateToQR
             )
             }
         } else {
@@ -228,7 +231,8 @@ private fun ScheduleView(
     allClasses: List<com.educenter.pro.data.model.ClassModel>,
     attendedClassIds: Set<String>,
     onDateChange: (String) -> Unit,
-    onClassClick: (String) -> Unit
+    onClassClick: (String) -> Unit,
+    onNavigateToQR: () -> Unit = {}
 ) {
     var showAllClasses by remember { mutableStateOf(false) }
 
@@ -361,6 +365,20 @@ private fun ScheduleView(
                 ) {
                     DatePicker(state = datePickerState)
                 }
+            }
+        }
+
+        // QR Scanner button
+        item {
+            Button(
+                onClick = onNavigateToQR,
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B5CF6))
+            ) {
+                Icon(Icons.Default.QrCodeScanner, contentDescription = null, modifier = Modifier.size(20.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("📷 Quét QR Điểm danh", fontWeight = FontWeight.Bold, fontSize = 15.sp)
             }
         }
 

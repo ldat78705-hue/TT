@@ -1,4 +1,4 @@
-﻿@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.educenter.pro.ui.screens.finance
 
 import androidx.compose.foundation.background
@@ -69,12 +69,16 @@ fun FinanceScreen(
                 Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("Tổng quan") })
                 Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("Công nợ") })
                 Tab(selected = selectedTab == 2, onClick = { selectedTab = 2 }, text = { Text("Giao dịch") })
+                Tab(selected = selectedTab == 3, onClick = { selectedTab = 3 }, text = { Text("Thu/Chi") })
+                Tab(selected = selectedTab == 4, onClick = { selectedTab = 4 }, text = { Text("Lương") })
             }
 
             when (selectedTab) {
                 0 -> OverviewTab(uiState, fmt)
                 1 -> DebtTab(uiState, fmt, onCollectFee = { paymentStudent = it })
                 2 -> TransactionsTab(uiState, fmt)
+                3 -> IncomeExpenseTab(uiState, fmt)
+                4 -> PayrollTab(uiState, fmt)
             }
         }
         } // PullRefreshWrapper
@@ -494,4 +498,134 @@ private fun PaymentDialog(
             }
         }
     )
+}
+
+@Composable
+private fun IncomeExpenseTab(uiState: FinanceUiState, fmt: NumberFormat) {
+    val totalIncome = uiState.incomeList.sumOf { it.amount }
+    val totalExpense = uiState.expenseList.sumOf { it.amount }
+    
+    LazyColumn(
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // Summary
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Card(modifier = Modifier.weight(1f), shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF0FDF4))
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("Thu khác", fontSize = 14.sp, color = Color(0xFF059669))
+                        Text(fmt.format(totalIncome), fontWeight = FontWeight.Bold, color = Color(0xFF059669), fontSize = 16.sp)
+                        Text("${uiState.incomeList.size} khoản", fontSize = 12.sp, color = Color(0xFF94A3B8))
+                    }
+                }
+                Card(modifier = Modifier.weight(1f), shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF2F2))
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("Chi phí", fontSize = 14.sp, color = Color(0xFFDC2626))
+                        Text(fmt.format(totalExpense), fontWeight = FontWeight.Bold, color = Color(0xFFDC2626), fontSize = 16.sp)
+                        Text("${uiState.expenseList.size} khoản", fontSize = 12.sp, color = Color(0xFF94A3B8))
+                    }
+                }
+            }
+        }
+
+        // Income
+        if (uiState.incomeList.isNotEmpty()) {
+            item { Text("📈 Thu nhập khác", fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(top = 8.dp)) }
+            items(uiState.incomeList) { income ->
+                Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), elevation = CardDefaults.cardElevation(1.dp)) {
+                    Row(modifier = Modifier.padding(12.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(income.description, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                            Text("${income.date.take(10)} • ${income.category}", fontSize = 12.sp, color = Color(0xFF94A3B8))
+                        }
+                        Text("+${fmt.format(income.amount)}", color = Color(0xFF10B981), fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+
+        // Expense
+        if (uiState.expenseList.isNotEmpty()) {
+            item { Text("📉 Chi phí", fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(top = 8.dp)) }
+            items(uiState.expenseList) { expense ->
+                Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), elevation = CardDefaults.cardElevation(1.dp)) {
+                    Row(modifier = Modifier.padding(12.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(expense.description, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                            Text("${expense.date.take(10)} • ${expense.category}", fontSize = 12.sp, color = Color(0xFF94A3B8))
+                        }
+                        Text("-${fmt.format(expense.amount)}", color = Color(0xFFEF4444), fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+
+        if (uiState.incomeList.isEmpty() && uiState.expenseList.isEmpty()) {
+            item {
+                Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                    Text("Chưa có khoản thu/chi nào", color = Color(0xFF94A3B8))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PayrollTab(uiState: FinanceUiState, fmt: NumberFormat) {
+    if (uiState.payrolls.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("💰", fontSize = 48.sp)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Chưa có phiếu lương nào", color = Color(0xFF94A3B8))
+            }
+        }
+    } else {
+        LazyColumn(
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            item {
+                Text("${uiState.payrolls.size} phiếu lương", fontWeight = FontWeight.SemiBold, color = Color(0xFF64748B), fontSize = 14.sp)
+            }
+            items(uiState.payrolls) { payroll ->
+                val isPaid = payroll.status == "PAID"
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = CardDefaults.cardElevation(2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Column {
+                                Text(payroll.teacherName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                Text("Tháng ${payroll.month}", fontSize = 13.sp, color = Color(0xFF64748B))
+                            }
+                            Box(
+                                modifier = Modifier.clip(RoundedCornerShape(8.dp))
+                                    .background(if (isPaid) Color(0xFF10B981).copy(alpha = 0.1f) else Color(0xFFF59E0B).copy(alpha = 0.1f))
+                                    .padding(horizontal = 10.dp, vertical = 4.dp)
+                            ) {
+                                Text(
+                                    if (isPaid) "Đã trả" else "Chưa trả",
+                                    fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                                    color = if (isPaid) Color(0xFF10B981) else Color(0xFFF59E0B)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("${payroll.sessionsTaught} buổi × ${fmt.format(payroll.rate)}", fontSize = 13.sp, color = Color(0xFF64748B))
+                            Text(fmt.format(payroll.totalSalary), fontWeight = FontWeight.ExtraBold, fontSize = 17.sp, color = Color(0xFF3B82F6))
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

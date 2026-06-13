@@ -44,6 +44,8 @@ import com.educenter.pro.ui.screens.attendance.AttendanceScreen
 import com.educenter.pro.ui.screens.reports.ReportsScreen
 import com.educenter.pro.ui.screens.finance.FinanceScreen
 import com.educenter.pro.ui.screens.announcements.AnnouncementsScreen
+import com.educenter.pro.ui.screens.qrscanner.QRScannerScreen
+import com.educenter.pro.ui.screens.staff.StaffScreen
 
 import androidx.compose.runtime.collectAsState
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -61,6 +63,8 @@ sealed class Screen(val route: String, val title: String? = null, val icon: andr
     object Reports : Screen("reports", "Báo cáo", Icons.Filled.Assessment)
     object Finance : Screen("finance", "Tài chính", Icons.Filled.Payments)
     object Announcements : Screen("announcements", "Thông báo", Icons.Filled.Campaign)
+    object QRScanner : Screen("qr_scanner", "Quét QR")
+    object Staff : Screen("staff", "Nhân viên")
     object More : Screen("more", "Thêm", Icons.Filled.MoreHoriz)
 }
 
@@ -92,7 +96,7 @@ fun AppNavigation() {
 
             if (showBottomBar) {
                 NavigationBar(
-                    containerColor = androidx.compose.ui.graphics.Color.White,
+                    containerColor = MaterialTheme.colorScheme.surface,
                     tonalElevation = 0.dp,
                     modifier = Modifier
                         .shadow(
@@ -208,6 +212,9 @@ fun AppNavigation() {
             composable(Screen.Teachers.route) {
                 TeachersScreen()
             }
+            composable(Screen.Staff.route) {
+                StaffScreen()
+            }
             composable(Screen.Profile.route) {
                 ProfileScreen(
                     onLogoutSuccess = {
@@ -217,6 +224,12 @@ fun AppNavigation() {
                     },
                     onNavigateToTransactions = {
                         navController.navigate(Screen.Transactions.route)
+                    },
+                    onNavigateToStaff = {
+                        navController.navigate(Screen.Staff.route)
+                    },
+                    onNavigateToFinance = {
+                        navController.navigate(Screen.Finance.route)
                     }
                 )
             }
@@ -226,7 +239,9 @@ fun AppNavigation() {
                 )
             }
             composable(Screen.Attendance.route) {
-                AttendanceScreen()
+                AttendanceScreen(
+                    onNavigateToQR = { navController.navigate(Screen.QRScanner.route) }
+                )
             }
             composable(Screen.Reports.route) {
                 ReportsScreen()
@@ -236,6 +251,11 @@ fun AppNavigation() {
             }
             composable(Screen.Announcements.route) {
                 AnnouncementsScreen()
+            }
+            composable(Screen.QRScanner.route) {
+                QRScannerScreen(
+                    onBack = { navController.popBackStack() }
+                )
             }
         }
     }

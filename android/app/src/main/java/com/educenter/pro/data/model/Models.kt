@@ -101,7 +101,11 @@ data class Announcement(
     val title: String = "",
     val content: String = "",
     val createdAt: String = "",
-    val createdBy: String = ""
+    val createdBy: String = "",
+    val targetAudience: String = "ALL",
+    val classId: String? = null,
+    val targetStudentIds: List<String>? = null,
+    val scheduledFor: String? = null
 )
 
 enum class UserRole {
@@ -116,6 +120,88 @@ data class Staff(
     val password: String = ""
 )
 
+// === Models synced from Web ===
+
+data class Invoice(
+    val id: String = "",
+    val studentId: String = "",
+    val studentName: String = "",
+    val month: String = "",
+    val amount: Double = 0.0,
+    val details: String = "",
+    val status: String = "UNPAID", // PAID, UNPAID, CANCELLED
+    val generatedDate: String = "",
+    val paidDate: String? = null
+)
+
+data class ProgressReport(
+    val id: String = "",
+    val classId: String = "",
+    val studentId: String = "",
+    val date: String = "",
+    val score: Double? = null,
+    val comments: String = "",
+    val createdBy: String = ""
+)
+
+data class Income(
+    val id: String = "",
+    val description: String = "",
+    val amount: Double = 0.0,
+    val category: String = "OTHER", // SALE, EVENT, OTHER
+    val date: String = "",
+    val paymentMethod: String? = null
+)
+
+data class Expense(
+    val id: String = "",
+    val description: String = "",
+    val amount: Double = 0.0,
+    val category: String = "OTHER", // SALARY, RENT, UTILITIES, MARKETING, SUPPLIES, OTHER
+    val date: String = ""
+)
+
+data class PayrollClassDetail(
+    val classId: String = "",
+    val className: String = "",
+    val sessionsTaught: Int = 0
+)
+
+data class Payroll(
+    val id: String = "",
+    val teacherId: String = "",
+    val teacherName: String = "",
+    val month: String = "",
+    val sessionsTaught: Int = 0,
+    val rate: Double = 0.0,
+    val baseSalary: Double = 0.0,
+    val bonus: Double = 0.0,
+    val deduction: Double = 0.0,
+    val totalSalary: Double = 0.0,
+    val status: String = "UNPAID", // PAID, UNPAID
+    val paidDate: String? = null,
+    val calculationDate: String = "",
+    val classDetails: List<PayrollClassDetail> = emptyList()
+)
+
+data class AuditLog(
+    val id: String = "",
+    val userId: String = "",
+    val userName: String = "",
+    val action: String = "",
+    val targetType: String = "",
+    val targetName: String = "",
+    val details: String = "",
+    val timestamp: String = ""
+)
+
+data class Room(
+    val id: String = "",
+    val name: String = "",
+    val capacity: Int = 0,
+    val description: String = ""
+)
+
 data class AppData(
     val settings: Settings? = null,
     val students: List<Student> = emptyList(),
@@ -124,5 +210,13 @@ data class AppData(
     val classes: List<ClassModel> = emptyList(),
     val transactions: List<Transaction> = emptyList(),
     val attendance: List<AttendanceRecord> = emptyList(),
-    val announcements: List<Announcement> = emptyList()
+    val announcements: List<Announcement> = emptyList(),
+    val invoices: List<Invoice> = emptyList(),
+    val progressReports: List<ProgressReport> = emptyList(),
+    val income: List<Income> = emptyList(),
+    val expenses: List<Expense> = emptyList(),
+    val payrolls: List<Payroll> = emptyList(),
+    val auditLogs: List<AuditLog> = emptyList(),
+    val rooms: List<Room> = emptyList()
 )
+
