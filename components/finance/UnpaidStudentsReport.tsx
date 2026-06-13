@@ -5,7 +5,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { Table, SortConfig, Column } from '../common/Table';
 import { Button } from '../common/Button';
 import { Student, UserRole, PersonStatus } from '../../types';
-import { downloadAsCSV } from '../../services/csvExport';
+import { ExportButton } from '../common/ExportButton';
 import { ICONS } from '../../constants';
 import { ListItemCard } from '../common/ListItemCard';
 import { BulkDebtPrintModal } from './BulkDebtPrintModal';
@@ -184,14 +184,13 @@ export const UnpaidStudentsReport: React.FC = () => {
         },
     ];
     
-    const handleExport = () => {
-        const dataToExport = sortedUnpaidStudents.map(s => ({
-            name: s.name,
-            classNames: s.classNames,
-            balance: Math.abs(s.balance)
-        }));
-        downloadAsCSV(dataToExport, { name: "Họ Tên", classNames: "Các Lớp Học", balance: "Số Tiền Nợ" }, `BaoCaoCongNo.csv`);
-    };
+    const exportData = useMemo(() => sortedUnpaidStudents.map(s => ({
+        name: s.name,
+        classNames: s.classNames,
+        balance: Math.abs(s.balance)
+    })), [sortedUnpaidStudents]);
+
+    const exportColumns = { name: "Họ Tên", classNames: "Các Lớp Học", balance: "Số Tiền Nợ" };
     
     const selectedStudentsForPrint = useMemo(() => {
         return sortedUnpaidStudents.filter(s => selectedStudentIds.includes(s.id));
@@ -258,7 +257,7 @@ export const UnpaidStudentsReport: React.FC = () => {
                         >
                             {ICONS.download} In Báo Cáo Lớp
                         </Button>
-                        <Button onClick={handleExport} variant="secondary">{ICONS.export} Xuất CSV</Button>
+                        <ExportButton data={exportData} columns={exportColumns} filenameBase="BaoCaoCongNo" />
                     </div>
                 </div>
 

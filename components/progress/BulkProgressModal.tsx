@@ -4,7 +4,7 @@ import { Button } from '../common/Button';
 import { Class, Student, ProgressReport } from '../../types';
 import { formatVietnamDate } from '../../utils/date';
 import { useToast } from '../../hooks/useToast';
-import { downloadAsCSV } from '../../services/csvExport';
+import { ExportButton } from '../common/ExportButton';
 
 interface BulkProgressModalProps {
     isOpen: boolean;
@@ -137,11 +137,10 @@ export const BulkProgressModal: React.FC<BulkProgressModalProps> = ({ isOpen, on
         }
     };
 
-    const handleExport = () => {
+    const exportData = useMemo(() => {
         const selectedClass = classes.find(c => c.id === selectedClassId);
         const className = selectedClass ? selectedClass.name : 'Unknown';
-
-        const dataToExport = enrolledStudents.map(s => {
+        return enrolledStudents.map(s => {
             const grade = grades[s.id];
             return {
                 studentId: s.id,
@@ -152,15 +151,15 @@ export const BulkProgressModal: React.FC<BulkProgressModalProps> = ({ isOpen, on
                 comments: grade ? grade.comments : ''
             };
         });
+    }, [enrolledStudents, grades, classes, selectedClassId, date]);
 
-        downloadAsCSV(dataToExport, {
-            studentId: 'Mã Học viện',
-            studentName: 'Tên Học viên',
-            className: 'Lớp học',
-            date: 'Ngày',
-            score: 'Điểm (Hệ 10)',
-            comments: 'Nhận xét'
-        }, `BangDiem_${className}_${date}.csv`);
+    const exportColumns = {
+        studentId: 'Mã Học viên',
+        studentName: 'Tên Học viên',
+        className: 'Lớp học',
+        date: 'Ngày',
+        score: 'Điểm (Hệ 10)',
+        comments: 'Nhận xét'
     };
 
     return (
@@ -241,9 +240,12 @@ export const BulkProgressModal: React.FC<BulkProgressModalProps> = ({ isOpen, on
                 )}
 
                 <div className="flex flex-col sm:flex-row justify-between items-center pt-4 gap-4 border-t dark:border-gray-700">
-                    <Button variant="secondary" onClick={handleExport} disabled={!selectedClassId || enrolledStudents.length === 0}>
-                        Xuất File Điểm (CSV)
-                    </Button>
+                    <ExportButton 
+                        data={exportData} 
+                        columns={exportColumns} 
+                        filenameBase={`BangDiem_${classes.find(c => c.id === selectedClassId)?.name || 'Unknown'}_${date}`}
+                        label="Xuất File Điểm"
+                    />
                     <div className="flex gap-2">
                         <Button variant="secondary" onClick={onClose} disabled={isSaving}>Hủy</Button>
                         <Button variant="primary" onClick={handleSave} disabled={isSaving || !selectedClassId || enrolledStudents.length === 0}>

@@ -13,7 +13,7 @@ import { ListItemCard } from '../components/common/ListItemCard';
 import { ConfirmationModal } from '../components/common/ConfirmationModal';
 import { getVietnamTime, formatVietnamDate } from '../utils/date';
 import { BulkProgressModal } from '../components/progress/BulkProgressModal';
-import { downloadAsCSV } from '../services/csvExport';
+import { ExportButton } from '../components/common/ExportButton';
 
 
 const ProgressReportForm: React.FC<{
@@ -441,22 +441,20 @@ export const ClassDetailScreen: React.FC = () => {
         return sortableItems;
     }, [classProgressReports, reportSortConfig]);
         
-    const handleExportReports = () => {
-        const dataToExport = sortedClassProgressReports.map(r => ({
-            date: formatVietnamDate(r.date),
-            studentId: r.studentId,
-            studentName: getStudentName(r.studentId),
-            score: r.score,
-            comments: r.comments
-        }));
-        
-        downloadAsCSV(dataToExport, {
-            date: 'Ngày',
-            studentId: 'Mã Học viện',
-            studentName: 'Tên Học viên',
-            score: 'Điểm',
-            comments: 'Nhận xét'
-        }, `BaoCaoTienDo_${cls?.name}_${new Date().toISOString().split('T')[0]}.csv`);
+    const exportReportData = useMemo(() => sortedClassProgressReports.map(r => ({
+        date: formatVietnamDate(r.date),
+        studentId: r.studentId,
+        studentName: getStudentName(r.studentId),
+        score: r.score,
+        comments: r.comments
+    })), [sortedClassProgressReports]);
+
+    const exportReportColumns = {
+        date: 'Ngày',
+        studentId: 'Mã Học viên',
+        studentName: 'Tên Học viên',
+        score: 'Điểm',
+        comments: 'Nhận xét'
     };
 
     const getStudentName = (studentId: string) => students.find(s => s.id === studentId)?.name || 'N/A';
@@ -705,14 +703,12 @@ export const ClassDetailScreen: React.FC = () => {
                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
                              <h2 className="text-xl font-semibold">Sổ liên lạc - Báo cáo Tiến độ</h2>
                             <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto relative group">
-                                <Button 
-                                    variant="secondary"
-                                    onClick={handleExportReports}
-                                    disabled={classProgressReports.length === 0}
-                                    className="w-full sm:w-auto"
-                                >
-                                    {ICONS.download} Xuất Điểm
-                                </Button>
+                                <ExportButton 
+                                    data={exportReportData} 
+                                    columns={exportReportColumns} 
+                                    filenameBase={`BaoCaoTienDo_${cls?.name}_${new Date().toISOString().split('T')[0]}`}
+                                    label="Xuất Điểm"
+                                />
                                 <Button 
                                     variant="secondary"
                                     onClick={() => setBulkProgModalOpen(true)}
