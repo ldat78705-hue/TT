@@ -37,7 +37,20 @@ export const QRAttendanceModal: React.FC<QRAttendanceModalProps> = ({ isOpen, on
     const [scannedIds, setScannedIds] = useState<Set<string>>(new Set());
     const [lastScanned, setLastScanned] = useState<string | null>(null);
 
+    // Use refs to avoid stale closures in setInterval callback
+    const scannedIdsRef = useRef<Set<string>>(scannedIds);
+    const processingRef = useRef<Set<string>>(new Set()); // Prevent concurrent processing of same ID
+    const selectedClassIdRef = useRef(selectedClassId);
+    const selectedDateRef = useRef(selectedDate);
+
+    // Keep refs in sync
+    useEffect(() => { scannedIdsRef.current = scannedIds; }, [scannedIds]);
+    useEffect(() => { selectedClassIdRef.current = selectedClassId; }, [selectedClassId]);
+    useEffect(() => { selectedDateRef.current = selectedDate; }, [selectedDate]);
+
     const selectedClass = useMemo(() => classes.find(c => c.id === selectedClassId), [classes, selectedClassId]);
+    const selectedClassRef = useRef(selectedClass);
+    useEffect(() => { selectedClassRef.current = selectedClass; }, [selectedClass]);
 
     // Today's classes
     const todayClasses = useMemo(() => {
@@ -66,36 +79,51 @@ export const QRAttendanceModal: React.FC<QRAttendanceModalProps> = ({ isOpen, on
     }, []);
 
     const processQRCode = useCallback(async (studentId: string) => {
-        if (!selectedClassId || !selectedDate) return;
-        if (scannedIds.has(studentId)) return;
+        const classId = selectedClassIdRef.current;
+        const date = selectedDateRef.current;
+        if (!classId || !date) return;
+        
+        // Check using ref (always current) instead of state (stale in setInterval)
+        if (scannedIdsRef.current.has(studentId)) return;
+        // Prevent concurrent processing of the same ID
+        if (processingRef.current.has(studentId)) return;
+        processingRef.current.add(studentId);
 
         const student = students.find(s => s.id === studentId);
         if (!student) {
-            toast.error(`Mã ${studentId} không tìm thấy trong hệ thống`);
-            return;
+            processingRef.current.delete(studentId);
+            return; // Silently ignore unknown IDs during scanning
         }
 
-        if (!selectedClass?.studentIds.includes(studentId)) {
-            toast.error(`${student.name} không thuộc lớp này`);
-            return;
+        const cls = selectedClassRef.current;
+        if (!cls?.studentIds.includes(studentId)) {
+            processingRef.current.delete(studentId);
+            return; // Silently ignore students not in this class
         }
 
         try {
             const record: AttendanceRecord = {
-                id: `${selectedClassId}_${studentId}_${selectedDate}`,
+                id: `${classId}_${studentId}_${date}`,
                 studentId,
-                classId: selectedClassId,
-                date: selectedDate,
+                classId: classId,
+                date: date,
                 status: AttendanceStatus.PRESENT,
             };
             await updateAttendance([record]);
-            setScannedIds(prev => new Set(prev).add(studentId));
+            setScannedIds(prev => {
+                const next = new Set(prev);
+                next.add(studentId);
+                scannedIdsRef.current = next;
+                return next;
+            });
             setLastScanned(studentId);
             toast.success(`✅ ${student.name} - Có mặt`);
         } catch {
             toast.error(`Lỗi điểm danh cho ${student.name}`);
+        } finally {
+            processingRef.current.delete(studentId);
         }
-    }, [selectedClassId, selectedDate, scannedIds, students, selectedClass, updateAttendance, toast]);
+    }, [students, updateAttendance, toast]); // No scannedIds dependency!
 
     const startScanning = useCallback(async () => {
         try {
@@ -140,6 +168,8 @@ export const QRAttendanceModal: React.FC<QRAttendanceModalProps> = ({ isOpen, on
         if (!isOpen) {
             stopScanning();
             setScannedIds(new Set());
+            scannedIdsRef.current = new Set();
+            processingRef.current = new Set();
             setLastScanned(null);
         }
     }, [isOpen, stopScanning]);
@@ -158,7 +188,7 @@ export const QRAttendanceModal: React.FC<QRAttendanceModalProps> = ({ isOpen, on
         <Modal isOpen={isOpen} onClose={onClose} title="📷 Quét QR Điểm danh">
             <div className="space-y-4">
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Quét mã QR trên thẻ học viên để điểm danh nhanh. Thẻ QR được in từ phần <b>Chi tiết Lớp học → Học viên</b>.
+                    Quét mã QR trên thẻ học viên để điểm danh nhanh. Thẻ QR được in từ phần <b>Học viên</b> hoặc <b>Chi tiết Lớp học</b>.
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -167,7 +197,7 @@ export const QRAttendanceModal: React.FC<QRAttendanceModalProps> = ({ isOpen, on
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-1">Lớp</label>
-                        <select value={selectedClassId} onChange={e => { setSelectedClassId(e.target.value); setScannedIds(new Set()); }} className="form-select">
+                        <select value={selectedClassId} onChange={e => { setSelectedClassId(e.target.value); setScannedIds(new Set()); scannedIdsRef.current = new Set(); processingRef.current = new Set(); }} className="form-select">
                             <option value="">-- Chọn --</option>
                             {todayClasses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
@@ -191,7 +221,7 @@ export const QRAttendanceModal: React.FC<QRAttendanceModalProps> = ({ isOpen, on
                                 </div>
                             )}
                             {lastScanned && (
-                                <div className="absolute bottom-2 left-2 right-2 bg-green-500/90 text-white text-sm font-bold px-3 py-2 rounded-lg text-center animate-pulse">
+                                <div className="absolute bottom-2 left-2 right-2 bg-green-500/90 text-white text-sm font-bold px-3 py-2 rounded-lg text-center">
                                     ✅ {students.find(s => s.id === lastScanned)?.name} đã điểm danh
                                 </div>
                             )}

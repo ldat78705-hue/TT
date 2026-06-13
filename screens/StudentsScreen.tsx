@@ -278,6 +278,11 @@ export const StudentsScreen: React.FC = () => {
     const [sortConfig, setSortConfig] = useState<SortConfig<Student> | null>({ key: 'name', direction: 'ascending' });
     const ITEMS_PER_PAGE = 10;
 
+    // QR Print State
+    const [selectedForQR, setSelectedForQR] = useState<Set<string>>(new Set());
+    const [showQRPrintModal, setShowQRPrintModal] = useState(false);
+    const [qrLayout, setQrLayout] = useState<'8' | '10' | '12'>('10'); // cards per A4 page
+
     const canManage = role === UserRole.ADMIN || role === UserRole.MANAGER;
 
     const handleSort = (key: keyof Student) => {
@@ -614,12 +619,88 @@ export const StudentsScreen: React.FC = () => {
         }, `DanhSachHocVien_${new Date().toISOString().split('T')[0]}.csv`);
     };
 
+    const handleToggleQRSelect = (id: string) => {
+        setSelectedForQR(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id); else next.add(id);
+            return next;
+        });
+    };
+
+    const handleSelectAllQR = () => {
+        if (selectedForQR.size === sortedStudents.length) {
+            setSelectedForQR(new Set());
+        } else {
+            setSelectedForQR(new Set(sortedStudents.map(s => s.id)));
+        }
+    };
+
+    const handlePrintQRCards = () => {
+        const selectedStudents = sortedStudents.filter(s => selectedForQR.has(s.id));
+        if (selectedStudents.length === 0) return;
+
+        const cardsPerPage = parseInt(qrLayout);
+        // Layout configs for A4
+        const layouts: Record<string, { cols: number; cardW: string; cardH: string; qrSize: string; fontSize: string; idSize: string; classSize: string; gap: string }> = {
+            '8':  { cols: 2, cardW: '88mm', cardH: '52mm', qrSize: '40mm', fontSize: '14px', idSize: '11px', classSize: '10px', gap: '4mm' },
+            '10': { cols: 2, cardW: '88mm', cardH: '42mm', qrSize: '34mm', fontSize: '13px', idSize: '10px', classSize: '9px', gap: '3mm' },
+            '12': { cols: 3, cardW: '60mm', cardH: '38mm', qrSize: '28mm', fontSize: '11px', idSize: '9px', classSize: '8px', gap: '2mm' },
+        };
+        const layout = layouts[qrLayout];
+
+        const getStudentClasses = (sId: string) => {
+            return state.classes.filter(c => c.studentIds.includes(sId)).map(c => c.name).join(', ');
+        };
+
+        const cards = selectedStudents.map(s => {
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(s.id)}&format=png`;
+            const classNames = getStudentClasses(s.id);
+            return `<div style="width:${layout.cardW};height:${layout.cardH};border:1px solid #ccc;border-radius:8px;padding:5px;display:inline-flex;align-items:center;gap:6px;background:white;page-break-inside:avoid;box-sizing:border-box;">
+                <img src="${qrUrl}" style="width:${layout.qrSize};height:${layout.qrSize};flex-shrink:0;" />
+                <div style="flex:1;overflow:hidden;min-width:0;">
+                    <div style="font-weight:bold;font-size:${layout.fontSize};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</div>
+                    <div style="font-size:${layout.idSize};color:#666;font-family:monospace;">${s.id}</div>
+                    <div style="font-size:${layout.classSize};color:#999;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${classNames || 'Chưa xếp lớp'}</div>
+                </div>
+            </div>`;
+        });
+
+        // Split into pages
+        const pages: string[] = [];
+        for (let i = 0; i < cards.length; i += cardsPerPage) {
+            const pageCards = cards.slice(i, i + cardsPerPage);
+            pages.push(`<div style="display:flex;flex-wrap:wrap;gap:${layout.gap};justify-content:center;align-content:flex-start;width:190mm;min-height:277mm;page-break-after:always;">${pageCards.join('')}</div>`);
+        }
+
+        const pw = window.open('', '_blank');
+        if (!pw) return;
+        pw.document.write(`<!DOCTYPE html><html><head><title>Thẻ QR Điểm danh</title>
+            <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body { font-family: 'Segoe UI', Arial, sans-serif; }
+                @page { size: A4; margin: 10mm; }
+                @media print { body { -webkit-print-color-adjust: exact; } }
+                .page-container > div:last-child { page-break-after: avoid; }
+            </style>
+        </head><body>
+            <div class="page-container">${pages.join('')}</div>
+        </body></html>`);
+        pw.document.close();
+        setTimeout(() => pw.print(), 1000);
+        setShowQRPrintModal(false);
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <h1 className="text-2xl font-bold">Quản lý Học viên</h1>
                 {canManage && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                        {selectedForQR.size > 0 && (
+                            <Button variant="secondary" onClick={() => setShowQRPrintModal(true)}>
+                                🖶️ In thẻ QR ({selectedForQR.size})
+                            </Button>
+                        )}
                         <Button variant="secondary" onClick={handleExport}>
                             {ICONS.download} Xuất danh sách
                         </Button>
@@ -654,7 +735,28 @@ export const StudentsScreen: React.FC = () => {
             {/* Desktop Table View */}
             <div className="hidden md:block">
                  <Table<Student>
-                    columns={columns}
+                    columns={[
+                        {
+                            header: (
+                                <input
+                                    type="checkbox"
+                                    checked={sortedStudents.length > 0 && selectedForQR.size === sortedStudents.length}
+                                    onChange={handleSelectAllQR}
+                                    className="rounded border-gray-300 text-primary focus:ring-primary"
+                                    title="Chọn tất cả để in QR"
+                                />
+                            ) as any,
+                            accessor: (item: Student) => (
+                                <input
+                                    type="checkbox"
+                                    checked={selectedForQR.has(item.id)}
+                                    onChange={() => handleToggleQRSelect(item.id)}
+                                    className="rounded border-gray-300 text-primary focus:ring-primary"
+                                />
+                            )
+                        },
+                        ...columns
+                    ]}
                     data={paginatedStudents}
                     sortConfig={sortConfig}
                     onSort={handleSort}
@@ -673,12 +775,19 @@ export const StudentsScreen: React.FC = () => {
                 {paginatedStudents.map(student => (
                     <div key={student.id} className="card-base p-4">
                         <div className="flex justify-between items-start gap-3">
-                            <div className="flex-1">
+                            <div className="flex items-start gap-3 flex-1">
+                                <input
+                                    type="checkbox"
+                                    checked={selectedForQR.has(student.id)}
+                                    onChange={() => handleToggleQRSelect(student.id)}
+                                    className="mt-1.5 rounded border-gray-300 text-primary focus:ring-primary"
+                                />
                                 <Link to={`/student/${student.id}`} className="block group">
                                     <h3 className="font-bold text-lg text-primary group-hover:underline">{student.name}</h3>
                                     <p className="text-sm text-gray-500 dark:text-gray-400 font-mono">{student.id}</p>
                                 </Link>
                             </div>
+
                             <div className="flex flex-col items-end">
                                 <span className={`px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold rounded-full shadow-sm ${student.status === PersonStatus.ACTIVE ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'} whitespace-nowrap mt-1`}>
                                     {student.status === PersonStatus.ACTIVE ? 'Hoạt động' : 'Tạm nghỉ'}
@@ -808,6 +917,47 @@ export const StudentsScreen: React.FC = () => {
                 onClose={() => setPaymentModalState({ isOpen: false, student: null })}
                 student={paymentModalState.student}
             />
+
+            {/* QR Print Modal */}
+            <Modal isOpen={showQRPrintModal} onClose={() => setShowQRPrintModal(false)} title="🖶️ In thẻ QR Điểm danh">
+                <div className="space-y-4">
+                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
+                        <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                            Đã chọn <strong>{selectedForQR.size}</strong> học viên để in thẻ QR
+                        </p>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium mb-2">Bố cục trên khổ giấy A4</label>
+                        <div className="grid grid-cols-3 gap-3">
+                            {[
+                                { value: '8', label: '8 thẻ/trang', desc: '2 cột × 4 hàng (Lớn)' },
+                                { value: '10', label: '10 thẻ/trang', desc: '2 cột × 5 hàng (Vừa)' },
+                                { value: '12', label: '12 thẻ/trang', desc: '3 cột × 4 hàng (Nhỏ)' },
+                            ].map(opt => (
+                                <button
+                                    key={opt.value}
+                                    onClick={() => setQrLayout(opt.value as any)}
+                                    className={`p-3 rounded-xl border-2 text-center transition-all ${
+                                        qrLayout === opt.value 
+                                            ? 'border-primary bg-primary/5 shadow-md' 
+                                            : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                                    }`}
+                                >
+                                    <p className="font-bold text-sm">{opt.label}</p>
+                                    <p className="text-[10px] text-slate-500 mt-1">{opt.desc}</p>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3 text-sm">
+                        <p>Số trang cần in: <strong>{Math.ceil(selectedForQR.size / parseInt(qrLayout))}</strong> trang A4</p>
+                    </div>
+                    <div className="flex justify-end gap-3 pt-2 border-t dark:border-slate-700">
+                        <Button variant="secondary" onClick={() => setShowQRPrintModal(false)}>Hủy</Button>
+                        <Button onClick={handlePrintQRCards}>🖶️ In {selectedForQR.size} thẻ QR</Button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 };

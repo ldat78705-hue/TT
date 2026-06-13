@@ -342,7 +342,7 @@ export const AnnouncementsScreen: React.FC = () => {
     return (
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <h1 className="text-2xl font-bold">Nhận xét & Đánh giá</h1>
+                <h1 className="text-2xl font-bold">Thông báo & Nhận xét</h1>
                 {activeTab === 'announcements' && canManageAnnouncements && (
                     <Button onClick={() => setAnnModalOpen(true)}>
                         {ICONS.plus} Tạo Thông báo mới
