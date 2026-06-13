@@ -58,6 +58,10 @@ class DataRepository @Inject constructor(
         return prefs.getString("user_name", null) ?: prefs.getString("user_email", null) ?: ""
     }
 
+    fun getCenterId(): String {
+        return prefs.getString("center_id", null) ?: ""
+    }
+
     suspend fun loginLocal(identifier: String, passwordRaw: String): Boolean {
         try {
             val response = apiService.login(LoginRequest(identifier, passwordRaw))
@@ -73,6 +77,7 @@ class DataRepository @Inject constructor(
                     .putString("user_role", roleStr)
                     .putString("user_email", identifier)
                     .putString("user_name", userName)
+                    .putString("center_id", response.centerId ?: "")
                     .apply()
                 _currentUserRole.value = com.educenter.pro.data.model.UserRole.valueOf(roleStr)
                 return true

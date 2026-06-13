@@ -5,8 +5,8 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 
-data class LoginRequest(val identifier: String, val password: String)
-data class LoginResponse(val token: String?, val user: Any?, val role: String?, val error: String?)
+data class LoginRequest(val identifier: String, val password: String, val centerId: String? = null)
+data class LoginResponse(val token: String?, val user: Any?, val role: String?, val error: String?, val centerId: String? = null)
 
 data class OperationPayload(val op: String, val payload: Any)
 data class BaseResponse(val success: Boolean?, val error: String?)
