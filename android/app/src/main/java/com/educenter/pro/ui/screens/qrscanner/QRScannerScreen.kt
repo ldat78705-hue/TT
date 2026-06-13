@@ -121,6 +121,7 @@ fun QRScannerScreen(
                     ClassSelector(
                         classes = uiState.availableClasses,
                         studentCounts = uiState.classStudentCounts,
+                        scheduledClassIds = uiState.scheduledClassIds,
                         onSelectClass = { viewModel.selectClass(it) }
                     )
                 }
@@ -152,8 +153,12 @@ fun QRScannerScreen(
 private fun ClassSelector(
     classes: List<com.educenter.pro.data.model.ClassModel>,
     studentCounts: Map<String, Int>,
+    scheduledClassIds: Set<String>,
     onSelectClass: (String) -> Unit
 ) {
+    val scheduledClasses = classes.filter { scheduledClassIds.contains(it.id) }
+    val unscheduledClasses = classes.filter { !scheduledClassIds.contains(it.id) }
+
     LazyColumn(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -172,49 +177,84 @@ private fun ClassSelector(
             }
         }
 
-        item {
-            Text("📚 Lớp học hôm nay", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.padding(top = 8.dp))
+        if (scheduledClasses.isNotEmpty()) {
+            item {
+                Text("📅 Lớp có lịch hôm nay", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.padding(top = 8.dp))
+            }
+
+            items(scheduledClasses) { cls ->
+                val count = studentCounts[cls.id] ?: 0
+                ClassCard(cls = cls, count = count, isScheduled = true, onSelectClass = onSelectClass)
+            }
+        }
+
+        if (unscheduledClasses.isNotEmpty()) {
+            item {
+                Text(
+                    if (scheduledClasses.isNotEmpty()) "📋 Lớp khác (ngoài lịch)" else "📋 Tất cả lớp học",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+
+            items(unscheduledClasses) { cls ->
+                val count = studentCounts[cls.id] ?: 0
+                ClassCard(cls = cls, count = count, isScheduled = false, onSelectClass = onSelectClass)
+            }
         }
 
         if (classes.isEmpty()) {
             item {
                 Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                    Text("Không có lớp nào hôm nay", color = Color(0xFF94A3B8))
+                    Text("Không có lớp nào", color = Color(0xFF94A3B8))
                 }
             }
         }
+    }
+}
 
-        items(classes) { cls ->
-            val count = studentCounts[cls.id] ?: 0
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                elevation = CardDefaults.cardElevation(2.dp),
-                onClick = { onSelectClass(cls.id) }
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ClassCard(
+    cls: com.educenter.pro.data.model.ClassModel,
+    count: Int,
+    isScheduled: Boolean,
+    onSelectClass: (String) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(2.dp),
+        onClick = { onSelectClass(cls.id) }
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier.size(48.dp).clip(RoundedCornerShape(12.dp))
+                    .background(if (isScheduled) Color(0xFF4F46E5).copy(alpha = 0.1f) else Color(0xFF64748B).copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
             ) {
-                Row(
-                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier.size(48.dp).clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFF4F46E5).copy(alpha = 0.1f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Default.Class, contentDescription = null, tint = Color(0xFF4F46E5))
+                Icon(Icons.Default.Class, contentDescription = null, tint = if (isScheduled) Color(0xFF4F46E5) else Color(0xFF64748B))
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(cls.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text(
+                    "${cls.subject} • $count học viên" + if (!isScheduled) " • Ngoài lịch" else "",
+                    fontSize = 13.sp,
+                    color = Color(0xFF64748B)
+                )
+                if (isScheduled) {
+                    val todaySchedule = cls.schedule.firstOrNull()
+                    if (todaySchedule != null) {
+                        Text("${todaySchedule.startTime} - ${todaySchedule.endTime}", fontSize = 12.sp, color = Color(0xFF4F46E5), fontWeight = FontWeight.Medium)
                     }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(cls.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                        Text("${cls.subject} • $count học viên", fontSize = 13.sp, color = Color(0xFF64748B))
-                        val todaySchedule = cls.schedule.firstOrNull()
-                        if (todaySchedule != null) {
-                            Text("${todaySchedule.startTime} - ${todaySchedule.endTime}", fontSize = 12.sp, color = Color(0xFF4F46E5), fontWeight = FontWeight.Medium)
-                        }
-                    }
-                    Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color(0xFFCBD5E1))
                 }
             }
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color(0xFFCBD5E1))
         }
     }
 }

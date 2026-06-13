@@ -25,6 +25,7 @@ data class ScanLogEntry(
 
 data class QRScannerUiState(
     val availableClasses: List<ClassModel> = emptyList(),
+    val scheduledClassIds: Set<String> = emptySet(),
     val classStudentCounts: Map<String, Int> = emptyMap(),
     val selectedClassId: String = "",
     val selectedClassName: String = "",
@@ -75,13 +76,18 @@ class QRScannerViewModel @Inject constructor(
                 cls.schedule.any { it.dayOfWeek == dayName }
             }
 
-            val counts = todayClasses.associate { cls ->
+            // Show today's scheduled classes first, then all other classes
+            val allClasses = data.classes
+            val orderedClasses = todayClasses + allClasses.filter { all -> todayClasses.none { it.id == all.id } }
+
+            val counts = orderedClasses.associate { cls ->
                 cls.id to students.count { s -> cls.studentIds.contains(s.id) }
             }
 
             _uiState.value = _uiState.value.copy(
-                availableClasses = todayClasses,
-                classStudentCounts = counts
+                availableClasses = orderedClasses,
+                classStudentCounts = counts,
+                scheduledClassIds = todayClasses.map { it.id }.toSet()
             )
         }
     }

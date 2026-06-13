@@ -67,6 +67,7 @@ export const QRAttendanceModal: React.FC<QRAttendanceModalProps> = ({ isOpen, on
     const [scannedIds, setScannedIds] = useState<Set<string>>(new Set());
     const [lastScanned, setLastScanned] = useState<{ id: string; name: string; time: string } | null>(null);
     const [scanLog, setScanLog] = useState<Array<{ id: string; name: string; time: string; status: 'success' | 'duplicate' | 'error' }>>([]);
+    const [showAllClasses, setShowAllClasses] = useState(false);
 
     // Use refs to avoid stale closures in setInterval callback
     const scannedIdsRef = useRef<Set<string>>(scannedIds);
@@ -91,6 +92,13 @@ export const QRAttendanceModal: React.FC<QRAttendanceModalProps> = ({ isOpen, on
             (cls.schedule || []).some(s => dayOfWeekToNumber[s.dayOfWeek] === dayIdx)
         );
     }, [classes, selectedDate]);
+
+    // Auto-expand all classes if no scheduled classes for this date
+    useEffect(() => {
+        if (todayClasses.length === 0 && classes.length > 0) {
+            setShowAllClasses(true);
+        }
+    }, [todayClasses.length, classes.length]);
 
     const classStudents = useMemo(() => {
         if (!selectedClass) return [];
@@ -248,6 +256,7 @@ export const QRAttendanceModal: React.FC<QRAttendanceModalProps> = ({ isOpen, on
             setScanLog([]);
             setStep('setup');
             setSelectedClassId('');
+            setShowAllClasses(false);
         }
     }, [isOpen, stopScanning]);
 
@@ -330,6 +339,7 @@ export const QRAttendanceModal: React.FC<QRAttendanceModalProps> = ({ isOpen, on
                                 <label className="block text-sm font-semibold mb-2 text-slate-700 dark:text-slate-300">📚 Chọn lớp học</label>
                                 {todayClasses.length > 0 ? (
                                     <div className="space-y-2">
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">📅 Lớp có lịch hôm nay:</p>
                                         {todayClasses.map(c => {
                                             const studentCount = students.filter(s => c.studentIds.includes(s.id) && s.status === PersonStatus.ACTIVE).length;
                                             return (
@@ -351,10 +361,57 @@ export const QRAttendanceModal: React.FC<QRAttendanceModalProps> = ({ isOpen, on
                                         })}
                                     </div>
                                 ) : (
-                                    <div className="text-center py-6 text-slate-400">
-                                        Không có lớp học nào vào ngày này.
+                                    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-3 mb-2">
+                                        <p className="text-sm text-amber-700 dark:text-amber-300">
+                                            ⚠️ Không có lớp có lịch vào ngày này. Chọn lớp từ danh sách bên dưới:
+                                        </p>
                                     </div>
                                 )}
+
+                                {/* All classes - for unscheduled sessions */}
+                                {(() => {
+                                    const otherClasses = classes.filter(c => !todayClasses.some(tc => tc.id === c.id));
+                                    const allClasses = todayClasses.length === 0 ? classes : otherClasses;
+                                    if (allClasses.length === 0) return null;
+                                    return (
+                                        <div className="mt-3">
+                                            <button 
+                                                onClick={() => setShowAllClasses(prev => !prev)}
+                                                className="w-full flex items-center justify-between p-2.5 bg-slate-100 dark:bg-slate-700/50 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600/50 transition-colors"
+                                            >
+                                                <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                                                    📋 {todayClasses.length > 0 ? 'Lớp khác' : 'Tất cả lớp học'} ({allClasses.length})
+                                                </span>
+                                                <svg className={`w-4 h-4 text-slate-500 transition-transform ${showAllClasses ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </button>
+                                            {showAllClasses && (
+                                                <div className="space-y-2 mt-2">
+                                                    {allClasses.map(c => {
+                                                        const studentCount = students.filter(s => c.studentIds.includes(s.id) && s.status === PersonStatus.ACTIVE).length;
+                                                        return (
+                                                            <button
+                                                                key={c.id}
+                                                                onClick={() => setSelectedClassId(c.id)}
+                                                                className={`w-full text-left p-3 rounded-xl border-2 transition-all ${
+                                                                    selectedClassId === c.id
+                                                                        ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 ring-2 ring-indigo-200 dark:ring-indigo-800'
+                                                                        : 'border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-600'
+                                                                }`}
+                                                            >
+                                                                <div className="font-semibold text-slate-800 dark:text-white">{c.name}</div>
+                                                                <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                                                    {studentCount} học viên • Ngoài lịch
+                                                                </div>
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
                             </div>
                         </div>
                     )}
