@@ -280,6 +280,108 @@ export default async function handler(req: any, res: any) {
             return res.status(200).json({ success: true, message: `Đã đổi mật khẩu quản trị nội bộ cho trung tâm "${slug}"` });
         }
 
+        // Get all accounts in a center (teachers, staff)
+        if (body.action === 'get_center_accounts') {
+            const { slug } = body;
+            if (!slug) return res.status(400).json({ error: 'Thiếu mã trung tâm' });
+
+            const colName = `center_${slug}`;
+            const accounts: any[] = [];
+
+            // Get teachers
+            const teachersDoc = await getDoc(doc(db, colName, 'teachers'));
+            if (teachersDoc.exists()) {
+                const teachers = teachersDoc.data()?.data || [];
+                teachers.forEach((t: any) => {
+                    accounts.push({
+                        id: t.id,
+                        name: t.name,
+                        type: 'teacher',
+                        typeLabel: 'Giáo viên',
+                        role: t.role || 'TEACHER',
+                        status: t.status || 'ACTIVE',
+                        hasPassword: !!t.password,
+                    });
+                });
+            }
+
+            // Get staff
+            const staffDoc = await getDoc(doc(db, colName, 'staff'));
+            if (staffDoc.exists()) {
+                const staff = staffDoc.data()?.data || [];
+                staff.forEach((s: any) => {
+                    accounts.push({
+                        id: s.id,
+                        name: s.name,
+                        type: 'staff',
+                        typeLabel: 'Nhân viên',
+                        role: s.role || 'MANAGER',
+                        status: s.status || 'ACTIVE',
+                        hasPassword: !!s.password,
+                    });
+                });
+            }
+
+            // Get settings for admin password info
+            const settingsDoc2 = await getDoc(doc(db, colName, 'settings'));
+            const hasAdminPwd = !!(settingsDoc2.exists() && settingsDoc2.data()?.data?.adminPassword);
+
+            return res.status(200).json({ 
+                success: true, 
+                accounts, 
+                hasAdminPassword: hasAdminPwd,
+                totalAccounts: accounts.length 
+            });
+        }
+
+        // Update account in center (change password, role, username)
+        if (body.action === 'update_center_account') {
+            const { slug, accountId, accountType, newPassword, newRole, newId } = body;
+            if (!slug || !accountId || !accountType) {
+                return res.status(400).json({ error: 'Thiếu thông tin tài khoản' });
+            }
+
+            const colName = `center_${slug}`;
+            const docKey = accountType === 'teacher' ? 'teachers' : 'staff';
+            const docRef = doc(db, colName, docKey);
+            const docSnap = await getDoc(docRef);
+            
+            if (!docSnap.exists()) {
+                return res.status(404).json({ error: 'Không tìm thấy dữ liệu' });
+            }
+
+            const items = docSnap.data()?.data || [];
+            const idx = items.findIndex((item: any) => item.id === accountId);
+            if (idx === -1) {
+                return res.status(404).json({ error: `Không tìm thấy tài khoản "${accountId}"` });
+            }
+
+            const changes: string[] = [];
+
+            if (newPassword) {
+                items[idx].password = hashPassword(newPassword);
+                changes.push('mật khẩu');
+            }
+            if (newRole) {
+                items[idx].role = newRole;
+                changes.push(`quyền → ${newRole}`);
+            }
+            if (newId && newId !== accountId) {
+                // Check duplicate
+                if (items.some((item: any) => item.id === newId)) {
+                    return res.status(409).json({ error: `Mã "${newId}" đã tồn tại` });
+                }
+                items[idx].id = newId;
+                changes.push(`mã → ${newId}`);
+            }
+
+            await updateDoc(docRef, { data: items });
+            return res.status(200).json({ 
+                success: true, 
+                message: `Đã cập nhật ${changes.join(', ')} cho "${items[idx].name}"` 
+            });
+        }
+
         return res.status(400).json({ error: 'Action không hợp lệ' });
     }
 

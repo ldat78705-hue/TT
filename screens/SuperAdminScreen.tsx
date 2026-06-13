@@ -111,7 +111,9 @@ const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
     const [passwords, setPasswords] = useState({ current: '', newPass: '', confirm: '' });
     const [credTarget, setCredTarget] = useState<any>(null);
     const [creds, setCreds] = useState<any>({ loginUsername: '', loginPassword: '', centerAdminPassword: '' });
-    const [credTab, setCredTab] = useState<'set'|'admin'>('set');
+    const [credTab, setCredTab] = useState<'set'|'admin'|'accounts'>('set');
+    const [centerAccounts, setCenterAccounts] = useState<any[]>([]);
+    const [isLoadingAccounts, setIsLoadingAccounts] = useState(false);
 
     const refresh = async () => {
         setIsLoading(true);
@@ -243,6 +245,19 @@ const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
             refresh();
         } catch (err: any) {
             setMessage('❌ ' + err.message);
+        }
+    };
+
+    const loadCenterAccounts = async (slug: string) => {
+        setIsLoadingAccounts(true);
+        try {
+            const result = await apiCall('get_center_accounts', { slug });
+            setCenterAccounts(result.accounts || []);
+        } catch (err: any) {
+            setMessage('❌ ' + err.message);
+            setCenterAccounts([]);
+        } finally {
+            setIsLoadingAccounts(false);
         }
     };
 
@@ -470,19 +485,23 @@ const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
             {/* Credentials Modal */}
             {credTarget && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-                    <div className="bg-white dark:bg-slate-800 rounded-xl p-6 max-w-lg w-full mx-4 shadow-2xl">
+                    <div className="bg-white dark:bg-slate-800 rounded-xl p-6 max-w-2xl w-full mx-4 shadow-2xl max-h-[85vh] overflow-y-auto">
                         <h3 className="text-lg font-bold mb-1">🔑 Quản lý tài khoản: {credTarget.name}</h3>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Mã: <code>{credTarget.slug}</code></p>
 
                         {/* Tabs */}
-                        <div className="flex border-b dark:border-slate-600 mb-4">
+                        <div className="flex border-b dark:border-slate-600 mb-4 overflow-x-auto">
                             <button onClick={() => setCredTab('set')}
-                                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${credTab === 'set' ? 'border-purple-500 text-purple-600 dark:text-purple-400' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+                                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${credTab === 'set' ? 'border-purple-500 text-purple-600 dark:text-purple-400' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
                                 Tài khoản đăng nhập
                             </button>
                             <button onClick={() => setCredTab('admin')}
-                                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${credTab === 'admin' ? 'border-purple-500 text-purple-600 dark:text-purple-400' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
-                                Mật khẩu Admin nội bộ
+                                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${credTab === 'admin' ? 'border-purple-500 text-purple-600 dark:text-purple-400' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+                                Mật khẩu Admin
+                            </button>
+                            <button onClick={() => { setCredTab('accounts' as any); loadCenterAccounts(credTarget.slug); }}
+                                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${credTab === 'accounts' as any ? 'border-purple-500 text-purple-600 dark:text-purple-400' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+                                👥 Tất cả tài khoản
                             </button>
                         </div>
 
@@ -520,7 +539,7 @@ const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                         {credTab === 'admin' && (
                             <>
                                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                                    Đổi mật khẩu Admin bên trong trung tâm (mật khẩu mà trung tâm dùng để đăng nhập với tài khoản "admin" nội bộ).
+                                    Đổi mật khẩu tài khoản "admin" bên trong trung tâm (dùng để đăng nhập quản trị).
                                 </p>
                                 <form onSubmit={handleChangeCenterAdminPwd} className="space-y-4">
                                     <div>
@@ -535,6 +554,16 @@ const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                                     </div>
                                 </form>
                             </>
+                        )}
+
+                        {(credTab as any) === 'accounts' && (
+                            <CenterAccountsManager 
+                                slug={credTarget.slug} 
+                                accounts={centerAccounts}
+                                isLoading={isLoadingAccounts}
+                                onRefresh={() => loadCenterAccounts(credTarget.slug)}
+                                onMessage={setMessage}
+                            />
                         )}
                     </div>
                 </div>
@@ -570,4 +599,135 @@ export const SuperAdminScreen: React.FC = () => {
 
     if (!isLoggedIn) return <SuperAdminLogin onLogin={() => setIsLoggedIn(true)} />;
     return <SuperAdminDashboard onLogout={handleLogout} />;
+};
+
+// --- CenterAccountsManager Component ---
+const CenterAccountsManager: React.FC<{
+    slug: string;
+    accounts: any[];
+    isLoading: boolean;
+    onRefresh: () => void;
+    onMessage: (msg: string) => void;
+}> = ({ slug, accounts, isLoading, onRefresh, onMessage }) => {
+    const [editingAccount, setEditingAccount] = useState<any>(null);
+    const [editForm, setEditForm] = useState({ newId: '', newPassword: '', newRole: '' });
+    const [isSaving, setIsSaving] = useState(false);
+
+    const handleEdit = (acc: any) => {
+        setEditingAccount(acc);
+        setEditForm({ newId: acc.id, newPassword: '', newRole: acc.role });
+    };
+
+    const handleSave = async () => {
+        if (!editingAccount) return;
+        setIsSaving(true);
+        try {
+            const payload: any = { slug, accountId: editingAccount.id, accountType: editingAccount.type };
+            if (editForm.newPassword) payload.newPassword = editForm.newPassword;
+            if (editForm.newRole !== editingAccount.role) payload.newRole = editForm.newRole;
+            if (editForm.newId !== editingAccount.id) payload.newId = editForm.newId;
+
+            if (!payload.newPassword && !payload.newRole && !payload.newId) {
+                onMessage('❌ Không có thay đổi nào');
+                setIsSaving(false);
+                return;
+            }
+
+            const result = await apiCall('update_center_account', payload);
+            onMessage(`✅ ${result.message}`);
+            setEditingAccount(null);
+            onRefresh();
+        } catch (err: any) {
+            onMessage('❌ ' + err.message);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const roleOptions = [
+        { value: 'TEACHER', label: 'Giáo viên' },
+        { value: 'MANAGER', label: 'Quản lý' },
+        { value: 'ACCOUNTANT', label: 'Kế toán' },
+    ];
+
+    if (isLoading) {
+        return <div className="text-center py-8 text-gray-500">Đang tải danh sách tài khoản...</div>;
+    }
+
+    if (accounts.length === 0) {
+        return <div className="text-center py-8 text-gray-500">Trung tâm chưa có tài khoản GV/NV nào.</div>;
+    }
+
+    return (
+        <div className="space-y-3">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+                Tổng cộng <strong>{accounts.length}</strong> tài khoản GV/NV
+            </p>
+
+            {/* Editing form */}
+            {editingAccount && (
+                <div className="p-4 border-2 border-purple-300 dark:border-purple-700 rounded-lg bg-purple-50/50 dark:bg-purple-900/20 space-y-3">
+                    <h4 className="font-semibold text-sm">✏️ Sửa: {editingAccount.name} ({editingAccount.typeLabel})</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label className="block text-xs font-medium mb-1">Mã đăng nhập</label>
+                            <input type="text" value={editForm.newId}
+                                onChange={e => setEditForm({...editForm, newId: e.target.value})}
+                                className="form-input text-sm" />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium mb-1">Mật khẩu mới</label>
+                            <input type="text" value={editForm.newPassword}
+                                onChange={e => setEditForm({...editForm, newPassword: e.target.value})}
+                                className="form-input text-sm" placeholder="Để trống = giữ nguyên" />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium mb-1">Quyền</label>
+                            <select value={editForm.newRole}
+                                onChange={e => setEditForm({...editForm, newRole: e.target.value})}
+                                className="form-input text-sm">
+                                {roleOptions.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                            </select>
+                        </div>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                        <Button size="sm" variant="secondary" onClick={() => setEditingAccount(null)}>Hủy</Button>
+                        <Button size="sm" onClick={handleSave} isLoading={isSaving}>Lưu thay đổi</Button>
+                    </div>
+                </div>
+            )}
+
+            {/* Accounts list */}
+            <div className="divide-y dark:divide-slate-700">
+                {accounts.map((acc: any) => (
+                    <div key={`${acc.type}-${acc.id}`} className="py-3 flex items-center justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-medium text-sm truncate">{acc.name}</span>
+                                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                    acc.type === 'teacher' 
+                                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' 
+                                        : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                                }`}>{acc.typeLabel}</span>
+                                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                    acc.status === 'ACTIVE'
+                                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+                                        : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+                                }`}>{acc.status === 'ACTIVE' ? 'Hoạt động' : 'Ngưng'}</span>
+                            </div>
+                            <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 flex-wrap">
+                                <span>🔑 Mã: <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{acc.id}</code></span>
+                                <span>👤 Quyền: {acc.role}</span>
+                                <span>{acc.hasPassword ? '🔒 Có MK' : '🔓 Chưa có MK'}</span>
+                            </div>
+                        </div>
+                        <button onClick={() => handleEdit(acc)}
+                            className="px-3 py-1.5 text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 transition-colors whitespace-nowrap">
+                            ✏️ Sửa
+                        </button>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
 };
