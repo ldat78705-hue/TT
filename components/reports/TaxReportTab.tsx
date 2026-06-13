@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { useData } from '../../hooks/useDataContext';
 import { TransactionType } from '../../types';
 import { Button } from '../common/Button';
@@ -11,7 +10,6 @@ export const TaxReportTab: React.FC = () => {
     const { state } = useData();
     const { transactions, income, settings } = state;
     
-    // Use Vietnam Time for all references
     const vnTimeStr = getVietnamTime();
     const vnDate = new Date(vnTimeStr);
     const currentMonthStr = `${vnDate.getFullYear()}-${String(vnDate.getMonth() + 1).padStart(2, '0')}`;
@@ -26,7 +24,6 @@ export const TaxReportTab: React.FC = () => {
     const [reportType, setReportType] = useState<'detailed' | 'daily_summary' | 'monthly_summary'>('detailed');
     
     const previewRef = useRef<HTMLDivElement>(null);
-    const [printHtml, setPrintHtml] = useState<string>('');
 
     const reportData = useMemo(() => {
         let start, end;
@@ -67,7 +64,6 @@ export const TaxReportTab: React.FC = () => {
             }))
         ];
 
-        // Sort by date ascending
         combined.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
         if (reportType === 'monthly_summary') {
@@ -82,7 +78,7 @@ export const TaxReportTab: React.FC = () => {
                 const [datePart, method] = key.split('|');
                 const [y, m] = datePart.split('-');
                 return {
-                    date: `${y}-${m}-01`, // Use 1st of month for sorting/display
+                    date: `${y}-${m}-01`,
                     description: `Doanh thu tháng ${m}/${y} (${method === 'cash' ? 'Tiền mặt' : 'Chuyển khoản'})`,
                     amount
                 };
@@ -115,12 +111,34 @@ export const TaxReportTab: React.FC = () => {
     const totalAmount = reportData.reduce((sum, item) => sum + item.amount, 0);
 
     const handlePrint = () => {
-        if (previewRef.current) {
-            setPrintHtml(previewRef.current.innerHTML);
-            setTimeout(() => {
-                window.print();
-            }, 100);
-        }
+        if (!previewRef.current) return;
+        const content = previewRef.current.innerHTML;
+        const pw = window.open('', '_blank');
+        if (!pw) return;
+        pw.document.write(`<!DOCTYPE html><html><head><title>Sổ doanh thu - ${settings.name}</title>
+            <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body { font-family: "Times New Roman", Times, serif; padding: 15mm; color: black; background: white; }
+                table { border-collapse: collapse; width: 100%; table-layout: fixed; font-size: 15px; }
+                th, td { border: 1px solid black; padding: 8px; }
+                th { text-align: center; }
+                .text-center { text-align: center; }
+                .text-right { text-align: right; }
+                .font-bold { font-weight: bold; }
+                .italic { font-style: italic; }
+                .uppercase { text-transform: uppercase; }
+                img { max-height: 64px; object-fit: contain; }
+                @media print {
+                    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                    @page { size: A4 portrait; margin: 15mm; }
+                    table { page-break-inside: auto; }
+                    tr { page-break-inside: avoid; page-break-after: auto; }
+                    thead { display: table-header-group; }
+                }
+            </style>
+        </head><body>${content}</body></html>`);
+        pw.document.close();
+        setTimeout(() => pw.print(), 500);
     };
 
     const formatDate = (dateStr: string) => {
@@ -142,7 +160,7 @@ export const TaxReportTab: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 print:hidden">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                 <div className="flex flex-wrap gap-4 items-end">
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
@@ -229,7 +247,7 @@ export const TaxReportTab: React.FC = () => {
             </div>
 
             {/* Screen Preview Area */}
-            <div className="bg-white p-8 rounded-lg shadow-sm border border-slate-200 overflow-x-auto text-black print:hidden">
+            <div className="bg-white p-8 rounded-lg shadow-sm border border-slate-200 overflow-x-auto text-black">
                 <div 
                     ref={previewRef}
                     contentEditable
@@ -313,37 +331,6 @@ export const TaxReportTab: React.FC = () => {
                     </div>
                 </div>
             </div>
-
-            {/* Render Print Portal */}
-            {createPortal(
-                <div 
-                    className="print-area-portal hidden print:block bg-white text-black w-full"
-                    dangerouslySetInnerHTML={{ __html: printHtml }}
-                />, 
-                document.body
-            )}
-            
-            {/* Print Styles */}
-            <style>{`
-                @media print {
-                    body > *:not(.print-area-portal) {
-                        display: none !important;
-                    }
-                    .print-area-portal {
-                        display: block !important;
-                    }
-                    /* Ensure table rows don't break across pages if possible, but allow table to span multiple pages */
-                    table { page-break-inside:auto }
-                    tr    { page-break-inside:avoid; page-break-after:auto }
-                    thead { display:table-header-group }
-                    tfoot { display:table-footer-group }
-                    
-                    @page {
-                        size: A4 portrait;
-                        margin: 15mm;
-                    }
-                }
-            `}</style>
         </div>
     );
 };

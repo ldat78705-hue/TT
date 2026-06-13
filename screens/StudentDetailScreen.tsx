@@ -605,7 +605,50 @@ export const StudentDetailScreen: React.FC = () => {
                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
                             <h2 className="text-xl font-semibold">Sổ cái Giao dịch</h2>
                             <div className="flex gap-2">
-                                <Button variant="secondary" onClick={() => window.print()} className="print-hidden">
+                                <Button variant="secondary" onClick={() => {
+                                    const typeMap: Record<string, string> = {
+                                        INVOICE: 'Hóa đơn', PAYMENT: 'Thanh toán',
+                                        ADJUSTMENT_CREDIT: 'Ghi có', ADJUSTMENT_DEBIT: 'Phí khác'
+                                    };
+                                    const rows = sortedTransactionsWithEndingBalance.map((t, i) => `<tr>
+                                        <td style="border:1px solid #ddd;padding:6px 8px;text-align:center;font-size:12px">${i + 1}</td>
+                                        <td style="border:1px solid #ddd;padding:6px 8px;font-size:12px">${formatVietnamDate(t.date)}</td>
+                                        <td style="border:1px solid #ddd;padding:6px 8px;font-size:12px">${typeMap[t.type] || t.type}</td>
+                                        <td style="border:1px solid #ddd;padding:6px 8px;font-size:12px">${t.description}</td>
+                                        <td style="border:1px solid #ddd;padding:6px 8px;text-align:right;font-size:12px;color:${t.amount >= 0 ? '#16a34a' : '#dc2626'}">${t.amount.toLocaleString('vi-VN')} ₫</td>
+                                        <td style="border:1px solid #ddd;padding:6px 8px;text-align:right;font-size:12px;font-weight:600;color:${t.endingBalance < 0 ? '#dc2626' : '#111'}">${t.endingBalance.toLocaleString('vi-VN')} ₫</td>
+                                    </tr>`).join('');
+                                    const pw = window.open('', '_blank');
+                                    if (!pw) return;
+                                    pw.document.write(`<!DOCTYPE html><html><head><title>Sổ cái - ${student.name}</title>
+                                        <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',sans-serif;padding:15mm}
+                                        table{border-collapse:collapse;width:100%}th{background:#f3f4f6;font-weight:600}
+                                        @media print{body{-webkit-print-color-adjust:exact}}</style>
+                                    </head><body>
+                                        <h2 style="text-align:center;margin-bottom:4px">${state.settings.name}</h2>
+                                        <h3 style="text-align:center;margin-bottom:12px;color:#666">SỔ CÁI GIAO DỊCH</h3>
+                                        <div style="display:flex;justify-content:space-between;margin-bottom:10px;font-size:13px">
+                                            <span><b>Học viên:</b> ${student.name} (${student.id})</span>
+                                            <span><b>Số dư:</b> <span style="color:${student.balance >= 0 ? '#16a34a' : '#dc2626'};font-weight:700">${student.balance.toLocaleString('vi-VN')} ₫</span></span>
+                                        </div>
+                                        <table>
+                                            <thead><tr>
+                                                <th style="border:1px solid #ddd;padding:8px;width:35px">STT</th>
+                                                <th style="border:1px solid #ddd;padding:8px;width:100px">Ngày</th>
+                                                <th style="border:1px solid #ddd;padding:8px;width:85px">Loại</th>
+                                                <th style="border:1px solid #ddd;padding:8px">Mô tả</th>
+                                                <th style="border:1px solid #ddd;padding:8px;width:110px;text-align:right">Số tiền</th>
+                                                <th style="border:1px solid #ddd;padding:8px;width:110px;text-align:right">Số dư</th>
+                                            </tr></thead>
+                                            <tbody>${rows}</tbody>
+                                        </table>
+                                        <div style="text-align:right;margin-top:10px;font-size:12px;color:#666">
+                                            Tổng: ${sortedTransactionsWithEndingBalance.length} giao dịch | Ngày in: ${new Date().toLocaleDateString('vi-VN')}
+                                        </div>
+                                    </body></html>`);
+                                    pw.document.close();
+                                    setTimeout(() => pw.print(), 500);
+                                }} className="print-hidden">
                                     {ICONS.print} <span className="ml-1">In sổ</span>
                                 </Button>
                                 {canManage && (

@@ -365,7 +365,68 @@ export const AttendanceScreen: React.FC = () => {
                             )}
                             <Button
                                 variant="secondary"
-                                onClick={() => window.print()}
+                                onClick={() => {
+                                    const statusLabel: Record<string, string> = {
+                                        PRESENT: 'Có mặt', ABSENT: 'Có phép', UNEXCUSED_ABSENT: 'Không phép',
+                                        LATE: 'Trễ', UNMARKED: 'Chưa ĐD'
+                                    };
+                                    const rows = classStudents.map((s, i) => {
+                                        const data = attendanceData.get(s.id);
+                                        const status = data?.status || AttendanceStatus.UNMARKED;
+                                        const note = data?.note || '';
+                                        return `<tr>
+                                            <td style="border:1px solid #ddd;padding:6px 10px;text-align:center">${i + 1}</td>
+                                            <td style="border:1px solid #ddd;padding:6px 10px">${s.name}</td>
+                                            <td style="border:1px solid #ddd;padding:6px 10px;font-family:monospace">${s.id}</td>
+                                            <td style="border:1px solid #ddd;padding:6px 10px;text-align:center">${statusLabel[status] || status}</td>
+                                            <td style="border:1px solid #ddd;padding:6px 10px;text-align:center">${attendanceCounts.get(s.id) || 0}</td>
+                                            <td style="border:1px solid #ddd;padding:6px 10px">${note}</td>
+                                        </tr>`;
+                                    }).join('');
+                                    const summary = classStudents.reduce((acc, s) => {
+                                        const st = attendanceData.get(s.id)?.status || AttendanceStatus.UNMARKED;
+                                        acc[st] = (acc[st] || 0) + 1;
+                                        return acc;
+                                    }, {} as Record<string, number>);
+                                    const pw = window.open('', '_blank');
+                                    if (!pw) return;
+                                    pw.document.write(`<!DOCTYPE html><html><head><title>Điểm danh - ${cls?.name} - ${date}</title>
+                                        <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',sans-serif;padding:15mm}
+                                        table{border-collapse:collapse;width:100%}th{background:#f3f4f6;font-weight:600}
+                                        @media print{body{-webkit-print-color-adjust:exact}}</style>
+                                    </head><body>
+                                        <h2 style="text-align:center;margin-bottom:4px">${state.settings.name}</h2>
+                                        <h3 style="text-align:center;margin-bottom:12px;color:#666">BẢNG ĐIỂM DANH</h3>
+                                        <div style="display:flex;justify-content:space-between;margin-bottom:10px;font-size:13px">
+                                            <span><b>Lớp:</b> ${cls?.name}</span>
+                                            <span><b>Ngày:</b> ${date}</span>
+                                            <span><b>Sĩ số:</b> ${classStudents.length}</span>
+                                        </div>
+                                        <table>
+                                            <thead><tr>
+                                                <th style="border:1px solid #ddd;padding:8px;width:40px">STT</th>
+                                                <th style="border:1px solid #ddd;padding:8px">Họ và tên</th>
+                                                <th style="border:1px solid #ddd;padding:8px;width:70px">Mã HV</th>
+                                                <th style="border:1px solid #ddd;padding:8px;width:90px">Trạng thái</th>
+                                                <th style="border:1px solid #ddd;padding:8px;width:60px">Số buổi</th>
+                                                <th style="border:1px solid #ddd;padding:8px">Ghi chú</th>
+                                            </tr></thead>
+                                            <tbody>${rows}</tbody>
+                                        </table>
+                                        <div style="margin-top:12px;font-size:12px;color:#666">
+                                            Có mặt: ${summary[AttendanceStatus.PRESENT] || 0} | 
+                                            Có phép: ${summary[AttendanceStatus.ABSENT] || 0} | 
+                                            Không phép: ${summary[AttendanceStatus.UNEXCUSED_ABSENT] || 0} | 
+                                            Trễ: ${summary[AttendanceStatus.LATE] || 0}
+                                        </div>
+                                        <div style="display:flex;justify-content:space-between;margin-top:30px;text-align:center;font-size:13px">
+                                            <div><b>Giáo viên</b><div style="height:50px"></div><div style="border-top:1px solid #999;padding-top:4px">Ký tên</div></div>
+                                            <div><b>Quản lý</b><div style="height:50px"></div><div style="border-top:1px solid #999;padding-top:4px">Ký tên</div></div>
+                                        </div>
+                                    </body></html>`);
+                                    pw.document.close();
+                                    setTimeout(() => pw.print(), 500);
+                                }}
                                 className="print-hidden"
                                 title="In bảng điểm danh"
                             >
