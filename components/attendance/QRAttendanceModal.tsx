@@ -3,7 +3,7 @@ import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { useData } from '../../hooks/useDataContext';
 import { useToast } from '../../hooks/useToast';
-import { Class, Student, AttendanceStatus, PersonStatus } from '../../types';
+import { Class, Student, AttendanceRecord, AttendanceStatus, PersonStatus } from '../../types';
 import { getVietnamTime } from '../../utils/date';
 
 interface QRAttendanceModalProps {
@@ -106,7 +106,7 @@ const PrintQRTab: React.FC<{ classes: Class[]; students: Student[] }> = ({ class
 
 // === Tab 2: Quét QR bằng camera ===
 const ScanQRTab: React.FC<{ classes: Class[]; students: Student[] }> = ({ classes, students }) => {
-    const { state, markAttendance } = useData();
+    const { updateAttendance } = useData();
     const { toast } = useToast();
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -163,19 +163,21 @@ const ScanQRTab: React.FC<{ classes: Class[]; students: Student[] }> = ({ classe
         }
 
         try {
-            await markAttendance({
+            const record: AttendanceRecord = {
+                id: `${selectedClassId}_${studentId}_${selectedDate}`,
                 studentId,
                 classId: selectedClassId,
                 date: selectedDate,
                 status: AttendanceStatus.PRESENT,
-            });
+            };
+            await updateAttendance([record]);
             setScannedIds(prev => new Set(prev).add(studentId));
             setLastScanned(studentId);
             toast.success(`✅ ${student.name} - Có mặt`);
         } catch {
             toast.error(`Lỗi điểm danh cho ${student.name}`);
         }
-    }, [selectedClassId, selectedDate, scannedIds, students, selectedClass, markAttendance, toast]);
+    }, [selectedClassId, selectedDate, scannedIds, students, selectedClass, updateAttendance, toast]);
 
     const startScanning = useCallback(async () => {
         try {
