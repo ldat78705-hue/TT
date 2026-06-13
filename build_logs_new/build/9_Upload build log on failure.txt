@@ -1,0 +1,25 @@
+﻿2026-06-13T18:12:23.2646419Z ##[group]Run actions/upload-artifact@v4
+2026-06-13T18:12:23.2646744Z with:
+2026-06-13T18:12:23.2646951Z   name: build-log
+2026-06-13T18:12:23.2647188Z   path: android/build_output.log
+2026-06-13T18:12:23.2647457Z   if-no-files-found: warn
+2026-06-13T18:12:23.2647703Z   compression-level: 6
+2026-06-13T18:12:23.2647936Z   overwrite: false
+2026-06-13T18:12:23.2648163Z   include-hidden-files: false
+2026-06-13T18:12:23.2648864Z env:
+2026-06-13T18:12:23.2649183Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.19-10/x64
+2026-06-13T18:12:23.2649685Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.19-10/x64
+2026-06-13T18:12:23.2650103Z   ANDROID_HOME: /usr/local/lib/android/sdk
+2026-06-13T18:12:23.2650410Z   ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+2026-06-13T18:12:23.2650699Z ##[endgroup]
+2026-06-13T18:12:23.5073103Z With the provided path, there will be 1 file uploaded
+2026-06-13T18:12:23.5077681Z Artifact name is valid!
+2026-06-13T18:12:23.5079168Z Root directory input is valid!
+2026-06-13T18:12:23.7096016Z Beginning upload of artifact content to blob storage
+2026-06-13T18:12:23.7929596Z Uploaded bytes 3704
+2026-06-13T18:12:23.8112983Z Finished uploading artifact content to blob storage!
+2026-06-13T18:12:23.8129747Z SHA256 digest of uploaded artifact zip is 9f4730f854d91f7d850f5f01c702963d49cf158b3a8a9a3b75ad054f56b25d04
+2026-06-13T18:12:23.8130347Z Finalizing artifact upload
+2026-06-13T18:12:23.9660169Z Artifact build-log.zip successfully finalized. Artifact ID 7613237438
+2026-06-13T18:12:23.9661454Z Artifact build-log has been successfully uploaded! Final size is 3704 bytes. Artifact ID is 7613237438
+2026-06-13T18:12:23.9668740Z Artifact download URL: https://github.com/ldat78705-hue/TT/actions/runs/27474834804/artifacts/7613237438

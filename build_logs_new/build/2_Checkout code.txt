@@ -1,0 +1,88 @@
+﻿2026-06-13T18:08:27.0047967Z ##[group]Run actions/checkout@v4
+2026-06-13T18:08:27.0050158Z with:
+2026-06-13T18:08:27.0051220Z   repository: ldat78705-hue/TT
+2026-06-13T18:08:27.0061108Z   token: ***
+2026-06-13T18:08:27.0062272Z   ssh-strict: true
+2026-06-13T18:08:27.0063326Z   ssh-user: git
+2026-06-13T18:08:27.0064405Z   persist-credentials: true
+2026-06-13T18:08:27.0065569Z   clean: true
+2026-06-13T18:08:27.0066643Z   sparse-checkout-cone-mode: true
+2026-06-13T18:08:27.0067953Z   fetch-depth: 1
+2026-06-13T18:08:27.0069146Z   fetch-tags: false
+2026-06-13T18:08:27.0070174Z   show-progress: true
+2026-06-13T18:08:27.0071295Z   lfs: false
+2026-06-13T18:08:27.0072320Z   submodules: false
+2026-06-13T18:08:27.0073435Z   set-safe-directory: true
+2026-06-13T18:08:27.0074908Z ##[endgroup]
+2026-06-13T18:08:27.1249817Z Syncing repository: ldat78705-hue/TT
+2026-06-13T18:08:27.1252868Z ##[group]Getting Git version info
+2026-06-13T18:08:27.1254417Z Working directory is '/home/runner/work/TT/TT'
+2026-06-13T18:08:27.1256455Z [command]/usr/bin/git version
+2026-06-13T18:08:27.1295507Z git version 2.54.0
+2026-06-13T18:08:27.1320670Z ##[endgroup]
+2026-06-13T18:08:27.1335754Z Temporarily overriding HOME='/home/runner/work/_temp/9c3e5db2-f487-44cb-a7a1-24f3eb75b904' before making global git config changes
+2026-06-13T18:08:27.1339799Z Adding repository directory to the temporary git global config as a safe directory
+2026-06-13T18:08:27.1349293Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/TT/TT
+2026-06-13T18:08:27.1391893Z Deleting the contents of '/home/runner/work/TT/TT'
+2026-06-13T18:08:27.1396542Z ##[group]Initializing the repository
+2026-06-13T18:08:27.1399803Z [command]/usr/bin/git init /home/runner/work/TT/TT
+2026-06-13T18:08:27.1476624Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-06-13T18:08:27.1479447Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-06-13T18:08:27.1481780Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-06-13T18:08:27.1483586Z hint: call:
+2026-06-13T18:08:27.1484625Z hint:
+2026-06-13T18:08:27.1485843Z hint: 	git config --global init.defaultBranch <name>
+2026-06-13T18:08:27.1487297Z hint:
+2026-06-13T18:08:27.1488811Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-06-13T18:08:27.1491215Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-06-13T18:08:27.1492889Z hint:
+2026-06-13T18:08:27.1493961Z hint: 	git branch -m <name>
+2026-06-13T18:08:27.1495104Z hint:
+2026-06-13T18:08:27.1496541Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-06-13T18:08:27.1498987Z Initialized empty Git repository in /home/runner/work/TT/TT/.git/
+2026-06-13T18:08:27.1502719Z [command]/usr/bin/git remote add origin https://github.com/ldat78705-hue/TT
+2026-06-13T18:08:27.1525769Z ##[endgroup]
+2026-06-13T18:08:27.1528725Z ##[group]Disabling automatic garbage collection
+2026-06-13T18:08:27.1531143Z [command]/usr/bin/git config --local gc.auto 0
+2026-06-13T18:08:27.1561886Z ##[endgroup]
+2026-06-13T18:08:27.1564145Z ##[group]Setting up auth
+2026-06-13T18:08:27.1569966Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-06-13T18:08:27.1604764Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-06-13T18:08:27.1931473Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-06-13T18:08:27.1962314Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-06-13T18:08:27.2195846Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-06-13T18:08:27.2229285Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-06-13T18:08:27.2465412Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-06-13T18:08:27.2501348Z ##[endgroup]
+2026-06-13T18:08:27.2509386Z ##[group]Fetching the repository
+2026-06-13T18:08:27.2511992Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +7622902bb8580bedde13e2d4c79990e6c8ce7d42:refs/tags/v1.6.0
+2026-06-13T18:08:27.9754827Z From https://github.com/ldat78705-hue/TT
+2026-06-13T18:08:27.9757934Z  * [new ref]         7622902bb8580bedde13e2d4c79990e6c8ce7d42 -> v1.6.0
+2026-06-13T18:08:27.9788168Z ##[endgroup]
+2026-06-13T18:08:27.9790699Z ##[group]Determining the checkout info
+2026-06-13T18:08:27.9793143Z ##[endgroup]
+2026-06-13T18:08:27.9796197Z [command]/usr/bin/git sparse-checkout disable
+2026-06-13T18:08:27.9838292Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-06-13T18:08:27.9866562Z ##[group]Checking out the ref
+2026-06-13T18:08:27.9869770Z [command]/usr/bin/git checkout --progress --force refs/tags/v1.6.0
+2026-06-13T18:08:28.0250204Z Note: switching to 'refs/tags/v1.6.0'.
+2026-06-13T18:08:28.0251122Z 
+2026-06-13T18:08:28.0251840Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-06-13T18:08:28.0253605Z changes and commit them, and you can discard any commits you make in this
+2026-06-13T18:08:28.0255361Z state without impacting any branches by switching back to a branch.
+2026-06-13T18:08:28.0256390Z 
+2026-06-13T18:08:28.0257131Z If you want to create a new branch to retain commits you create, you may
+2026-06-13T18:08:28.0259008Z do so (now or later) by using -c with the switch command. Example:
+2026-06-13T18:08:28.0260730Z 
+2026-06-13T18:08:28.0261164Z   git switch -c <new-branch-name>
+2026-06-13T18:08:28.0261840Z 
+2026-06-13T18:08:28.0262242Z Or undo this operation with:
+2026-06-13T18:08:28.0262871Z 
+2026-06-13T18:08:28.0263232Z   git switch -
+2026-06-13T18:08:28.0263761Z 
+2026-06-13T18:08:28.0264520Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-06-13T18:08:28.0265652Z 
+2026-06-13T18:08:28.0267277Z HEAD is now at 7622902 feat(android): Add Income/Expense CRUD in FinanceScreen, fix ProgressReport API payload
+2026-06-13T18:08:28.0271645Z ##[endgroup]
+2026-06-13T18:08:28.0305657Z [command]/usr/bin/git log -1 --format=%H
+2026-06-13T18:08:28.0329481Z 7622902bb8580bedde13e2d4c79990e6c8ce7d42

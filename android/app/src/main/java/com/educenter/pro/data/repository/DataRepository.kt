@@ -439,24 +439,6 @@ class DataRepository @Inject constructor(
         } catch (e: Exception) { e.printStackTrace(); throw e }
     }
 
-    // ============ INCOME / EXPENSE ============
-
-    suspend fun addIncome(description: String, amount: Double, category: String, date: String, paymentMethod: String = "transfer") = withContext(Dispatchers.IO) {
-        try {
-            val payload = mapOf("description" to description, "amount" to amount, "category" to category, "date" to date, "paymentMethod" to paymentMethod)
-            val updatedData = apiService.executeOperation(OperationPayload("addIncome", payload))
-            saveAndCache(updatedData)
-        } catch (e: Exception) { e.printStackTrace(); throw e }
-    }
-
-    suspend fun addExpense(description: String, amount: Double, category: String, date: String) = withContext(Dispatchers.IO) {
-        try {
-            val payload = mapOf("description" to description, "amount" to amount, "category" to category, "date" to date)
-            val updatedData = apiService.executeOperation(OperationPayload("addExpense", payload))
-            saveAndCache(updatedData)
-        } catch (e: Exception) { e.printStackTrace(); throw e }
-    }
-
     // ============ OFFLINE SYNC ============
 
     suspend fun refreshPendingCount() = withContext(Dispatchers.IO) {
