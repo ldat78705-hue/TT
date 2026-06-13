@@ -9,6 +9,8 @@ import { Link } from 'react-router-dom';
 import { AbsentStudentsModal } from '../components/attendance/AbsentStudentsModal';
 import { QRAttendanceModal } from '../components/attendance/QRAttendanceModal';
 import { Button } from '../components/common/Button';
+import { useAuth } from '../hooks/useAuth';
+import { UserRole, Teacher } from '../types';
 
 const dayOfWeekToNumber: Record<ClassSchedule['dayOfWeek'], number> = {
     'Sunday': 0,
@@ -43,10 +45,21 @@ import { getVietnamTime } from '../utils/date';
 
 export const AttendanceHubScreen: React.FC = () => {
     const { state } = useData();
+    const { user, role } = useAuth();
     const [displayMonth, setDisplayMonth] = useState(() => new Date(getVietnamTime()));
     const [selectedDate, setSelectedDate] = useState(() => new Date(getVietnamTime()));
     const [showAbsentModal, setShowAbsentModal] = useState(false);
     const [showQRModal, setShowQRModal] = useState(false);
+
+    // Filter classes for teacher role
+    const relevantClasses = useMemo(() => {
+        if (role === UserRole.TEACHER) {
+            const teacherId = (user as Teacher)?.id;
+            if (!teacherId) return [];
+            return state.classes.filter(cls => (cls.teacherIds || []).includes(teacherId));
+        }
+        return state.classes;
+    }, [state.classes, user, role]);
 
     const normalizedSelectedDate = useMemo(() => {
         const d = new Date(selectedDate);
@@ -78,7 +91,7 @@ export const AttendanceHubScreen: React.FC = () => {
             const [classId, dateStr] = key.split('|');
             const recordDate = new Date(dateStr + 'T00:00:00'); // Ensure local timezone
             if (recordDate >= startOfMonth && recordDate <= endOfMonth) {
-                const cls = state.classes.find(c => c.id === classId);
+                const cls = relevantClasses.find(c => c.id === classId);
                 if (cls) {
                     const scheduleForDay = cls.schedule.find(s => dayOfWeekToNumber[s.dayOfWeek] === recordDate.getDay());
                     
@@ -114,7 +127,7 @@ export const AttendanceHubScreen: React.FC = () => {
             const dayOfWeek = currentDate.getDay();
             const dateString = formatDateString(currentDate);
 
-            state.classes.forEach(cls => {
+            relevantClasses.forEach(cls => {
                 cls.schedule?.forEach(s => {
                     if (dayOfWeekToNumber[s.dayOfWeek] === dayOfWeek) {
                         const key = `${cls.id}|${dateString}`;
@@ -138,7 +151,7 @@ export const AttendanceHubScreen: React.FC = () => {
         }
         
         return Array.from(eventsMap.values());
-    }, [state.classes, state.attendance, displayMonth]);
+    }, [relevantClasses, state.attendance, displayMonth]);
         
     const eventsForSelectedDay = useMemo(() => {
         const selectedDateString = formatDateString(normalizedSelectedDate);
