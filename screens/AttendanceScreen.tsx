@@ -259,10 +259,10 @@ export const AttendanceScreen: React.FC = () => {
                            <div>
                                <p className="mb-2 font-semibold">Thao tác nhanh:</p>
                                <div className="flex gap-2 w-full overflow-x-auto pb-1">
-                                    <Button size="sm" variant="secondary" onClick={() => handleBulkChange(AttendanceStatus.PRESENT)} disabled={!canTakeAttendance} className="whitespace-nowrap">Tất cả có mặt</Button>
-                                    <Button size="sm" onClick={() => handleBulkChange(AttendanceStatus.LATE)} disabled={!canTakeAttendance} className="bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-400 text-white whitespace-nowrap">Tất cả đi muộn</Button>
-                                    <Button size="sm" variant="danger" onClick={() => handleBulkChange(AttendanceStatus.ABSENT)} disabled={!canTakeAttendance} className="whitespace-nowrap bg-teal-500 hover:bg-teal-600">Tất cả có phép</Button>
-                                    <Button size="sm" variant="danger" onClick={() => handleBulkChange(AttendanceStatus.UNEXCUSED_ABSENT)} disabled={!canTakeAttendance} className="whitespace-nowrap">Tất cả không phép</Button>
+                                     <Button size="sm" onClick={() => handleBulkChange(AttendanceStatus.PRESENT)} disabled={!canTakeAttendance} className="whitespace-nowrap !bg-green-600 hover:!bg-green-700 !text-white !ring-green-400 !font-bold !shadow-md !shadow-green-500/20">✓ Tất cả có mặt</Button>
+                                     <Button size="sm" onClick={() => handleBulkChange(AttendanceStatus.LATE)} disabled={!canTakeAttendance} className="bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-400 text-white whitespace-nowrap">Tất cả đi muộn</Button>
+                                     <Button size="sm" variant="danger" onClick={() => handleBulkChange(AttendanceStatus.ABSENT)} disabled={!canTakeAttendance} className="whitespace-nowrap bg-teal-500 hover:bg-teal-600">Tất cả có phép</Button>
+                                     <Button size="sm" variant="danger" onClick={() => handleBulkChange(AttendanceStatus.UNEXCUSED_ABSENT)} disabled={!canTakeAttendance} className="whitespace-nowrap">Tất cả không phép</Button>
                                </div>
                            </div>
                            <div>
