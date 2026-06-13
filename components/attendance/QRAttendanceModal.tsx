@@ -3,7 +3,7 @@ import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { useData } from '../../hooks/useDataContext';
 import { useToast } from '../../hooks/useToast';
-import { Class, Student, AttendanceRecord, AttendanceStatus, PersonStatus } from '../../types';
+import { AttendanceRecord, AttendanceStatus, PersonStatus } from '../../types';
 import { getVietnamTime } from '../../utils/date';
 
 interface QRAttendanceModalProps {
