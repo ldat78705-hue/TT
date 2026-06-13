@@ -346,7 +346,7 @@ private fun ScanningView(
             }
 
             // Last scanned notification
-            AnimatedVisibility(
+            androidx.compose.animation.AnimatedVisibility(
                 visible = uiState.lastScannedName != null,
                 enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
                 exit = fadeOut(),
