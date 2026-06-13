@@ -272,7 +272,7 @@ const AppRoutes: React.FC = () => {
                         <AppLayout />
                     </ProtectedRoute>
                 }>
-                    <Route path={ROUTES.DASHBOARD} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.TEACHER, UserRole.VIEWER]}><DashboardScreen /></ProtectedRoute>} />
+                    <Route path={ROUTES.DASHBOARD} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT, UserRole.TEACHER, UserRole.VIEWER]}><DashboardScreen /></ProtectedRoute>} />
                     <Route path={ROUTES.CLASSES} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.TEACHER, UserRole.VIEWER]}><ClassesScreen /></ProtectedRoute>} />
                     <Route path={ROUTES.CLASS_DETAIL} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.TEACHER, UserRole.VIEWER]}><ClassDetailScreen /></ProtectedRoute>} />
                     <Route path={ROUTES.ATTENDANCE_DETAIL} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.TEACHER, UserRole.VIEWER]}><AttendanceScreen /></ProtectedRoute>} />
@@ -303,7 +303,7 @@ const AppRoutes: React.FC = () => {
                     <Route path={ROUTES.PARENT_FINANCE} element={<ParentFinanceScreen />} />
                 </Route>
 
-                <Route path="*" element={<Navigate to={isAuthenticated ? (role === UserRole.PARENT ? ROUTES.PARENT_DASHBOARD : (role === UserRole.ACCOUNTANT ? ROUTES.FINANCE : ROUTES.DASHBOARD)) : ROUTES.LOGIN} replace />} />
+                <Route path="*" element={<Navigate to={isAuthenticated ? (role === UserRole.PARENT ? ROUTES.PARENT_DASHBOARD : ROUTES.DASHBOARD) : ROUTES.LOGIN} replace />} />
             </Routes>
         </>
     );

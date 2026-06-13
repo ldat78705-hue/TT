@@ -33,6 +33,7 @@ const managerNavLinks = [
 ];
 
 const accountantNavLinks = [
+    { to: ROUTES.DASHBOARD, icon: ICONS.dashboard, label: 'Bảng điều khiển' },
     { to: ROUTES.STUDENTS, icon: ICONS.students, label: 'Học viên' },
     { to: ROUTES.FINANCE, icon: ICONS.finance, label: 'Tài chính' },
     { to: ROUTES.REPORTS, icon: ICONS.reports, label: 'Báo cáo' },
