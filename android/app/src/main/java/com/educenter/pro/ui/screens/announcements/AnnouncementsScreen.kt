@@ -1,4 +1,4 @@
-﻿@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.educenter.pro.ui.screens.announcements
 
 import androidx.compose.foundation.layout.*
@@ -124,6 +124,8 @@ fun AnnouncementsScreen(
         if (showAddDialog) {
             var title by remember { mutableStateOf("") }
             var content by remember { mutableStateOf("") }
+            var selectedTarget by remember { mutableStateOf("ALL") }
+            val targetOptions = listOf("ALL" to "Tất cả", "TEACHERS" to "Giáo viên", "STUDENTS" to "Học viên")
 
             AlertDialog(
                 onDismissRequest = { showAddDialog = false },
@@ -139,16 +141,28 @@ fun AnnouncementsScreen(
                         OutlinedTextField(
                             value = content, onValueChange = { content = it },
                             label = { Text("Nội dung *") },
-                            modifier = Modifier.fillMaxWidth().height(150.dp),
-                            maxLines = 6
+                            modifier = Modifier.fillMaxWidth().height(120.dp),
+                            maxLines = 5
                         )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text("Đối tượng nhận:", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            targetOptions.forEach { (key, label) ->
+                                FilterChip(
+                                    selected = selectedTarget == key,
+                                    onClick = { selectedTarget = key },
+                                    label = { Text(label, fontSize = 13.sp) }
+                                )
+                            }
+                        }
                     }
                 },
                 confirmButton = {
                     Button(
                         onClick = {
                             if (title.isNotBlank() && content.isNotBlank()) {
-                                viewModel.addAnnouncement(title, content, "ALL")
+                                viewModel.addAnnouncement(title, content, selectedTarget)
                                 showAddDialog = false
                             }
                         }

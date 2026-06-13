@@ -1,4 +1,4 @@
-﻿@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.educenter.pro.ui.screens.teachers
 
 import androidx.compose.foundation.background
@@ -33,6 +33,8 @@ fun TeachersScreen(
     viewModel: TeachersViewModel = hiltViewModel()
 ) {
     val teachers by viewModel.teachers.collectAsState()
+    val currentUserRole by viewModel.currentUserRole.collectAsState()
+    val canManage = currentUserRole == com.educenter.pro.data.model.UserRole.ADMIN || currentUserRole == com.educenter.pro.data.model.UserRole.MANAGER
     var showAddDialog by remember { mutableStateOf(false) }
     var selectedForEdit by remember { mutableStateOf<Teacher?>(null) }
     var teacherToDelete by remember { mutableStateOf<Teacher?>(null) }
@@ -41,11 +43,13 @@ fun TeachersScreen(
     Scaffold(
         topBar = { TopAppBar(title = { Text("Giáo viên") }) },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showAddDialog = true },
-                containerColor = Color(0xFF3B82F6)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Thêm", tint = Color.White)
+            if (canManage) {
+                FloatingActionButton(
+                    onClick = { showAddDialog = true },
+                    containerColor = Color(0xFF3B82F6)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Thêm", tint = Color.White)
+                }
             }
         }
     ) { padding ->
@@ -101,12 +105,14 @@ fun TeachersScreen(
                                 Text("$salaryLabel: ${fmt.format(teacher.rate)}", fontSize = 14.sp, color = Color(0xFF10B981), fontWeight = FontWeight.Medium)
                             }
                         }
-                        Column {
-                            IconButton(onClick = { selectedForEdit = teacher }, modifier = Modifier.size(32.dp)) {
-                                Icon(Icons.Default.Edit, contentDescription = "Sửa", tint = Color(0xFF3B82F6), modifier = Modifier.size(18.dp))
-                            }
-                            IconButton(onClick = { teacherToDelete = teacher }, modifier = Modifier.size(32.dp)) {
-                                Icon(Icons.Default.Delete, contentDescription = "Xóa", tint = Color(0xFFEF4444), modifier = Modifier.size(18.dp))
+                        if (canManage) {
+                            Column {
+                                IconButton(onClick = { selectedForEdit = teacher }, modifier = Modifier.size(32.dp)) {
+                                    Icon(Icons.Default.Edit, contentDescription = "Sửa", tint = Color(0xFF3B82F6), modifier = Modifier.size(18.dp))
+                                }
+                                IconButton(onClick = { teacherToDelete = teacher }, modifier = Modifier.size(32.dp)) {
+                                    Icon(Icons.Default.Delete, contentDescription = "Xóa", tint = Color(0xFFEF4444), modifier = Modifier.size(18.dp))
+                                }
                             }
                         }
                     }

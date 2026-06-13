@@ -1,4 +1,4 @@
-﻿@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.educenter.pro.ui.screens.classes
 
 import androidx.activity.compose.BackHandler
@@ -37,6 +37,8 @@ fun ClassesScreen(
     val availableStudents by viewModel.availableStudentsForClass.collectAsState()
     val teacherNames by viewModel.selectedClassTeacherNames.collectAsState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
+    val currentUserRole by viewModel.currentUserRole.collectAsState()
+    val canManage = currentUserRole == com.educenter.pro.data.model.UserRole.ADMIN || currentUserRole == com.educenter.pro.data.model.UserRole.MANAGER
 
     var showAddClassDialog by remember { mutableStateOf(false) }
     var showEditClassDialog by remember { mutableStateOf(false) }
@@ -64,11 +66,13 @@ fun ClassesScreen(
                         }
                     },
                     actions = {
-                        IconButton(onClick = { showEditClassDialog = true }) {
-                            Icon(Icons.Default.Edit, contentDescription = "Sửa lớp", tint = Color(0xFF667EEA))
-                        }
-                        IconButton(onClick = { showAddStudentDialog = true }) {
-                            Icon(Icons.Default.PersonAdd, contentDescription = "Thêm học viên")
+                        if (canManage) {
+                            IconButton(onClick = { showEditClassDialog = true }) {
+                                Icon(Icons.Default.Edit, contentDescription = "Sửa lớp", tint = Color(0xFF667EEA))
+                            }
+                            IconButton(onClick = { showAddStudentDialog = true }) {
+                                Icon(Icons.Default.PersonAdd, contentDescription = "Thêm học viên")
+                            }
                         }
                     }
                 )
@@ -142,8 +146,10 @@ fun ClassesScreen(
                                     Spacer(modifier = Modifier.height(2.dp))
                                     Text(student.phone, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
-                                IconButton(onClick = { studentToRemove = student }) {
-                                    Icon(Icons.Default.RemoveCircle, contentDescription = "Xóa khỏi lớp", tint = Color(0xFFEF4444))
+                                if (canManage) {
+                                    IconButton(onClick = { studentToRemove = student }) {
+                                        Icon(Icons.Default.RemoveCircle, contentDescription = "Xóa khỏi lớp", tint = Color(0xFFEF4444))
+                                    }
                                 }
                             }
                         }
@@ -218,8 +224,10 @@ fun ClassesScreen(
     } else {
         Scaffold(
             floatingActionButton = {
-                FloatingActionButton(onClick = { showAddClassDialog = true }) {
-                    Icon(Icons.Default.Add, contentDescription = "Thêm Lớp")
+                if (canManage) {
+                    FloatingActionButton(onClick = { showAddClassDialog = true }) {
+                        Icon(Icons.Default.Add, contentDescription = "Thêm Lớp")
+                    }
                 }
             }
         ) { padding ->

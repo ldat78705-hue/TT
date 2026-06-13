@@ -302,13 +302,13 @@ class DataRepository @Inject constructor(
 
     // ============ ANNOUNCEMENTS ============
 
-    suspend fun addAnnouncement(title: String, content: String, createdBy: String) = withContext(Dispatchers.IO) {
+    suspend fun addAnnouncement(title: String, content: String, createdBy: String, targetAudience: String = "ALL") = withContext(Dispatchers.IO) {
         try {
             val payload = mapOf(
                 "title" to title,
                 "content" to content,
                 "createdBy" to createdBy,
-                "targetAudience" to "ALL"
+                "targetAudience" to targetAudience
             )
             val updatedData = apiService.executeOperation(OperationPayload("addAnnouncement", payload))
             saveAndCache(updatedData)

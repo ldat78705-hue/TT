@@ -28,6 +28,8 @@ class ClassesViewModel @Inject constructor(
     private val _selectedClass = MutableStateFlow<ClassModel?>(null)
     val selectedClass: StateFlow<ClassModel?> = _selectedClass.asStateFlow()
 
+    val currentUserRole = dataRepository.currentUserRole
+
     init {
         viewModelScope.launch {
             dataRepository.appData.collect { appData ->

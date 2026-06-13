@@ -1,13 +1,14 @@
 package com.educenter.pro.ui.navigation
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Class
-import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -16,6 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -25,14 +28,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Checklist
-import androidx.compose.material.icons.filled.MoreHoriz
-import androidx.compose.material.icons.filled.Assessment
-import androidx.compose.material.icons.filled.Payments
-import androidx.compose.material.icons.filled.Campaign
 import com.educenter.pro.ui.screens.dashboard.DashboardScreen
 import com.educenter.pro.ui.screens.login.LoginScreen
 import com.educenter.pro.ui.screens.splash.SplashScreen
@@ -46,11 +41,12 @@ import com.educenter.pro.ui.screens.finance.FinanceScreen
 import com.educenter.pro.ui.screens.announcements.AnnouncementsScreen
 import com.educenter.pro.ui.screens.qrscanner.QRScannerScreen
 import com.educenter.pro.ui.screens.staff.StaffScreen
+import com.educenter.pro.data.model.UserRole
 
 import androidx.compose.runtime.collectAsState
 import androidx.hilt.navigation.compose.hiltViewModel
 
-sealed class Screen(val route: String, val title: String? = null, val icon: androidx.compose.ui.graphics.vector.ImageVector? = null) {
+sealed class Screen(val route: String, val title: String? = null, val icon: ImageVector? = null) {
     object Splash : Screen("splash")
     object Login : Screen("login")
     object Home : Screen("home", "Trang chủ", Icons.Filled.Home)
@@ -68,8 +64,8 @@ sealed class Screen(val route: String, val title: String? = null, val icon: andr
     object More : Screen("more", "Thêm", Icons.Filled.MoreHoriz)
 }
 
-// Bottom nav: 5 items max for good UX
-val bottomNavItems = listOf(Screen.Home, Screen.Students, Screen.Attendance, Screen.Reports, Screen.Profile)
+// Bottom nav: 4 tabs for clean UX
+val bottomNavItems = listOf(Screen.Home, Screen.Students, Screen.Attendance, Screen.More)
 
 @Composable
 fun AppNavigation() {
@@ -78,8 +74,8 @@ fun AppNavigation() {
     val currentUserRole by profileViewModel.currentUserRole.collectAsState()
 
     val visibleNavItems = bottomNavItems.filter { screen ->
-        if (currentUserRole == com.educenter.pro.data.model.UserRole.ACCOUNTANT) {
-            screen == Screen.Students || screen == Screen.Profile || screen == Screen.Reports
+        if (currentUserRole == UserRole.ACCOUNTANT) {
+            screen == Screen.Students || screen == Screen.More
         } else {
             true
         }
@@ -90,8 +86,12 @@ fun AppNavigation() {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination
 
-            // Show bottom bar on main screens + new screens
-            val mainRoutes = setOf(Screen.Home.route, Screen.Students.route, Screen.Attendance.route, Screen.Profile.route, Screen.Reports.route, Screen.Finance.route, Screen.Announcements.route, Screen.Classes.route, Screen.Teachers.route)
+            val mainRoutes = setOf(
+                Screen.Home.route, Screen.Students.route, Screen.Attendance.route,
+                Screen.More.route, Screen.Profile.route, Screen.Reports.route,
+                Screen.Finance.route, Screen.Announcements.route,
+                Screen.Classes.route, Screen.Teachers.route
+            )
             val showBottomBar = mainRoutes.contains(currentDestination?.route)
 
             if (showBottomBar) {
@@ -101,12 +101,18 @@ fun AppNavigation() {
                     modifier = Modifier
                         .shadow(
                             elevation = 20.dp,
-                            spotColor = androidx.compose.ui.graphics.Color(0x1A000000),
-                            ambientColor = androidx.compose.ui.graphics.Color(0x0D000000)
+                            spotColor = Color(0x1A000000),
+                            ambientColor = Color(0x0D000000)
                         )
                 ) {
                     visibleNavItems.forEach { screen ->
-                        val isSelected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
+                        val isSelected = if (screen == Screen.More) {
+                            // "More" is selected when on More, Profile, Finance, Announcements, etc.
+                            val moreRoutes = setOf(Screen.More.route, Screen.Profile.route, Screen.Finance.route, Screen.Announcements.route, Screen.Reports.route, Screen.Classes.route, Screen.Teachers.route)
+                            moreRoutes.contains(currentDestination?.route)
+                        } else {
+                            currentDestination?.hierarchy?.any { it.route == screen.route } == true
+                        }
                         NavigationBarItem(
                             icon = {
                                 Box(
@@ -115,10 +121,7 @@ fun AppNavigation() {
                                             .clip(RoundedCornerShape(14.dp))
                                             .background(
                                                 Brush.horizontalGradient(
-                                                    listOf(
-                                                        androidx.compose.ui.graphics.Color(0xFF667EEA),
-                                                        androidx.compose.ui.graphics.Color(0xFF764BA2)
-                                                    )
+                                                    listOf(Color(0xFF667EEA), Color(0xFF764BA2))
                                                 )
                                             )
                                             .padding(horizontal = 16.dp, vertical = 6.dp)
@@ -130,8 +133,7 @@ fun AppNavigation() {
                                     Icon(
                                         screen.icon!!,
                                         contentDescription = null,
-                                        tint = if (isSelected) androidx.compose.ui.graphics.Color.White
-                                               else androidx.compose.ui.graphics.Color(0xFF64748B),
+                                        tint = if (isSelected) Color.White else Color(0xFF64748B),
                                         modifier = Modifier.size(22.dp)
                                     )
                                 }
@@ -141,8 +143,7 @@ fun AppNavigation() {
                                     screen.title!!,
                                     fontSize = 12.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
-                                    color = if (isSelected) androidx.compose.ui.graphics.Color(0xFF667EEA)
-                                           else androidx.compose.ui.graphics.Color(0xFF64748B),
+                                    color = if (isSelected) Color(0xFF667EEA) else Color(0xFF64748B),
                                     maxLines = 1
                                 )
                             },
@@ -157,7 +158,7 @@ fun AppNavigation() {
                                 }
                             },
                             colors = NavigationBarItemDefaults.colors(
-                                indicatorColor = androidx.compose.ui.graphics.Color.Transparent
+                                indicatorColor = Color.Transparent
                             )
                         )
                     }
@@ -178,7 +179,7 @@ fun AppNavigation() {
                         }
                     },
                     onNavigateToHome = {
-                        val route = if (currentUserRole == com.educenter.pro.data.model.UserRole.ACCOUNTANT) Screen.Students.route else Screen.Home.route
+                        val route = if (currentUserRole == UserRole.ACCOUNTANT) Screen.Students.route else Screen.Home.route
                         navController.navigate(route) {
                             popUpTo(Screen.Splash.route) { inclusive = true }
                         }
@@ -188,7 +189,7 @@ fun AppNavigation() {
             composable(Screen.Login.route) {
                 LoginScreen(
                     onLoginSuccess = {
-                        val route = if (currentUserRole == com.educenter.pro.data.model.UserRole.ACCOUNTANT) Screen.Students.route else Screen.Home.route
+                        val route = if (currentUserRole == UserRole.ACCOUNTANT) Screen.Students.route else Screen.Home.route
                         navController.navigate(route) {
                             popUpTo(Screen.Login.route) { inclusive = true }
                         }
@@ -214,6 +215,22 @@ fun AppNavigation() {
             }
             composable(Screen.Staff.route) {
                 StaffScreen()
+            }
+            composable(Screen.More.route) {
+                MoreScreen(
+                    currentUserRole = currentUserRole,
+                    onNavigateTo = { route ->
+                        navController.navigate(route) {
+                            launchSingleTop = true
+                        }
+                    },
+                    onLogout = {
+                        profileViewModel.logout()
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                )
             }
             composable(Screen.Profile.route) {
                 ProfileScreen(
@@ -257,6 +274,205 @@ fun AppNavigation() {
                     onBack = { navController.popBackStack() }
                 )
             }
+        }
+    }
+}
+
+// ============================================
+// "More" Hub Screen — Groups secondary features
+// ============================================
+@Composable
+fun MoreScreen(
+    currentUserRole: UserRole,
+    onNavigateTo: (String) -> Unit,
+    onLogout: () -> Unit
+) {
+    val profileViewModel: com.educenter.pro.ui.screens.profile.ProfileViewModel = hiltViewModel()
+    val email by profileViewModel.userEmail.collectAsState()
+    val centerName by profileViewModel.centerName.collectAsState()
+    val isSyncing by profileViewModel.isSyncing.collectAsState()
+    val isDark by com.educenter.pro.ui.theme.ThemeManager.isDarkMode.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    val versionName = try {
+        context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0"
+    } catch (e: Exception) { "1.0" }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(rememberScrollState())
+    ) {
+        // Profile header
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Brush.verticalGradient(listOf(Color(0xFF2563EB), Color(0xFF3B82F6))))
+                .padding(top = 40.dp, bottom = 24.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(
+                    modifier = Modifier.size(64.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.2f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.AccountCircle, contentDescription = null, modifier = Modifier.size(44.dp), tint = Color.White)
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(email.ifBlank { "Người dùng" }, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                if (centerName.isNotBlank()) {
+                    Text(centerName, color = Color.White.copy(alpha = 0.8f), fontSize = 13.sp)
+                }
+                Text("Vai trò: ${currentUserRole.name}", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Navigation items grouped
+        Column(modifier = Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+
+            // === Quick Actions ===
+            Text("Quản lý", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 4.dp, bottom = 2.dp))
+
+            if (currentUserRole != UserRole.ACCOUNTANT) {
+                MoreMenuItem(Icons.Default.Class, "Lớp học", Color(0xFF8B5CF6)) { onNavigateTo(Screen.Classes.route) }
+            }
+            if (currentUserRole == UserRole.ADMIN || currentUserRole == UserRole.MANAGER) {
+                MoreMenuItem(Icons.Default.Person, "Giáo viên", Color(0xFF0EA5E9)) { onNavigateTo(Screen.Teachers.route) }
+                MoreMenuItem(Icons.Default.Group, "Nhân viên", Color(0xFF6366F1)) { onNavigateTo(Screen.Staff.route) }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("Tính năng", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 4.dp, bottom = 2.dp))
+
+            MoreMenuItem(Icons.Default.Assessment, "Báo cáo", Color(0xFF0EA5E9)) { onNavigateTo(Screen.Reports.route) }
+
+            if (currentUserRole != UserRole.TEACHER) {
+                MoreMenuItem(Icons.Default.Payments, "Tài chính", Color(0xFFF59E0B)) { onNavigateTo(Screen.Finance.route) }
+            }
+
+            MoreMenuItem(Icons.Default.Campaign, "Thông báo", Color(0xFFEC4899)) { onNavigateTo(Screen.Announcements.route) }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("Tài khoản", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 4.dp, bottom = 2.dp))
+
+            // Sync
+            MoreMenuItem(
+                Icons.Default.Sync,
+                if (isSyncing) "Đang đồng bộ..." else "Đồng bộ dữ liệu",
+                Color(0xFF3B82F6),
+                enabled = !isSyncing
+            ) { profileViewModel.manualSync() }
+
+            MoreMenuItem(Icons.Default.Receipt, "Lịch sử Thu / Chi", Color(0xFF10B981)) { onNavigateTo(Screen.Transactions.route) }
+
+            // Dark mode toggle
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp).fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier.size(36.dp).clip(CircleShape).background(Color(0xFF8B5CF6).copy(alpha = 0.1f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            if (isDark) Icons.Default.DarkMode else Icons.Default.LightMode,
+                            contentDescription = null,
+                            tint = Color(0xFF8B5CF6),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(14.dp))
+                    Text(
+                        if (isDark) "Chế độ tối" else "Chế độ sáng",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Switch(
+                        checked = isDark,
+                        onCheckedChange = { com.educenter.pro.ui.theme.ThemeManager.toggleDarkMode(context) }
+                    )
+                }
+            }
+
+            // Version
+            Text(
+                "Phiên bản: v$versionName",
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // === LOGOUT BUTTON — prominent ===
+            Button(
+                onClick = onLogout,
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444))
+            ) {
+                Icon(Icons.Default.Logout, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Đăng xuất", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+}
+
+@Composable
+private fun MoreMenuItem(
+    icon: ImageVector,
+    label: String,
+    color: Color,
+    enabled: Boolean = true,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        onClick = onClick,
+        enabled = enabled
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp).fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier.size(36.dp).clip(CircleShape).background(color.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(18.dp))
+            }
+            Spacer(modifier = Modifier.width(14.dp))
+            Text(
+                label,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 15.sp,
+                color = if (enabled) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            Icon(
+                Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                modifier = Modifier.size(18.dp)
+            )
         }
     }
 }

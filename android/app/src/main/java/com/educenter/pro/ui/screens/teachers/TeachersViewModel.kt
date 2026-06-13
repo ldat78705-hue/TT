@@ -18,6 +18,8 @@ class TeachersViewModel @Inject constructor(
     private val _teachers = MutableStateFlow<List<Teacher>>(emptyList())
     val teachers = _teachers.asStateFlow()
 
+    val currentUserRole = dataRepository.currentUserRole
+
     init {
         viewModelScope.launch {
             dataRepository.appData.collect { appData ->
