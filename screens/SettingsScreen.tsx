@@ -110,6 +110,185 @@ const AdminPasswordSettings: React.FC = () => {
 };
 
 
+const CentersManagement: React.FC = () => {
+    const { toast } = useToast();
+    const { role } = useAuth();
+    const [centers, setCenters] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isCreating, setIsCreating] = useState(false);
+    const [showCreateForm, setShowCreateForm] = useState(false);
+    const [newCenter, setNewCenter] = useState({ slug: '', name: '', address: '', phone: '' });
+
+    const LOCAL_STORAGE_KEY = 'educenter_user_session';
+
+    const getToken = () => {
+        try {
+            const session = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '{}');
+            return session.token || '';
+        } catch { return ''; }
+    };
+
+    const loadCenters = async () => {
+        setIsLoading(true);
+        try {
+            const resp = await fetch('/api/centers', {
+                headers: { 'Authorization': `Bearer ${getToken()}` }
+            });
+            if (!resp.ok) throw new Error(await resp.text());
+            const data = await resp.json();
+            setCenters(data.centers || []);
+        } catch (err: any) {
+            toast.error('Lỗi tải danh sách trung tâm: ' + (err.message || ''));
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (role === UserRole.ADMIN) {
+            loadCenters();
+        }
+    }, [role]);
+
+    const handleCreate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newCenter.slug || !newCenter.name) {
+            toast.error('Vui lòng nhập mã và tên trung tâm');
+            return;
+        }
+        // Validate slug
+        if (!/^[a-z0-9_]+$/.test(newCenter.slug)) {
+            toast.error('Mã trung tâm chỉ được chứa chữ thường, số và dấu gạch dưới');
+            return;
+        }
+        setIsCreating(true);
+        try {
+            const resp = await fetch('/api/centers', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getToken()}`
+                },
+                body: JSON.stringify(newCenter)
+            });
+            const data = await resp.json();
+            if (!resp.ok) throw new Error(data.error || 'Tạo thất bại');
+            toast.success(`Trung tâm "${newCenter.name}" đã được tạo thành công!`);
+            setNewCenter({ slug: '', name: '', address: '', phone: '' });
+            setShowCreateForm(false);
+            loadCenters();
+        } catch (err: any) {
+            toast.error(err.message || 'Lỗi tạo trung tâm');
+        } finally {
+            setIsCreating(false);
+        }
+    };
+
+    if (role !== UserRole.ADMIN) return null;
+
+    return (
+        <div className="card-base">
+            <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold">Quản lý Trung tâm</h2>
+                <Button onClick={() => setShowCreateForm(!showCreateForm)}>
+                    {showCreateForm ? ICONS.close : ICONS.plus} {showCreateForm ? 'Hủy' : 'Tạo mới'}
+                </Button>
+            </div>
+
+            {showCreateForm && (
+                <form onSubmit={handleCreate} className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg space-y-4">
+                    <h3 className="font-semibold text-blue-800 dark:text-blue-200">Tạo Trung tâm mới</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium">Mã trung tâm (slug) <span className="text-red-500">*</span></label>
+                            <input
+                                type="text"
+                                value={newCenter.slug}
+                                onChange={e => setNewCenter({ ...newCenter, slug: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
+                                className="form-input mt-1"
+                                placeholder="vd: abc_edu"
+                                required
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Chỉ chữ thường, số, gạch dưới. Không thể đổi sau khi tạo.</p>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium">Tên trung tâm <span className="text-red-500">*</span></label>
+                            <input
+                                type="text"
+                                value={newCenter.name}
+                                onChange={e => setNewCenter({ ...newCenter, name: e.target.value })}
+                                className="form-input mt-1"
+                                placeholder="VD: Trung tâm ABC"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium">Địa chỉ</label>
+                            <input
+                                type="text"
+                                value={newCenter.address}
+                                onChange={e => setNewCenter({ ...newCenter, address: e.target.value })}
+                                className="form-input mt-1"
+                                placeholder="Địa chỉ trung tâm"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium">Số điện thoại</label>
+                            <input
+                                type="text"
+                                value={newCenter.phone}
+                                onChange={e => setNewCenter({ ...newCenter, phone: e.target.value })}
+                                className="form-input mt-1"
+                                placeholder="SĐT liên hệ"
+                            />
+                        </div>
+                    </div>
+                    <div className="flex justify-end gap-3">
+                        <Button type="button" variant="secondary" onClick={() => setShowCreateForm(false)}>Hủy</Button>
+                        <Button type="submit" isLoading={isCreating}>Tạo Trung tâm</Button>
+                    </div>
+                </form>
+            )}
+
+            {isLoading ? (
+                <div className="text-center py-8">{ICONS.loading} Đang tải...</div>
+            ) : centers.length === 0 ? (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                    Chưa có trung tâm nào. Nhấn <strong>"Tạo mới"</strong> để bắt đầu.
+                </div>
+            ) : (
+                <div className="space-y-3">
+                    {centers.map(center => (
+                        <div key={center.id} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 border dark:border-slate-600 rounded-lg">
+                            <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                    <h4 className="font-bold text-lg">{center.name}</h4>
+                                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${center.status === 'ACTIVE' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-gray-100 text-gray-600'}`}>
+                                        {center.status === 'ACTIVE' ? '● Hoạt động' : center.status}
+                                    </span>
+                                </div>
+                                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                    <span>Mã: <code className="bg-gray-200 dark:bg-gray-600 px-1.5 py-0.5 rounded text-xs font-mono">{center.slug}</code></span>
+                                    {center.address && <span>📍 {center.address}</span>}
+                                    {center.phone && <span>📞 {center.phone}</span>}
+                                    <span>📅 {new Date(center.createdAt).toLocaleDateString('vi-VN')}</span>
+                                </div>
+                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                                    Collection: <code>{center.collectionName}</code> • Gói: {center.plan}
+                                </p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg text-sm text-amber-700 dark:text-amber-300">
+                <strong>💡 Hướng dẫn:</strong> Sau khi tạo trung tâm mới, hãy đăng nhập bằng tài khoản <code className="bg-amber-200 dark:bg-amber-800 px-1 rounded">admin</code> với mật khẩu mặc định <code className="bg-amber-200 dark:bg-amber-800 px-1 rounded">123456</code> và chọn trung tâm tương ứng khi đăng nhập.
+            </div>
+        </div>
+    );
+};
+
 import { getVietnamTime } from '../utils/date';
 
 export const SettingsScreen: React.FC = () => {
@@ -678,6 +857,8 @@ export const SettingsScreen: React.FC = () => {
                 )}
             </form>
             
+            <CentersManagement />
+
             <AdminPasswordSettings />
 
             {role === UserRole.ADMIN && (
