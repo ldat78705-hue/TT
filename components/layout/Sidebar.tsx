@@ -14,7 +14,7 @@ const adminNavLinks = [
   { to: ROUTES.ROOMS, icon: ICONS.rooms, label: 'Phòng học' },
   { to: ROUTES.ATTENDANCE_HUB, icon: ICONS.calendar, label: 'Lịch điểm danh' },
   { to: ROUTES.FINANCE, icon: ICONS.finance, label: 'Tài chính' },
-  { to: ROUTES.ANNOUNCEMENTS, icon: ICONS.announcement, label: 'Tiến độ học tập' },
+  { to: ROUTES.ANNOUNCEMENTS, icon: ICONS.announcement, label: 'Nhận xét & Đánh giá' },
   { to: ROUTES.REPORTS, icon: ICONS.reports, label: 'Báo cáo' },
   { to: ROUTES.AUDIT_LOG, icon: ICONS.history, label: 'Lịch sử' },
   { to: ROUTES.SETTINGS, icon: ICONS.settings, label: 'Cài đặt' },
@@ -27,7 +27,7 @@ const managerNavLinks = [
   { to: ROUTES.STAFF, icon: ICONS.staff, label: 'Nhân viên' },
   { to: ROUTES.CLASSES, icon: ICONS.classes, label: 'Lớp học' },
   { to: ROUTES.ATTENDANCE_HUB, icon: ICONS.calendar, label: 'Lịch điểm danh' },
-  { to: ROUTES.ANNOUNCEMENTS, icon: ICONS.announcement, label: 'Tiến độ học tập' },
+  { to: ROUTES.ANNOUNCEMENTS, icon: ICONS.announcement, label: 'Nhận xét & Đánh giá' },
   { to: ROUTES.REPORTS, icon: ICONS.reports, label: 'Báo cáo' },
 ];
 
@@ -39,7 +39,7 @@ const accountantNavLinks = [
 const teacherNavLinks = [
     { to: ROUTES.DASHBOARD, icon: ICONS.dashboard, label: 'Bảng điều khiển' },
     { to: ROUTES.CLASSES, icon: ICONS.classes, label: 'Lớp học của tôi' },
-    { to: ROUTES.ANNOUNCEMENTS, icon: ICONS.announcement, label: 'Tiến độ học tập' },
+    { to: ROUTES.ANNOUNCEMENTS, icon: ICONS.announcement, label: 'Nhận xét & Đánh giá' },
 ];
 
 interface SidebarProps {

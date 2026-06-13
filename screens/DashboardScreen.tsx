@@ -253,6 +253,83 @@ const AdminDashboard: React.FC = () => {
     }, [students, canViewFinancials]);
 
 
+    const WeeklyCalendarWidget: React.FC<{ classes: Class[], teachers: Teacher[] }> = ({ classes, teachers }) => {
+        const vnTimeStr = getVietnamTime();
+        const vnDateObj = new Date(vnTimeStr);
+        const todayDayIdx = vnDateObj.getDay(); // 0=Sun
+
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const;
+        const dayLabels: Record<string, string> = {
+            'Monday': 'Thứ 2', 'Tuesday': 'Thứ 3', 'Wednesday': 'Thứ 4', 'Thursday': 'Thứ 5',
+            'Friday': 'Thứ 6', 'Saturday': 'Thứ 7', 'Sunday': 'CN'
+        };
+        const dayToNum: Record<string, number> = {
+            'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6
+        };
+
+        const colors = ['bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 border-blue-300 dark:border-blue-700',
+                        'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 border-purple-300 dark:border-purple-700',
+                        'bg-teal-100 dark:bg-teal-900/30 text-teal-800 dark:text-teal-200 border-teal-300 dark:border-teal-700',
+                        'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200 border-orange-300 dark:border-orange-700',
+                        'bg-pink-100 dark:bg-pink-900/30 text-pink-800 dark:text-pink-200 border-pink-300 dark:border-pink-700',
+                        'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-200 border-emerald-300 dark:border-emerald-700'];
+
+        const classColorMap = useMemo(() => {
+            const map = new Map<string, string>();
+            classes.forEach((cls, i) => map.set(cls.id, colors[i % colors.length]));
+            return map;
+        }, [classes]);
+
+        const weekData = useMemo(() => {
+            return days.map(day => {
+                const sessions: { cls: Class, schedule: Class['schedule'][0] }[] = [];
+                classes.forEach(cls => {
+                    (cls.schedule || []).forEach(s => {
+                        if (s.dayOfWeek === day) sessions.push({ cls, schedule: s });
+                    });
+                });
+                return {
+                    day,
+                    label: dayLabels[day],
+                    isToday: dayToNum[day] === todayDayIdx,
+                    sessions: sessions.sort((a, b) => a.schedule.startTime.localeCompare(b.schedule.startTime))
+                };
+            });
+        }, [classes, todayDayIdx]);
+
+        const getTeacherName = (ids: string[]) => {
+            if (!ids || ids.length === 0) return '';
+            return ids.map(id => teachers.find(t => t.id === id)?.name?.split(' ').pop() || '').join(', ');
+        };
+
+        return (
+            <div className="card-base">
+                <h2 className="text-xl font-bold mb-4">📅 Lịch học Tuần</h2>
+                <div className="grid grid-cols-7 gap-1.5">
+                    {weekData.map(d => (
+                        <div key={d.day} className="min-w-0">
+                            <div className={`text-center text-xs font-bold py-1.5 rounded-t-lg ${d.isToday ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
+                                {d.label}
+                            </div>
+                            <div className="min-h-[120px] bg-slate-50 dark:bg-slate-800/50 rounded-b-lg p-1 space-y-1">
+                                {d.sessions.length > 0 ? d.sessions.map((s, i) => (
+                                    <Link key={i} to={`/class/${s.cls.id}`}
+                                        className={`block p-1.5 rounded-md border text-[10px] leading-tight hover:opacity-80 transition-opacity ${classColorMap.get(s.cls.id) || colors[0]}`}>
+                                        <div className="font-bold truncate">{s.cls.name}</div>
+                                        <div className="opacity-70">{s.schedule.startTime}-{s.schedule.endTime}</div>
+                                        <div className="opacity-60 truncate">{getTeacherName(s.cls.teacherIds)}</div>
+                                    </Link>
+                                )) : (
+                                    <div className="flex items-center justify-center h-full text-[10px] text-gray-400">—</div>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -265,6 +342,9 @@ const AdminDashboard: React.FC = () => {
                     </>
                 )}
             </div>
+
+            {/* Weekly Calendar */}
+            <WeeklyCalendarWidget classes={classes} teachers={teachers} />
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="lg:col-span-1">

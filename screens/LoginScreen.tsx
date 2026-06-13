@@ -46,9 +46,30 @@ export const LoginScreen: React.FC = () => {
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
-        const success = await login(identifier, password);
-        if (!success) {
-            toast.error("Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.");
+        try {
+            const response = await import('../services/api').then(m => m.loginApi(identifier, password));
+            if (response && response.token) {
+                // Store expiry warning in sessionStorage for display after redirect
+                if (response.expiryWarning) {
+                    sessionStorage.setItem('center_expiry_warning', response.expiryWarning);
+                }
+                // Store mustChangePassword flag
+                if (response.mustChangePassword) {
+                    sessionStorage.setItem('must_change_password', 'true');
+                }
+                const success = await login(identifier, password);
+                if (!success) {
+                    toast.error("Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.");
+                }
+            }
+        } catch (err: any) {
+            const errorMsg = err.message || '';
+            try {
+                const parsed = JSON.parse(errorMsg);
+                toast.error(parsed.error || 'Đăng nhập thất bại.');
+            } catch {
+                toast.error(errorMsg || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
+            }
         }
         setIsLoading(false);
     };

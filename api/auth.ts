@@ -39,15 +39,26 @@ async function getAuthData(centerId?: string) {
     };
 }
 
+// Check if user is using default/DOB password
+function isDefaultPassword(user: any, password: string, role: string): boolean {
+    if (role === UserRole.ADMIN && (password === '123456')) return true;
+    if (user.dob) {
+        const dobPwd = user.dob.split('-').reverse().join('');
+        if (password === dobPwd) return true;
+    }
+    return false;
+}
+
 // Try to authenticate a user within a specific center's data
-function tryAuthInData(data: any, identifier: string, password: string, hashedPassword: string): { user: any, role: string } | null {
+function tryAuthInData(data: any, identifier: string, password: string, hashedPassword: string): { user: any, role: string, mustChangePassword: boolean } | null {
     const upperIdentifier = identifier.toUpperCase();
 
     // 1. Admin
     if (upperIdentifier === 'ADMIN' || upperIdentifier === 'ADMIN_USER') {
         const adminPassword = data.settings?.adminPassword || '123456';
         if (password === adminPassword || hashedPassword === adminPassword) {
-            return { user: { id: 'ADMIN_USER', name: 'Admin', role: UserRole.ADMIN }, role: UserRole.ADMIN };
+            const mustChange = password === '123456';
+            return { user: { id: 'ADMIN_USER', name: 'Admin', role: UserRole.ADMIN }, role: UserRole.ADMIN, mustChangePassword: mustChange };
         }
         return null;
     }
@@ -55,7 +66,7 @@ function tryAuthInData(data: any, identifier: string, password: string, hashedPa
     // 2. Viewer
     if (upperIdentifier === 'VIEWER' || upperIdentifier === 'VIEWER_USER') {
         if (data.settings?.viewerAccountActive !== false && (password === 'viewer123' || hashedPassword === 'viewer123')) {
-            return { user: { id: 'VIEWER_USER', name: 'Viewer', role: UserRole.VIEWER }, role: UserRole.VIEWER };
+            return { user: { id: 'VIEWER_USER', name: 'Viewer', role: UserRole.VIEWER }, role: UserRole.VIEWER, mustChangePassword: false };
         }
         return null;
     }
@@ -64,7 +75,7 @@ function tryAuthInData(data: any, identifier: string, password: string, hashedPa
     if (data.teachers) {
         const teacher = data.teachers.find((t: any) => t.id && t.id.toUpperCase() === upperIdentifier);
         if (teacher && (teacher.password === password || teacher.password === hashedPassword)) {
-            return { user: teacher, role: teacher.role || UserRole.TEACHER };
+            return { user: teacher, role: teacher.role || UserRole.TEACHER, mustChangePassword: isDefaultPassword(teacher, password, teacher.role || UserRole.TEACHER) };
         }
     }
 
@@ -72,7 +83,7 @@ function tryAuthInData(data: any, identifier: string, password: string, hashedPa
     if (data.staff) {
         const staffMember = data.staff.find((s: any) => s.id && s.id.toUpperCase() === upperIdentifier);
         if (staffMember && (staffMember.password === password || staffMember.password === hashedPassword)) {
-            return { user: staffMember, role: staffMember.role || UserRole.MANAGER };
+            return { user: staffMember, role: staffMember.role || UserRole.MANAGER, mustChangePassword: isDefaultPassword(staffMember, password, staffMember.role || UserRole.MANAGER) };
         }
     }
 
@@ -83,7 +94,7 @@ function tryAuthInData(data: any, identifier: string, password: string, hashedPa
             const dobPassword = student.dob ? student.dob.split('-').reverse().join('') : null;
             const correctPassword = student.password || dobPassword;
             if (password === correctPassword || hashedPassword === correctPassword) {
-                return { user: student, role: UserRole.PARENT };
+                return { user: student, role: UserRole.PARENT, mustChangePassword: isDefaultPassword(student, password, UserRole.PARENT) };
             }
         }
     }
@@ -134,8 +145,17 @@ export default async function handler(req: any, res: any) {
                 if (centerData?.status === 'LOCKED') {
                     return res.status(403).json({ error: 'Trung tâm này đã bị khóa. Vui lòng liên hệ quản trị viên hệ thống.' });
                 }
-                if (centerData?.expiresAt && new Date(centerData.expiresAt) < new Date()) {
-                    return res.status(403).json({ error: 'Trung tâm này đã hết hạn sử dụng. Vui lòng liên hệ quản trị viên hệ thống để gia hạn.' });
+                
+                let expiryWarning: string | null = null;
+                if (centerData?.expiresAt) {
+                    const expiresAt = new Date(centerData.expiresAt);
+                    const now = new Date();
+                    const daysLeft = Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                    if (daysLeft < 0) {
+                        expiryWarning = `⚠️ Trung tâm đã hết hạn sử dụng từ ngày ${expiresAt.toLocaleDateString('vi-VN')}. Vui lòng liên hệ nhà cung cấp để gia hạn. Một số tính năng có thể bị hạn chế.`;
+                    } else if (daysLeft <= 7) {
+                        expiryWarning = `⚠️ Trung tâm sẽ hết hạn sau ${daysLeft} ngày (${expiresAt.toLocaleDateString('vi-VN')}). Vui lòng liên hệ nhà cung cấp để gia hạn.`;
+                    }
                 }
 
                 const hashedInput = hashPassword(password);
@@ -154,7 +174,8 @@ export default async function handler(req: any, res: any) {
                     token,
                     user: { id: 'ADMIN_USER', name: centerData?.name || 'Admin', role: UserRole.ADMIN },
                     role: UserRole.ADMIN,
-                    centerId: effectiveCenterId
+                    centerId: effectiveCenterId,
+                    ...(expiryWarning && { expiryWarning })
                 });
             }
 
@@ -178,7 +199,7 @@ export default async function handler(req: any, res: any) {
                         });
                         const safeUser = { ...result.user };
                         delete safeUser.password;
-                        return res.status(200).json({ token, user: safeUser, role: result.role, centerId: cId });
+                        return res.status(200).json({ token, user: safeUser, role: result.role, centerId: cId, mustChangePassword: result.mustChangePassword });
                     }
                 } catch (e) {
                     console.error(`Error checking center ${cId}:`, e);
@@ -214,7 +235,7 @@ export default async function handler(req: any, res: any) {
             });
             const safeUser = { ...result.user };
             delete safeUser.password;
-            return res.status(200).json({ token, user: safeUser, role: result.role, centerId: effectiveCenterId || '_legacy' });
+            return res.status(200).json({ token, user: safeUser, role: result.role, centerId: effectiveCenterId || '_legacy', mustChangePassword: result.mustChangePassword });
         }
 
         return res.status(401).json({ error: 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.' });

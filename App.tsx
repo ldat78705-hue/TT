@@ -70,8 +70,37 @@ const ProtectedRoute: React.FC<{children: React.ReactNode, allowedRoles: UserRol
 
 const AppLayout: React.FC = () => {
     const location = useLocation();
-    const { error, setError } = useData();
+    const { error, setError, updateUserPassword } = useData();
+    const { user, role } = useAuth();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [expiryWarning, setExpiryWarning] = useState<string | null>(null);
+    const [showForceChangePwd, setShowForceChangePwd] = useState(false);
+    const [newPwd, setNewPwd] = useState('');
+    const [confirmPwd, setConfirmPwd] = useState('');
+    const [changePwdLoading, setChangePwdLoading] = useState(false);
+    const [changePwdError, setChangePwdError] = useState('');
+
+    useEffect(() => {
+        const warning = sessionStorage.getItem('center_expiry_warning');
+        if (warning) setExpiryWarning(warning);
+        const mustChange = sessionStorage.getItem('must_change_password');
+        if (mustChange === 'true') setShowForceChangePwd(true);
+    }, []);
+
+    const handleForceChangePassword = async () => {
+        setChangePwdError('');
+        if (newPwd.length < 6) { setChangePwdError('Mật khẩu mới phải có ít nhất 6 ký tự.'); return; }
+        if (newPwd !== confirmPwd) { setChangePwdError('Mật khẩu xác nhận không khớp.'); return; }
+        setChangePwdLoading(true);
+        try {
+            await updateUserPassword({ userId: user?.id || '', role: role!, newPassword: newPwd });
+            sessionStorage.removeItem('must_change_password');
+            setShowForceChangePwd(false);
+        } catch (err: any) {
+            setChangePwdError(err.message || 'Lỗi đổi mật khẩu');
+        }
+        setChangePwdLoading(false);
+    };
     
     const isAttendanceHub = location.pathname === ROUTES.ATTENDANCE_HUB;
 
@@ -90,7 +119,7 @@ const AppLayout: React.FC = () => {
             case ROUTES.CLASSES: return 'Lớp học';
             case ROUTES.ATTENDANCE_HUB: return 'Điểm danh';
             case ROUTES.FINANCE: return 'Tài chính';
-            case ROUTES.ANNOUNCEMENTS: return 'Tiến độ học tập';
+            case ROUTES.ANNOUNCEMENTS: return 'Nhận xét & Đánh giá';
             case ROUTES.REPORTS: return 'Báo cáo';
             case ROUTES.SETTINGS: return 'Cài đặt';
             case ROUTES.ROOMS: return 'Phòng học';
@@ -104,6 +133,14 @@ const AppLayout: React.FC = () => {
             <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
             <div className="flex-1 flex flex-col overflow-hidden relative">
                 <Header pageTitle={pageTitle} onMenuClick={() => setIsSidebarOpen(true)} />
+                {expiryWarning && (
+                    <div className="bg-amber-50 dark:bg-amber-900/30 border-l-4 border-amber-500 text-amber-800 dark:text-amber-200 p-3 mx-4 mt-2 md:mx-8 rounded-r-lg flex items-center justify-between gap-3" role="alert">
+                        <p className="text-sm font-medium">{expiryWarning}</p>
+                        <button onClick={() => { setExpiryWarning(null); sessionStorage.removeItem('center_expiry_warning'); }} className="text-amber-600 hover:text-amber-800 flex-shrink-0" aria-label="Đóng">
+                            {React.cloneElement(ICONS.close, { className: 'w-4 h-4' })}
+                        </button>
+                    </div>
+                )}
                 <main className={`animate-fade-in ${isAttendanceHub ? "flex-1 overflow-hidden" : "flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8 pb-28 md:pb-8"}`}>
                     {error && (
                         <div className="bg-red-100 border-l-4 border-red-500 text-red-800 p-4 mb-6 rounded-xl relative shadow-sm" role="alert">
@@ -118,6 +155,35 @@ const AppLayout: React.FC = () => {
                         <Outlet />
                     </React.Suspense>
                 </main>
+
+                {/* Force Change Password Modal */}
+                {showForceChangePwd && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+                            <div className="text-center mb-6">
+                                <div className="w-16 h-16 mx-auto bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mb-4">
+                                    <span className="text-3xl">🔐</span>
+                                </div>
+                                <h2 className="text-xl font-bold">Đổi mật khẩu bắt buộc</h2>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Bạn đang dùng mật khẩu mặc định. Vui lòng đổi mật khẩu mới để bảo mật tài khoản.</p>
+                            </div>
+                            {changePwdError && <p className="text-red-500 text-sm mb-3 text-center">{changePwdError}</p>}
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Mật khẩu mới</label>
+                                    <input type="password" value={newPwd} onChange={e => setNewPwd(e.target.value)}
+                                        className="form-input" placeholder="Ít nhất 6 ký tự" autoFocus />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Xác nhận mật khẩu</label>
+                                    <input type="password" value={confirmPwd} onChange={e => setConfirmPwd(e.target.value)}
+                                        className="form-input" placeholder="Nhập lại mật khẩu mới" />
+                                </div>
+                                <Button className="w-full" onClick={handleForceChangePassword} isLoading={changePwdLoading}>Đổi mật khẩu</Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 <BottomNav onMenuClick={() => setIsSidebarOpen(true)} />
             </div>
         </div>

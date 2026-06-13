@@ -342,7 +342,7 @@ export const AnnouncementsScreen: React.FC = () => {
     return (
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <h1 className="text-2xl font-bold">Tiến độ học tập & Thông báo</h1>
+                <h1 className="text-2xl font-bold">Nhận xét & Đánh giá</h1>
                 {activeTab === 'announcements' && canManageAnnouncements && (
                     <Button onClick={() => setAnnModalOpen(true)}>
                         {ICONS.plus} Tạo Thông báo mới
@@ -365,7 +365,7 @@ export const AnnouncementsScreen: React.FC = () => {
                     className={`py-2 px-4 font-medium border-b-2 transition-colors ${activeTab === 'progress' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'}`}
                     onClick={() => setActiveTab('progress')}
                 >
-                    Tiến độ học tập
+                    Nhận xét & Đánh giá
                 </button>
                 <button
                     className={`py-2 px-4 font-medium border-b-2 transition-colors ${activeTab === 'announcements' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'}`}
