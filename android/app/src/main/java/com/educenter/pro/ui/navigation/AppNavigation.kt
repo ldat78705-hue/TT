@@ -71,6 +71,9 @@ sealed class Screen(val route: String, val title: String? = null, val icon: Imag
     object More : Screen("more", "Thêm", Icons.Filled.MoreHoriz)
     object MyPayslip : Screen("my_payslip", "Bảng lương")
     object TeacherCalendar : Screen("teacher_calendar", "Lịch dạy")
+    // Parent screens
+    object ParentHome : Screen("parent_home", "Trang chủ", Icons.Filled.Home)
+    object ParentAttendance : Screen("parent_attendance", "Điểm danh", Icons.Filled.EventAvailable)
 }
 
 // Bottom nav: 4 tabs for clean UX
@@ -82,12 +85,10 @@ fun AppNavigation() {
     val profileViewModel: com.educenter.pro.ui.screens.profile.ProfileViewModel = hiltViewModel()
     val currentUserRole by profileViewModel.currentUserRole.collectAsState()
 
-    val visibleNavItems = bottomNavItems.filter { screen ->
-        if (currentUserRole == UserRole.ACCOUNTANT) {
-            screen == Screen.Students || screen == Screen.More
-        } else {
-            true
-        }
+    val visibleNavItems = when (currentUserRole) {
+        UserRole.ACCOUNTANT -> listOf(Screen.Students, Screen.More)
+        UserRole.PARENT -> listOf(Screen.ParentHome, Screen.ParentAttendance, Screen.More)
+        else -> bottomNavItems
     }
 
     Scaffold(
@@ -99,7 +100,8 @@ fun AppNavigation() {
                 Screen.Home.route, Screen.Students.route, Screen.Attendance.route,
                 Screen.More.route, Screen.Profile.route, Screen.Reports.route,
                 Screen.Finance.route, Screen.Announcements.route,
-                Screen.Classes.route, Screen.Teachers.route
+                Screen.Classes.route, Screen.Teachers.route,
+                Screen.ParentHome.route, Screen.ParentAttendance.route
             )
             val showBottomBar = mainRoutes.contains(currentDestination?.route)
 
@@ -188,7 +190,11 @@ fun AppNavigation() {
                         }
                     },
                     onNavigateToHome = {
-                        val route = if (currentUserRole == UserRole.ACCOUNTANT) Screen.Students.route else Screen.Home.route
+                        val route = when (currentUserRole) {
+                            UserRole.ACCOUNTANT -> Screen.Students.route
+                            UserRole.PARENT -> Screen.ParentHome.route
+                            else -> Screen.Home.route
+                        }
                         navController.navigate(route) {
                             popUpTo(Screen.Splash.route) { inclusive = true }
                         }
@@ -198,7 +204,11 @@ fun AppNavigation() {
             composable(Screen.Login.route) {
                 LoginScreen(
                     onLoginSuccess = {
-                        val route = if (currentUserRole == UserRole.ACCOUNTANT) Screen.Students.route else Screen.Home.route
+                        val route = when (currentUserRole) {
+                            UserRole.ACCOUNTANT -> Screen.Students.route
+                            UserRole.PARENT -> Screen.ParentHome.route
+                            else -> Screen.Home.route
+                        }
                         navController.navigate(route) {
                             popUpTo(Screen.Login.route) { inclusive = true }
                         }
@@ -299,6 +309,16 @@ fun AppNavigation() {
                     onBack = { navController.popBackStack() }
                 )
             }
+            // === Parent screens ===
+            composable(Screen.ParentHome.route) {
+                com.educenter.pro.ui.screens.parent.ParentDashboardScreen(
+                    onNavigateToAttendance = { navController.navigate(Screen.ParentAttendance.route) },
+                    onNavigateToAnnouncements = { navController.navigate(Screen.Announcements.route) }
+                )
+            }
+            composable(Screen.ParentAttendance.route) {
+                com.educenter.pro.ui.screens.parent.ParentAttendanceScreen()
+            }
         }
     }
 }
@@ -359,36 +379,48 @@ fun MoreScreen(
                 if (centerName.isNotBlank()) {
                     Text(centerName, color = Color.White.copy(alpha = 0.8f), fontSize = 13.sp)
                 }
-                Text("Vai trò: ${currentUserRole.name}", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
+                Text("Vai trò: ${when(currentUserRole) {
+                    UserRole.ADMIN -> "Quản trị viên"
+                    UserRole.MANAGER -> "Quản lý"
+                    UserRole.TEACHER -> "Giáo viên"
+                    UserRole.ACCOUNTANT -> "Kế toán"
+                    UserRole.PARENT -> "Phụ huynh"
+                    UserRole.VIEWER -> "Xem"
+                }}", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
             }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Navigation items grouped
+         // Navigation items grouped
         Column(modifier = Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
 
-            // === Quick Actions ===
-            Text("Quản lý", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 4.dp, bottom = 2.dp))
+            // === Quick Actions (hide for PARENT) ===
+            if (currentUserRole != UserRole.PARENT) {
+                Text("Quản lý", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 4.dp, bottom = 2.dp))
 
-            if (currentUserRole != UserRole.ACCOUNTANT) {
-                MoreMenuItem(Icons.Default.Class, "Lớp học", Color(0xFF8B5CF6)) { onNavigateTo(Screen.Classes.route) }
-            }
-            if (currentUserRole == UserRole.ADMIN || currentUserRole == UserRole.MANAGER) {
-                MoreMenuItem(Icons.Default.Person, "Giáo viên", Color(0xFF0EA5E9)) { onNavigateTo(Screen.Teachers.route) }
-                MoreMenuItem(Icons.Default.Group, "Nhân viên", Color(0xFF6366F1)) { onNavigateTo(Screen.Staff.route) }
+                if (currentUserRole != UserRole.ACCOUNTANT) {
+                    MoreMenuItem(Icons.Default.Class, "Lớp học", Color(0xFF8B5CF6)) { onNavigateTo(Screen.Classes.route) }
+                }
+                if (currentUserRole == UserRole.ADMIN || currentUserRole == UserRole.MANAGER) {
+                    MoreMenuItem(Icons.Default.Person, "Giáo viên", Color(0xFF0EA5E9)) { onNavigateTo(Screen.Teachers.route) }
+                    MoreMenuItem(Icons.Default.Group, "Nhân viên", Color(0xFF6366F1)) { onNavigateTo(Screen.Staff.route) }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
             Text("Tính năng", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 4.dp, bottom = 2.dp))
 
-            MoreMenuItem(Icons.Default.Assessment, "Báo cáo", Color(0xFF0EA5E9)) { onNavigateTo(Screen.Reports.route) }
+            if (currentUserRole != UserRole.PARENT) {
+                MoreMenuItem(Icons.Default.Assessment, "Báo cáo", Color(0xFF0EA5E9)) { onNavigateTo(Screen.Reports.route) }
+            }
 
             if (currentUserRole == UserRole.ADMIN || currentUserRole == UserRole.MANAGER || currentUserRole == UserRole.TEACHER) {
                 MoreMenuItem(Icons.Default.RateReview, "Nhận xét Học viên", Color(0xFF8B5CF6)) { onNavigateTo(Screen.ProgressReport.route) }
             }
 
-            if (currentUserRole != UserRole.TEACHER) {
+            if (currentUserRole != UserRole.TEACHER && currentUserRole != UserRole.PARENT) {
                 MoreMenuItem(Icons.Default.Payments, "Tài chính", Color(0xFFF59E0B)) { onNavigateTo(Screen.Finance.route) }
             }
 

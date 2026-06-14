@@ -584,8 +584,25 @@ export default async function handler(req: any, res: any) {
             }
         }
         if (role === UserRole.PARENT) {
-            if (operation.op !== 'updateUserPassword' || operation.payload?.userId !== authPayload.userId) {
+            const allowedParentOps = ['updateUserPassword', 'updateAttendance'];
+            if (!allowedParentOps.includes(operation.op)) {
                 return res.status(403).send('Từ chối: Bạn không có quyền sửa đổi dữ liệu');
+            }
+            if (operation.op === 'updateUserPassword' && operation.payload?.userId !== authPayload.userId) {
+                return res.status(403).send('Từ chối: Bạn chỉ có thể thay đổi mật khẩu của chính mình');
+            }
+            if (operation.op === 'updateAttendance') {
+                // Parent can only submit EXCUSED_ABSENT for their own student
+                const records = Array.isArray(operation.payload) ? operation.payload : [];
+                const parentStudentId = authPayload.userId;
+                for (const r of records) {
+                    if (r.studentId !== parentStudentId) {
+                        return res.status(403).send('Từ chối: Bạn chỉ có thể xin nghỉ cho con mình');
+                    }
+                    if (r.status !== 'EXCUSED_ABSENT') {
+                        return res.status(403).send('Từ chối: Phụ huynh chỉ có thể xin nghỉ phép');
+                    }
+                }
             }
         }
 

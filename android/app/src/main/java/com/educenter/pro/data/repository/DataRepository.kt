@@ -67,9 +67,13 @@ class DataRepository @Inject constructor(
             val response = apiService.login(LoginRequest(identifier, passwordRaw))
             if (response.token != null) {
                 val roleStr = response.role ?: "VIEWER"
-                // Extract user name from response user object (Map)
+                // Extract user name and id from response user object (Map)
                 val userName = when (val user = response.user) {
                     is Map<*, *> -> user["name"]?.toString() ?: identifier
+                    else -> identifier
+                }
+                val userId = when (val user = response.user) {
+                    is Map<*, *> -> user["id"]?.toString() ?: identifier
                     else -> identifier
                 }
                 prefs.edit()
@@ -77,6 +81,7 @@ class DataRepository @Inject constructor(
                     .putString("user_role", roleStr)
                     .putString("user_email", identifier)
                     .putString("user_name", userName)
+                    .putString("user_id", userId)
                     .putString("center_id", response.centerId ?: "")
                     .apply()
                 _currentUserRole.value = com.educenter.pro.data.model.UserRole.valueOf(roleStr)
@@ -446,6 +451,10 @@ class DataRepository @Inject constructor(
         return prefs.getString("user_email", null) ?: ""
     }
 
+    fun getLoggedInUserId(): String {
+        return prefs.getString("user_id", null) ?: prefs.getString("user_email", null) ?: ""
+    }
+
     suspend fun changePassword(currentPassword: String, newPassword: String) = withContext(Dispatchers.IO) {
         // Verify current password by attempting a login
         try {
@@ -462,20 +471,24 @@ class DataRepository @Inject constructor(
                 com.educenter.pro.data.model.UserRole.MANAGER,
                 com.educenter.pro.data.model.UserRole.ACCOUNTANT,
                 com.educenter.pro.data.model.UserRole.VIEWER -> {
-                    data.staff.find { it.email == email }?.id
-                        ?: data.teachers.find { it.email == email }?.id
-                        ?: throw Exception("Không tìm thấy tài khoản")
+                    data.staff.find { it.email == email || it.id == email }?.id
+                        ?: data.teachers.find { it.email == email || it.id == email }?.id
+                        ?: if (email == "ADMIN_USER") "ADMIN_USER" else throw Exception("Không tìm thấy tài khoản")
                 }
                 com.educenter.pro.data.model.UserRole.TEACHER -> {
-                    data.teachers.find { it.email == email }?.id
+                    data.teachers.find { it.email == email || it.id == email }?.id
                         ?: throw Exception("Không tìm thấy tài khoản giáo viên")
                 }
-                else -> throw Exception("Vai trò không hỗ trợ đổi mật khẩu")
+                com.educenter.pro.data.model.UserRole.PARENT -> {
+                    data.students.find { it.id == getLoggedInUserId() }?.id
+                        ?: throw Exception("Không tìm thấy tài khoản học sinh")
+                }
             }
 
             // Map role to the format expected by the server
             val roleStr = when (role) {
                 com.educenter.pro.data.model.UserRole.TEACHER -> "TEACHER"
+                com.educenter.pro.data.model.UserRole.PARENT -> "STUDENT"
                 else -> role.name
             }
 
