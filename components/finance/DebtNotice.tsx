@@ -129,7 +129,7 @@ export const DebtNotice: React.FC<DebtNoticeProps> = ({ student, transactions, s
                 {student.parentName && <p><span className="font-bold">Phụ huynh:</span> {student.parentName}</p>}
             </div>
 
-            {/* === CHI TIẾT CÁC BUỔI HỌC === */}
+            {/* === CHI TIẾT ĐIỂM DANH (GỌN) === */}
             {attendanceByClass.length > 0 && (
                 <div className="border-t border-gray-300 pt-1 mb-1">
                     <p className="font-bold text-[10px] mb-1 uppercase">Chi tiết điểm danh:</p>
@@ -145,47 +145,21 @@ export const DebtNotice: React.FC<DebtNoticeProps> = ({ student, transactions, s
                             </p>
                             {classInfo.months.map(monthData => {
                                 const presentCount = monthData.records.filter(r => r.status === 'PRESENT' || r.status === 'LATE').length;
-                                const absentCount = monthData.records.filter(r => r.status === 'ABSENT' || r.status === 'UNEXCUSED_ABSENT').length;
-
-                                const totalSessions = monthData.records.length;
                                 const monthFee = classInfo.fee.type === 'PER_SESSION' 
                                     ? presentCount * classInfo.fee.amount 
                                     : classInfo.fee.type === 'MONTHLY' 
                                         ? classInfo.fee.amount 
                                         : 0;
                                 return (
-                                    <div key={monthData.month} className="ml-1 mb-1">
-                                        <p className="font-semibold text-[9px] text-gray-700">{formatMonth(monthData.month)} ({totalSessions} buổi):</p>
-                                        <table className="w-full text-[9px] ml-1">
-                                            <tbody>
-                                                <tr>
-                                                    <td className="pr-1" style={{ width: '100%' }}>
-                                                        <div className="flex flex-wrap gap-x-1">
-                                                            {monthData.records.map(r => (
-                                                                <span key={r.id} className="inline-block" title={`${r.date} - ${statusLabel[r.status] || r.status}`}>
-                                                                    <span className="text-gray-500">{new Date(r.date).getDate()}</span>
-                                                                    <span className={
-                                                                        r.status === 'PRESENT' ? 'text-green-600 font-bold' :
-                                                                        r.status === 'LATE' ? 'text-yellow-600 font-bold' :
-                                                                        r.status === 'ABSENT' ? 'text-red-600 font-bold' :
-                                                                        'text-blue-600 font-bold'
-                                                                    }>{statusVN[r.status] || '?'}</span>
-                                                                    {' '}
-                                                                </span>
-                                                            ))}
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                        <p className="text-[9px] ml-1 text-gray-600">
-                                            ✔ {presentCount} có mặt
-                                            {absentCount > 0 && <span className="text-red-600"> • ✘ {absentCount} vắng</span>}
-                                            {classInfo.fee.type === 'PER_SESSION' && monthFee > 0 && (
-                                                <span className="font-bold"> → {formatCurrency(monthFee)}</span>
-                                            )}
-                                        </p>
-                                    </div>
+                                    <p key={monthData.month} className="ml-2 text-[9px] py-0.5">
+                                        {formatMonth(monthData.month)}: <span className="font-bold">{presentCount} buổi</span>
+                                        {classInfo.fee.type === 'PER_SESSION' && classInfo.fee.amount > 0 && (
+                                            <span> × {formatCurrency(classInfo.fee.amount)} = <span className="font-bold">{formatCurrency(monthFee)}</span></span>
+                                        )}
+                                        {classInfo.fee.type === 'MONTHLY' && monthFee > 0 && (
+                                            <span> → <span className="font-bold">{formatCurrency(monthFee)}</span></span>
+                                        )}
+                                    </p>
                                 );
                             })}
                         </div>
@@ -241,8 +215,7 @@ export const DebtNotice: React.FC<DebtNoticeProps> = ({ student, transactions, s
             )}
             
             <div className="text-center mt-2 italic text-[9px]">
-                <p>Ghi chú: ✔ Có mặt &nbsp; ✘ Vắng &nbsp; ⏰ Muộn</p>
-                <p className="mt-1">Cảm ơn Quý phụ huynh!</p>
+                <p>Cảm ơn Quý phụ huynh!</p>
             </div>
         </div>
     );
