@@ -112,7 +112,7 @@ fun AppNavigation() {
                     visibleNavItems.forEach { screen ->
                         val isSelected = if (screen == Screen.More) {
                             // "More" is selected when on More, Profile, Finance, Announcements, etc.
-                            val moreRoutes = setOf(Screen.More.route, Screen.Profile.route, Screen.Finance.route, Screen.Announcements.route, Screen.Reports.route, Screen.Classes.route, Screen.Teachers.route, Screen.MyPayslip.route)
+                            val moreRoutes = setOf(Screen.More.route, Screen.Profile.route, Screen.Finance.route, Screen.Announcements.route, Screen.Reports.route, Screen.Classes.route, Screen.Teachers.route, Screen.MyPayslip.route, Screen.TeacherCalendar.route)
                             moreRoutes.contains(currentDestination?.route)
                         } else {
                             currentDestination?.hierarchy?.any { it.route == screen.route } == true
@@ -288,6 +288,11 @@ fun AppNavigation() {
                     onBack = { navController.popBackStack() }
                 )
             }
+            composable(Screen.TeacherCalendar.route) {
+                com.educenter.pro.ui.screens.calendar.TeacherCalendarScreen(
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
     }
 }
@@ -385,6 +390,7 @@ fun MoreScreen(
 
             // Teacher: My Payslip
             if (currentUserRole == UserRole.TEACHER) {
+                MoreMenuItem(Icons.Default.CalendarMonth, "Lịch dạy của tôi", Color(0xFF3B82F6)) { onNavigateTo(Screen.TeacherCalendar.route) }
                 MoreMenuItem(Icons.Default.Receipt, "Bảng lương của tôi", Color(0xFF10B981)) { onNavigateTo("my_payslip") }
             }
 
