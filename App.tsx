@@ -42,6 +42,7 @@ const ParentAttendanceScreen = React.lazy(() => import('./screens/parent/ParentA
 const SuperAdminScreen = React.lazy(() => import('./screens/SuperAdminScreen').then(m => ({ default: m.SuperAdminScreen })));
 const LandingPage = React.lazy(() => import('./screens/LandingPage').then(m => ({ default: m.LandingPage })));
 const GuidePage = React.lazy(() => import('./screens/GuidePage').then(m => ({ default: m.GuidePage })));
+const TeacherCalendarScreen = React.lazy(() => import('./screens/teacher/TeacherCalendarScreen').then(m => ({ default: m.TeacherCalendarScreen })));
 
 
 import { UserRole } from './types';
@@ -127,6 +128,7 @@ const AppLayout: React.FC = () => {
             case ROUTES.SETTINGS: return 'Cài đặt';
             case ROUTES.ROOMS: return 'Phòng học';
             case ROUTES.AUDIT_LOG: return 'Lịch sử thao tác';
+            case ROUTES.TEACHER_CALENDAR: return 'Lịch dạy';
             default: return 'EduCenter Pro';
         }
     }, [location.pathname]);
@@ -305,6 +307,7 @@ const AppRoutes: React.FC = () => {
                     <Route path={ROUTES.ANNOUNCEMENTS} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.TEACHER, UserRole.VIEWER]}><AnnouncementsScreen /></ProtectedRoute>} />
                     <Route path={ROUTES.ROOMS} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.VIEWER]}><RoomsScreen /></ProtectedRoute>} />
                     <Route path={ROUTES.AUDIT_LOG} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.VIEWER]}><AuditLogScreen /></ProtectedRoute>} />
+                    <Route path={ROUTES.TEACHER_CALENDAR} element={<ProtectedRoute allowedRoles={[UserRole.TEACHER, UserRole.ADMIN, UserRole.MANAGER, UserRole.VIEWER]}><TeacherCalendarScreen /></ProtectedRoute>} />
                 </Route>
 
                 {/* Parent Portal Routes */}

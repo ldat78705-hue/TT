@@ -15,7 +15,9 @@ data class Settings(
     val bankName: String = "",
     val bankAccountNumber: String = "",
     val bankAccountHolder: String = "",
-    val zaloTuitionTemplate: String = ""
+    val zaloTuitionTemplate: String = "",
+    val zaloAbsenceTemplate: String = "",
+    val messageTemplates: Map<String, String>? = null
 )
 
 data class Student(

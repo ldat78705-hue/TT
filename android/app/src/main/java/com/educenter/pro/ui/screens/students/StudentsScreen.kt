@@ -75,25 +75,11 @@ fun StudentsScreen(
         ) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Search bar with clear button
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = viewModel::onSearchQueryChange,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp)
-                    .height(48.dp),
-                placeholder = { Text("Tìm tên hoặc số điện thoại...", fontSize = 14.sp, maxLines = 1) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(20.dp)) },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { viewModel.onSearchQueryChange("") }, modifier = Modifier.size(32.dp)) {
-                            Icon(Icons.Default.Clear, contentDescription = "Xóa tìm kiếm", modifier = Modifier.size(16.dp))
-                        }
-                    }
-                },
-                singleLine = true,
-                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp),
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+            com.educenter.pro.ui.components.AppSearchBar(
+                query = searchQuery,
+                onQueryChange = viewModel::onSearchQueryChange,
+                placeholder = "Tìm tên hoặc số điện thoại...",
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
             )
 
             LazyColumn(
@@ -620,12 +606,15 @@ fun StudentDetailDialog(
                             val classNames = studentClasses.joinToString(", ") { it.name }
                             
                             // Use custom template from settings if available
-                            val template = settings?.zaloTuitionTemplate
+                            // Priority: messageTemplates.tuitionReminder > zaloTuitionTemplate > default
+                            val template = settings?.messageTemplates?.get("tuitionReminder")
+                                ?: settings?.zaloTuitionTemplate
                             val message = if (!template.isNullOrBlank()) {
                                 template
                                     .replace("{parentName}", parentName)
                                     .replace("{centerName}", centerName)
                                     .replace("{studentName}", student.name)
+                                    .replace("{className}", classNames)
                                     .replace("{amount}", debtAmount)
                                     .replace("\\n", "\n")
                             } else {

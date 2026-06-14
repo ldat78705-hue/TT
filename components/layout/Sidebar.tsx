@@ -43,6 +43,7 @@ const accountantNavLinks = [
 const teacherNavLinks = [
     { to: ROUTES.DASHBOARD, icon: ICONS.dashboard, label: 'Bảng điều khiển' },
     { to: ROUTES.CLASSES, icon: ICONS.classes, label: 'Lớp học của tôi' },
+    { to: ROUTES.TEACHER_CALENDAR, icon: ICONS.calendar, label: 'Lịch dạy' },
     { to: ROUTES.ATTENDANCE_HUB, icon: ICONS.calendar, label: 'Lịch điểm danh' },
     { to: ROUTES.ANNOUNCEMENTS, icon: ICONS.announcement, label: 'Thông báo' },
 ];

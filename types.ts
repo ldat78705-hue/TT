@@ -204,8 +204,17 @@ export interface CenterSettings {
   zaloRefreshToken?: string;
   zaloAccessToken?: string;
   zaloTokenExpiresAt?: number;
-  zaloAbsenceTemplate?: string; // Mẫu tin nhắn vắng mặt
-  zaloTuitionTemplate?: string; // Mẫu tin nhắn học phí
+  zaloAbsenceTemplate?: string; // Mẫu tin nhắn vắng mặt (legacy)
+  zaloTuitionTemplate?: string; // Mẫu tin nhắn học phí (legacy)
+  // Message Templates (unified)
+  messageTemplates?: {
+    absenceNotification?: string;    // Thông báo vắng mặt gửi PHHS
+    tuitionReminder?: string;        // Nhắc nhở công nợ/học phí
+    attendanceReport?: string;       // Báo cáo điểm danh ngày
+    leaveRequestConfirm?: string;    // Xác nhận nghỉ phép
+    welcomeStudent?: string;         // Chào mừng HS mới
+    paymentConfirm?: string;         // Xác nhận thanh toán
+  };
   // Auto Payment / Webhook Settings
   webhookEnabled?: boolean;
   webhookStudentIdPrefix?: string; // Prefix mã HV trong nội dung CK (default: 'HS')

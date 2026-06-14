@@ -245,7 +245,7 @@ export default async function handler(req: any, res: any) {
                 
                 const { accessToken } = await getValidAccessToken(centerId, settings);
                 
-                const template = settings.zaloAbsenceTemplate || 
+                const template = settings.messageTemplates?.absenceNotification || settings.zaloAbsenceTemplate || 
                     'Kính gửi PH {parentName},\n\nTrung tâm {centerName} xin thông báo: Học viên {studentName} đã vắng mặt tại lớp {className} ngày {date}.\n\nVui lòng liên hệ trung tâm nếu cần thêm thông tin.\nTrân trọng!';
                 
                 const results: any[] = [];
@@ -320,7 +320,7 @@ export default async function handler(req: any, res: any) {
                 
                 const { accessToken } = await getValidAccessToken(centerId, settings);
                 
-                const template = settings.zaloTuitionTemplate || 
+                const template = settings.messageTemplates?.tuitionReminder || settings.zaloTuitionTemplate || 
                     'Kính gửi PH {parentName},\n\nTrung tâm {centerName} xin thông báo: Học viên {studentName} hiện có học phí chưa thanh toán: {amount}.\n\nVui lòng thanh toán để đảm bảo quyền lợi học tập.\nTrân trọng!';
                 
                 const message = processTemplate(template, {

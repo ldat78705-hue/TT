@@ -63,6 +63,7 @@ export const ROUTES = {
   PARENT_REPORTS: '/portal/reports',
   PARENT_FINANCE: '/portal/finance',
   PARENT_ATTENDANCE: '/portal/attendance',
+  TEACHER_CALENDAR: '/teacher-calendar',
 };
 
 export const ICONS = {

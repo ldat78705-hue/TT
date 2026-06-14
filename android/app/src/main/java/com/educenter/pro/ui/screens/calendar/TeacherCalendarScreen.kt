@@ -85,10 +85,15 @@ class TeacherCalendarViewModel @Inject constructor(
         viewModelScope.launch {
             repository.appData.collect { appData ->
                 if (appData != null) {
-                    val email = repository.getLoggedInUserEmail()
-                    val teacher = appData.teachers.find { it.email == email || it.id == email }
+                    val loginId = repository.getLoggedInUserId()
+                    val loginEmail = repository.getLoggedInUserEmail()
+                    val teacher = appData.teachers.find { t ->
+                        t.id == loginId || t.id == loginEmail ||
+                        t.email == loginEmail || t.email == loginId ||
+                        t.phone == loginEmail || t.phone == loginId
+                    }
                     val teacherId = teacher?.id ?: ""
-                    val teacherName = teacher?.name ?: email
+                    val teacherName = teacher?.name ?: loginEmail
 
                     activeStudentIds = appData.students.filter { it.status == PersonStatus.ACTIVE }.map { it.id }.toSet()
 

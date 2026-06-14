@@ -617,6 +617,88 @@ export const SettingsScreen: React.FC = () => {
                                 )}
                             </div>
                         </fieldset>
+
+                        {/* Message Templates */}
+                        <fieldset className="form-fieldset" disabled={isViewer}>
+                            <legend className="form-legend">📝 Tin nhắn mẫu</legend>
+                            <div className="space-y-4 mt-2">
+                                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                                    <p className="font-semibold">Biến có thể sử dụng:</p>
+                                    <div className="flex flex-wrap gap-2 mt-1">
+                                        {['{parentName}', '{studentName}', '{className}', '{date}', '{centerName}', '{amount}', '{phone}'].map(v => (
+                                            <code key={v} className="bg-white dark:bg-black/30 px-1.5 py-0.5 rounded text-xs">{v}</code>
+                                        ))}
+                                    </div>
+                                    <p className="mt-2 text-gray-500 dark:text-gray-400">Các biến sẽ được thay thế bằng dữ liệu thực khi gửi tin nhắn. Cấu hình ở đây sẽ áp dụng cho cả Web và App.</p>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium">🔴 Thông báo vắng mặt</label>
+                                    <p className="text-xs text-gray-500 mb-1">Gửi PHHS khi học viên vắng không phép</p>
+                                    <textarea 
+                                        value={settings.messageTemplates?.absenceNotification || settings.zaloAbsenceTemplate || 'Kính gửi PH {parentName},\n\nTrung tâm {centerName} xin thông báo: Học viên {studentName} đã vắng mặt tại lớp {className} ngày {date}.\n\nVui lòng liên hệ trung tâm nếu cần thêm thông tin.\nTrân trọng!'}
+                                        onChange={(e) => setSettings(prev => ({ ...prev, messageTemplates: { ...prev.messageTemplates, absenceNotification: e.target.value } }))}
+                                        className="form-input mt-1" 
+                                        rows={4}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium">💰 Nhắc nhở công nợ / Học phí</label>
+                                    <p className="text-xs text-gray-500 mb-1">Gửi PHHS khi cần nhắc học phí</p>
+                                    <textarea 
+                                        value={settings.messageTemplates?.tuitionReminder || settings.zaloTuitionTemplate || 'Kính gửi PH {parentName},\n\nTrung tâm {centerName} xin thông báo: Học viên {studentName} hiện có học phí chưa thanh toán: {amount}.\n\nVui lòng thanh toán để đảm bảo quyền lợi học tập.\nTrân trọng!'}
+                                        onChange={(e) => setSettings(prev => ({ ...prev, messageTemplates: { ...prev.messageTemplates, tuitionReminder: e.target.value } }))}
+                                        className="form-input mt-1" 
+                                        rows={4}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium">📋 Báo cáo điểm danh ngày</label>
+                                    <p className="text-xs text-gray-500 mb-1">Gửi PHHS khi điểm danh xong</p>
+                                    <textarea 
+                                        value={settings.messageTemplates?.attendanceReport || 'Kính gửi PH {parentName},\n\nHọc viên {studentName} đã tham gia lớp {className} ngày {date}.\n\nTrân trọng,\n{centerName}'}
+                                        onChange={(e) => setSettings(prev => ({ ...prev, messageTemplates: { ...prev.messageTemplates, attendanceReport: e.target.value } }))}
+                                        className="form-input mt-1" 
+                                        rows={3}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium">📝 Xác nhận nghỉ phép</label>
+                                    <p className="text-xs text-gray-500 mb-1">Gửi PHHS khi phụ huynh xin nghỉ cho con</p>
+                                    <textarea 
+                                        value={settings.messageTemplates?.leaveRequestConfirm || 'Kính gửi PH {parentName},\n\nTrung tâm {centerName} đã ghi nhận đơn xin nghỉ phép cho học viên {studentName} tại lớp {className} ngày {date}.\n\nTrân trọng!'}
+                                        onChange={(e) => setSettings(prev => ({ ...prev, messageTemplates: { ...prev.messageTemplates, leaveRequestConfirm: e.target.value } }))}
+                                        className="form-input mt-1" 
+                                        rows={3}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium">🎉 Chào mừng HS mới</label>
+                                    <p className="text-xs text-gray-500 mb-1">Gửi PHHS khi đăng ký HS mới</p>
+                                    <textarea 
+                                        value={settings.messageTemplates?.welcomeStudent || 'Kính gửi PH {parentName},\n\nTrung tâm {centerName} xin chào mừng học viên {studentName} gia nhập lớp {className}.\n\nChúc em học tập vui vẻ và đạt kết quả tốt!\nTrân trọng!'}
+                                        onChange={(e) => setSettings(prev => ({ ...prev, messageTemplates: { ...prev.messageTemplates, welcomeStudent: e.target.value } }))}
+                                        className="form-input mt-1" 
+                                        rows={3}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium">✅ Xác nhận thanh toán</label>
+                                    <p className="text-xs text-gray-500 mb-1">Gửi khi ghi nhận thanh toán thành công</p>
+                                    <textarea 
+                                        value={settings.messageTemplates?.paymentConfirm || 'Kính gửi PH {parentName},\n\nTrung tâm {centerName} xác nhận đã nhận thanh toán {amount} cho học viên {studentName}.\n\nCảm ơn quý phụ huynh!\nTrân trọng!'}
+                                        onChange={(e) => setSettings(prev => ({ ...prev, messageTemplates: { ...prev.messageTemplates, paymentConfirm: e.target.value } }))}
+                                        className="form-input mt-1" 
+                                        rows={3}
+                                    />
+                                </div>
+                            </div>
+                        </fieldset>
                     </div>
                 </div>
 

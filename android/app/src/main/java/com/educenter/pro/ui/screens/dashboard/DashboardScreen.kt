@@ -95,32 +95,10 @@ fun DashboardScreen(
             val appData = uiState
 
             Column {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = {
-                        Text("Tìm học viên, lớp, giáo viên...", fontSize = 14.sp, maxLines = 1, color = Color(0xFF94A3B8))
-                    },
-                    leadingIcon = {
-                        Icon(Icons.Default.Search, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(20.dp))
-                    },
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
-                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = BlueAccent,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                    ),
-                    trailingIcon = {
-                        if (searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { searchQuery = "" }, modifier = Modifier.size(32.dp)) {
-                                Icon(Icons.Default.Close, contentDescription = "Xóa", tint = Color(0xFF64748B), modifier = Modifier.size(16.dp))
-                            }
-                        }
-                    }
+                com.educenter.pro.ui.components.AppSearchBar(
+                    query = searchQuery,
+                    onQueryChange = { searchQuery = it },
+                    placeholder = "Tìm học viên, lớp, giáo viên..."
                 )
 
                 if (searchQuery.length >= 2) {

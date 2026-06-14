@@ -147,7 +147,12 @@ class DashboardViewModel @Inject constructor(
 
                     // === TEACHER-SPECIFIC DATA ===
                     val loggedInEmail = dataRepository.getLoggedInUserEmail()
-                    val teacher = appData.teachers.find { it.email == loggedInEmail || it.id == loggedInEmail }
+                    val loggedInId = dataRepository.getLoggedInUserId()
+                    val teacher = appData.teachers.find { t ->
+                        t.id == loggedInId || t.id == loggedInEmail ||
+                        t.email == loggedInEmail || t.email == loggedInId ||
+                        t.phone == loggedInEmail || t.phone == loggedInId
+                    }
                     val teacherId = teacher?.id ?: ""
                     val teacherName = teacher?.name ?: loggedInEmail
 
