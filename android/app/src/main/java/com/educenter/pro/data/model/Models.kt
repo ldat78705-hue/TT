@@ -23,6 +23,7 @@ data class Student(
     val name: String = "",
     val phone: String = "",
     val parentName: String = "",
+    val parentPhone: String? = null, // SĐT Zalo phụ huynh
     val email: String = "",
     val address: String = "",
     val gender: String = "Khác",

@@ -4,7 +4,6 @@ package com.educenter.pro.ui.screens.classes
 import android.content.Context
 import android.content.Intent
 import android.graphics.*
-import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -407,7 +406,8 @@ private fun shareClassDebtReport(context: Context, cls: ClassModel, students: Li
         }
 
         canvas.drawText("${index + 1}", colX[0] + 20f, cellY, paintCell)
-        canvas.drawText(student.id, colX[1] + 10f, cellY, paintCell)
+        val displayId = if (student.id.length > 8) student.id.take(8) + ".." else student.id
+        canvas.drawText(displayId, colX[1] + 10f, cellY, paintCell)
         canvas.drawText(student.name, colX[2] + 10f, cellY, paintCellBold)
         canvas.drawText(currencyFormatter.format(Math.abs(student.balance)), colX[3] - 20f, cellY, paintRed)
 
@@ -422,9 +422,10 @@ private fun shareClassDebtReport(context: Context, cls: ClassModel, students: Li
     val totalBg = Paint().apply { color = android.graphics.Color.parseColor("#FEF2F2"); style = Paint.Style.FILL }
     canvas.drawRect(colX[0], y, colX[3], y + rowHeight, totalBg)
     val totalY = y + rowHeight * 0.65f
-    val totalLabel = Paint(paintCellBold).apply { textAlign = Paint.Align.RIGHT }
-    canvas.drawText("TỔNG CÔNG NỢ", colX[2] + 460f, totalY, totalLabel)
-    canvas.drawText(currencyFormatter.format(Math.abs(totalDebt)), colX[3] - 20f, totalY, paintRed)
+    val totalLabel = Paint(paintCellBold).apply { textAlign = Paint.Align.RIGHT; textSize = 30f }
+    canvas.drawText("TỔNG CÔNG NỢ:", colX[2] + 400f, totalY, totalLabel)
+    val totalAmountPaint = Paint(paintRed).apply { textSize = 32f }
+    canvas.drawText(currencyFormatter.format(Math.abs(totalDebt)), colX[3] - 20f, totalY, totalAmountPaint)
     y += rowHeight
     canvas.drawLine(colX[0], y, colX[3], y, paintLine)
 
