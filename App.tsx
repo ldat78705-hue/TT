@@ -106,7 +106,7 @@ const AppLayout: React.FC = () => {
         setChangePwdLoading(false);
     };
     
-    const isAttendanceHub = location.pathname === ROUTES.ATTENDANCE_HUB;
+    const isFullHeightPage = location.pathname === ROUTES.ATTENDANCE_HUB || location.pathname === ROUTES.TEACHER_CALENDAR;
 
     const pageTitle = useMemo(() => {
         const path = location.pathname;
@@ -146,7 +146,7 @@ const AppLayout: React.FC = () => {
                         </button>
                     </div>
                 )}
-                <main className={`animate-fade-in ${isAttendanceHub ? "flex-1 overflow-hidden" : "flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8 pb-28 md:pb-8"}`}>
+                <main className={`animate-fade-in ${isFullHeightPage ? "flex-1 overflow-hidden" : "flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8 pb-28 md:pb-8"}`}>
                     {error && (
                         <div className="bg-red-100 border-l-4 border-red-500 text-red-800 p-4 mb-6 rounded-xl relative shadow-sm" role="alert">
                             <p className="font-bold">Thao tác thất bại</p>

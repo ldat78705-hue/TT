@@ -227,6 +227,7 @@ private val classColors = listOf(
 @Composable
 fun TeacherCalendarScreen(
     onBack: () -> Unit,
+    onNavigateToAttendance: (classId: String, date: String) -> Unit = { _, _ -> },
     viewModel: TeacherCalendarViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -414,9 +415,12 @@ fun TeacherCalendarScreen(
                     items(uiState.selectedDayClasses) { item ->
                         val colorIdx = myClasses(uiState).indexOf(item.classModel.id).coerceAtLeast(0) % classColors.size
                         val color = classColors[colorIdx]
+                        val dateStr = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(uiState.selectedDate)
 
                         Card(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().clickable {
+                                onNavigateToAttendance(item.classModel.id, dateStr)
+                            },
                             shape = RoundedCornerShape(14.dp),
                             elevation = CardDefaults.cardElevation(2.dp)
                         ) {
@@ -434,7 +438,7 @@ fun TeacherCalendarScreen(
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Text(item.classModel.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onBackground)
+                                        Text(item.classModel.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.weight(1f))
                                         Box(
                                             modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(color.copy(alpha = 0.1f)).padding(horizontal = 8.dp, vertical = 3.dp)
                                         ) {
@@ -455,6 +459,16 @@ fun TeacherCalendarScreen(
                                         Icon(Icons.Default.People, contentDescription = null, modifier = Modifier.size(14.dp), tint = Color(0xFF94A3B8))
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Text("${item.studentCount} học viên", fontSize = 13.sp, color = Color(0xFF64748B))
+                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    // Attendance button
+                                    Button(
+                                        onClick = { onNavigateToAttendance(item.classModel.id, dateStr) },
+                                        modifier = Modifier.fillMaxWidth().height(40.dp),
+                                        shape = RoundedCornerShape(10.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = color)
+                                    ) {
+                                        Text("✏️ Điểm danh", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                     }
                                 }
                             }

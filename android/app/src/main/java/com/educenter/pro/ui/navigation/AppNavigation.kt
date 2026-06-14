@@ -71,6 +71,7 @@ sealed class Screen(val route: String, val title: String? = null, val icon: Imag
     object More : Screen("more", "Thêm", Icons.Filled.MoreHoriz)
     object MyPayslip : Screen("my_payslip", "Bảng lương")
     object TeacherCalendar : Screen("teacher_calendar", "Lịch dạy")
+    object AttendanceFromCalendar : Screen("attendance_calendar/{classId}/{date}")
     // Parent screens
     object ParentHome : Screen("parent_home", "Trang chủ", Icons.Filled.Home)
     object ParentAttendance : Screen("parent_attendance", "Điểm danh", Icons.Filled.EventAvailable)
@@ -306,7 +307,26 @@ fun AppNavigation() {
             }
             composable(Screen.TeacherCalendar.route) {
                 com.educenter.pro.ui.screens.calendar.TeacherCalendarScreen(
-                    onBack = { navController.popBackStack() }
+                    onBack = { navController.popBackStack() },
+                    onNavigateToAttendance = { classId, date ->
+                        navController.navigate("attendance_calendar/$classId/$date")
+                    }
+                )
+            }
+            composable(
+                "attendance_calendar/{classId}/{date}",
+                arguments = listOf(
+                    androidx.navigation.navArgument("classId") { type = androidx.navigation.NavType.StringType },
+                    androidx.navigation.navArgument("date") { type = androidx.navigation.NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val classId = backStackEntry.arguments?.getString("classId") ?: ""
+                val date = backStackEntry.arguments?.getString("date") ?: ""
+                com.educenter.pro.ui.screens.attendance.AttendanceFromCalendarScreen(
+                    classId = classId,
+                    date = date,
+                    onBack = { navController.popBackStack() },
+                    onNavigateToQR = { navController.navigate(Screen.QRScanner.route) }
                 )
             }
             // === Parent screens ===

@@ -993,3 +993,145 @@ private fun formatDateVN(dateStr: String): String {
         dateStr
     }
 }
+
+/**
+ * Attendance screen opened from Teacher Calendar with preselected classId and date.
+ * Auto-selects the class and date, then shows the full attendance UI.
+ */
+@Composable
+fun AttendanceFromCalendarScreen(
+    classId: String,
+    date: String,
+    onBack: () -> Unit,
+    onNavigateToQR: () -> Unit = {},
+    viewModel: AttendanceViewModel = hiltViewModel()
+) {
+    // Auto-select class and date when this screen opens
+    LaunchedEffect(classId, date) {
+        if (date.isNotEmpty()) {
+            viewModel.selectDate(date)
+        }
+        if (classId.isNotEmpty()) {
+            viewModel.selectClass(classId)
+        }
+    }
+
+    val classes by viewModel.classes.collectAsState()
+    val selectedClassId by viewModel.selectedClassId.collectAsState()
+    val selectedDate by viewModel.selectedDate.collectAsState()
+    val students by viewModel.studentsInClass.collectAsState()
+    val attendanceMap by viewModel.attendanceMap.collectAsState()
+    val monthlyCounts by viewModel.monthlyAttendanceCounts.collectAsState()
+    val isSaving by viewModel.isSaving.collectAsState()
+    val saveSuccess by viewModel.saveSuccess.collectAsState()
+    val pendingOpsCount by viewModel.pendingOpsCount.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    val selectedClassName = classes.find { it.id == selectedClassId }?.name ?: ""
+
+    LaunchedEffect(saveSuccess) {
+        if (saveSuccess != null) {
+            kotlinx.coroutines.delay(2000)
+            viewModel.clearSaveResult()
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Column {
+                        Text(
+                            selectedClassName.ifEmpty { "Điểm danh" },
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            "Ngày: ${formatDateVN(selectedDate)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Quay lại")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            )
+        }
+    ) { padding ->
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+            if (students.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("📋", fontSize = 48.sp)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "Lớp này chưa có học viên",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                }
+            } else {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        item {
+                            QuickActionsCard(
+                                onBulkChange = { viewModel.setAllStatus(it) },
+                                onReset = { viewModel.setAllStatus("UNMARKED") }
+                            )
+                        }
+                        item {
+                            AttendanceSummaryBar(
+                                attendanceMap = attendanceMap,
+                                totalStudents = students.size
+                            )
+                        }
+                        itemsIndexed(students) { index, student ->
+                            val entry = attendanceMap[student.id] ?: AttendanceEntry()
+                            val monthCount = monthlyCounts[student.id] ?: 0
+                            StudentAttendanceCard(
+                                index = index + 1,
+                                studentName = student.name,
+                                monthlyCount = monthCount,
+                                entry = entry,
+                                onStatusChange = { status -> viewModel.setStudentStatus(student.id, status) },
+                                onNoteChange = { note -> viewModel.setStudentNote(student.id, note) }
+                            )
+                        }
+                        item { Spacer(modifier = Modifier.height(80.dp)) }
+                    }
+                    SaveButtonBar(
+                        isSaving = isSaving,
+                        saveSuccess = saveSuccess,
+                        pendingCount = pendingOpsCount,
+                        hasMarkedStudents = attendanceMap.any { it.value.status != "UNMARKED" },
+                        onSave = { viewModel.saveAttendance() },
+                        onDelete = { viewModel.deleteAttendance() },
+                        onShare = {
+                            val report = viewModel.buildAbsenceReport()
+                            if (report != null) {
+                                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, report)
+                                }
+                                context.startActivity(Intent.createChooser(shareIntent, "Gửi thông báo vắng qua..."))
+                            }
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
