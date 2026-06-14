@@ -452,10 +452,12 @@ fun StudentCard(
                             color = Color(0xFF3B82F6),
                             fontWeight = FontWeight.Medium,
                             modifier = Modifier.clickable {
-                                val intent = android.content.Intent(android.content.Intent.ACTION_DIAL).apply {
-                                    data = android.net.Uri.parse("tel:${student.phone}")
-                                }
-                                context.startActivity(intent)
+                                try {
+                                    val intent = android.content.Intent(android.content.Intent.ACTION_DIAL).apply {
+                                        data = android.net.Uri.parse("tel:${student.phone.replace("\\s".toRegex(), "")}")
+                                    }
+                                    context.startActivity(intent)
+                                } catch (_: Exception) {}
                             }
                         )
                     }
@@ -563,10 +565,12 @@ fun StudentDetailDialog(
                     if (student.phone.isNotBlank()) {
                         androidx.compose.material3.AssistChip(
                             onClick = {
-                                val intent = android.content.Intent(android.content.Intent.ACTION_DIAL).apply {
-                                    data = android.net.Uri.parse("tel:${student.phone}")
-                                }
-                                context.startActivity(intent)
+                                try {
+                                    val intent = android.content.Intent(android.content.Intent.ACTION_DIAL).apply {
+                                        data = android.net.Uri.parse("tel:${student.phone.replace("\\s".toRegex(), "")}")
+                                    }
+                                    context.startActivity(intent)
+                                } catch (_: Exception) {}
                             },
                             label = { Text("📞 ${student.phone}", fontSize = 14.sp) },
                             shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp)

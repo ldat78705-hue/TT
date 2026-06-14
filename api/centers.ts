@@ -1,6 +1,6 @@
 import { verifyToken } from './_lib/jwt.js';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, doc, getDoc, setDoc, getDocs, collection, deleteDoc, updateDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, getDocs, collection, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { authenticateServer } from './_lib/serverAuth.js';
 import { hashPassword, verifyPassword } from './_lib/crypto.js';
 import { signToken } from './_lib/jwt.js';
@@ -430,6 +430,111 @@ export default async function handler(req: any, res: any) {
             } catch (error: any) {
                 console.error('Backup All Error:', error);
                 return res.status(500).json({ error: 'Sao lưu thất bại: ' + (error.message || 'Unknown') });
+            }
+        }
+
+        // === RESTORE ALL ===
+        if (body.action === 'restore_all') {
+            try {
+                const { backupData } = body;
+                if (!backupData || !backupData.centers) {
+                    return res.status(400).json({ error: 'Dữ liệu sao lưu không hợp lệ' });
+                }
+
+                const centersData = backupData.centers;
+                const slugs = Object.keys(centersData);
+                let restored = 0;
+
+                const SHARDED_COLS = ['attendance', 'invoices', 'transactions', 'income', 'expenses', 'payrolls'];
+                const NON_SHARDED_COLS = ['students', 'teachers', 'staff', 'classes', 'progressReports', 'announcements', 'settings', 'auditLogs', 'rooms'];
+
+                for (const slug of slugs) {
+                    const colName = `center_${slug}`;
+                    const centerData = centersData[slug];
+                    if (!centerData) continue;
+
+                    // First: delete all existing docs in this center collection
+                    const existingDocs = await getDocs(collection(db, colName));
+                    const deleteBatches: any[] = [];
+                    let deleteBatch = writeBatch(db);
+                    let deleteCount = 0;
+                    existingDocs.forEach((d) => {
+                        deleteBatch.delete(doc(db, colName, d.id));
+                        deleteCount++;
+                        if (deleteCount >= 450) {
+                            deleteBatches.push(deleteBatch);
+                            deleteBatch = writeBatch(db);
+                            deleteCount = 0;
+                        }
+                    });
+                    if (deleteCount > 0) deleteBatches.push(deleteBatch);
+                    for (const b of deleteBatches) await b.commit();
+
+                    // Now write back data
+                    let batch = writeBatch(db);
+                    let opCount = 0;
+
+                    const flushBatch = async () => {
+                        if (opCount > 0) {
+                            await batch.commit();
+                            batch = writeBatch(db);
+                            opCount = 0;
+                        }
+                    };
+
+                    // Write non-sharded collections
+                    for (const col of NON_SHARDED_COLS) {
+                        if (centerData[col] !== undefined) {
+                            batch.set(doc(db, colName, col), { data: centerData[col] });
+                            opCount++;
+                            if (opCount >= 450) await flushBatch();
+                        }
+                    }
+
+                    // Write sharded collections — group items by shard key
+                    for (const col of SHARDED_COLS) {
+                        const items = centerData[col];
+                        if (!Array.isArray(items) || items.length === 0) continue;
+
+                        // Group by shard key
+                        const shards: Record<string, any[]> = {};
+                        for (const item of items) {
+                            let shardKey = col; // fallback
+                            try {
+                                if (['transactions', 'income', 'expenses'].includes(col) && item.date) {
+                                    const match = item.date.match(/^(\d{4})-(\d{2})/);
+                                    if (match) shardKey = `${col}_${match[1]}_${match[2]}`;
+                                } else if (['attendance', 'invoices', 'payrolls'].includes(col) && item.date) {
+                                    const match = item.date.match(/^(\d{4})-(\d{2})/);
+                                    if (match) shardKey = `${col}_${match[1]}_${match[2]}`;
+                                }
+                            } catch {}
+                            if (!shards[shardKey]) shards[shardKey] = [];
+                            shards[shardKey].push(item);
+                        }
+
+                        for (const [shardKey, shardItems] of Object.entries(shards)) {
+                            batch.set(doc(db, colName, shardKey), { data: shardItems });
+                            opCount++;
+                            if (opCount >= 450) await flushBatch();
+                        }
+                    }
+
+                    // Write sync doc
+                    const newSyncId = Date.now().toString() + '_restore_' + Math.random().toString(36).substring(2);
+                    batch.set(doc(db, colName, '_sync'), { syncId: newSyncId, lastUpdatedAt: Date.now() });
+                    opCount++;
+                    await flushBatch();
+
+                    restored++;
+                }
+
+                return res.status(200).json({
+                    message: `Đã khôi phục ${restored}/${slugs.length} trung tâm thành công.`
+                });
+            } catch (error: any) {
+                console.error('Restore All Error:', error);
+                return res.status(500).json({ error: 'Khôi phục thất bại: ' + (error.message || 'Unknown') });
             }
         }
 

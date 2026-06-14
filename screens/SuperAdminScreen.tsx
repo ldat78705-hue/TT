@@ -101,6 +101,13 @@ const SuperAdminLogin: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
 };
 
 // --- Dashboard ---
+const getVNDateStr = () => {
+    const now = new Date();
+    const vn = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${pad(vn.getUTCHours())}-${pad(vn.getUTCMinutes())}_${pad(vn.getUTCDate())}-${pad(vn.getUTCMonth()+1)}-${vn.getUTCFullYear()}`;
+};
+
 const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     const [centers, setCenters] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -118,6 +125,8 @@ const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
     const [credTab, setCredTab] = useState<'set'|'admin'|'accounts'>('set');
     const [centerAccounts, setCenterAccounts] = useState<any[]>([]);
     const [isLoadingAccounts, setIsLoadingAccounts] = useState(false);
+    const [isRestoring, setIsRestoring] = useState(false);
+    const [restoreConfirm, setRestoreConfirm] = useState<{open:boolean, data:any, source:string}>({open:false, data:null, source:''});
 
     // === Google Drive Backup State ===
     const [driveToken, setDriveToken] = useState<string | null>(localStorage.getItem(SA_DRIVE_TOKEN_KEY));
@@ -177,9 +186,9 @@ const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
             const backupData = await apiCall('backup_all', {});
             const fileContent = JSON.stringify(backupData, null, 2);
             const blob = new Blob([fileContent], { type: 'application/json' });
-            const now = new Date();
-            const dateStr = now.toISOString().replace(/[:.]/g, '-').substring(0, 19);
+            const dateStr = getVNDateStr();
             const fileName = `EduCenterPro_FULL_${isAuto ? 'Auto_' : ''}Backup_${dateStr}.json`;
+            const now = new Date();
 
             const metadata = { name: fileName, mimeType: 'application/json', parents: ['root'] };
             const form = new FormData();
@@ -214,8 +223,7 @@ const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            const dateStr = new Date().toISOString().split('T')[0];
-            link.download = `EduCenterPro_FULL_Backup_${dateStr}.json`;
+            link.download = `EduCenterPro_FULL_Backup_${getVNDateStr()}.json`;
             document.body.appendChild(link); link.click();
             document.body.removeChild(link); URL.revokeObjectURL(url);
             setMessage(`✅ Đã tải về bản sao lưu (${backupData.centersCount} trung tâm)`);
@@ -277,6 +285,57 @@ const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
             } else throw new Error('Xóa thất bại');
         } catch (err: any) { setMessage('❌ ' + err.message); }
         finally { setDriveFileToDelete(null); }
+    };
+
+    // === RESTORE FUNCTIONS ===
+    const handleRestoreFromFile = () => {
+        const input = document.createElement('input');
+        input.type = 'file'; input.accept = '.json';
+        input.onchange = async (e: any) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            try {
+                const text = await file.text();
+                const data = JSON.parse(text);
+                if (!data.centersData && !data.students) {
+                    setMessage('❌ File không đúng định dạng sao lưu EduCenterPro.'); return;
+                }
+                setRestoreConfirm({open: true, data, source: `file "${file.name}"`});
+            } catch { setMessage('❌ File JSON không hợp lệ.'); }
+        };
+        input.click();
+    };
+
+    const handleRestoreFromDrive = async (fileId: string, fileName: string) => {
+        if (!driveToken) return;
+        setMessage('⏳ Đang tải file từ Drive...');
+        try {
+            const resp = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+                headers: { 'Authorization': `Bearer ${driveToken}` },
+            });
+            if (!resp.ok) throw new Error('Tải thất bại');
+            const data = await resp.json();
+            if (!data.centersData && !data.students) {
+                setMessage('❌ File không đúng định dạng sao lưu.'); return;
+            }
+            setRestoreConfirm({open: true, data, source: `Drive "${fileName}"`});
+        } catch (err: any) { setMessage('❌ ' + err.message); }
+    };
+
+    const handleConfirmRestore = async () => {
+        if (!restoreConfirm.data) return;
+        setIsRestoring(true);
+        setMessage('⏳ Đang khôi phục dữ liệu...');
+        try {
+            const result = await apiCall('restore_all', { backupData: restoreConfirm.data });
+            setMessage(`✅ Khôi phục thành công! ${result.message || ''}`);
+            refresh();
+        } catch (err: any) {
+            setMessage('❌ Khôi phục thất bại: ' + err.message);
+        } finally {
+            setIsRestoring(false);
+            setRestoreConfirm({open: false, data: null, source: ''});
+        }
     };
 
     const lastAutoBackupStr = localStorage.getItem(SA_AUTO_BACKUP_KEY);
@@ -484,11 +543,15 @@ const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Sao lưu toàn bộ dữ liệu của tất cả trung tâm ({centers.length} TT)</p>
                         </div>
                         <div className="flex gap-2 flex-wrap">
-                            <button onClick={handleDownloadBackup} disabled={isBackingUp}
+                            <button onClick={handleDownloadBackup} disabled={isBackingUp || isRestoring}
                                 className="px-3 py-2 text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors disabled:opacity-50">
                                 📥 Tải về máy
                             </button>
-                            <button onClick={() => doBackupToDrive(false)} disabled={isBackingUp || !driveToken}
+                            <button onClick={handleRestoreFromFile} disabled={isBackingUp || isRestoring}
+                                className="px-3 py-2 text-sm bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors disabled:opacity-50">
+                                {isRestoring ? '⏳ Đang khôi phục...' : '🔄 Khôi phục từ file'}
+                            </button>
+                            <button onClick={() => doBackupToDrive(false)} disabled={isBackingUp || !driveToken || isRestoring}
                                 className="px-3 py-2 text-sm bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors disabled:opacity-50"
                                 title={!driveToken ? 'Kết nối Google Drive trước' : ''}>
                                 {isBackingUp ? '⏳ Đang sao lưu...' : '☁️ Lưu lên Drive'}
@@ -769,6 +832,8 @@ const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                                         <div className="flex gap-2 flex-shrink-0">
                                             <button onClick={() => handleDriveDownload(f.id, f.name)}
                                                 className="px-2 py-1 text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 rounded hover:bg-blue-200">📥 Tải</button>
+                                            <button onClick={() => handleRestoreFromDrive(f.id, f.name)}
+                                                className="px-2 py-1 text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 rounded hover:bg-amber-200">🔄 Khôi phục</button>
                                             <button onClick={() => setDriveFileToDelete(f)}
                                                 className="px-2 py-1 text-xs bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 rounded hover:bg-red-200">🗑️</button>
                                         </div>
@@ -787,6 +852,17 @@ const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                 onConfirm={handleDriveDeleteConfirm}
                 title="Xóa file sao lưu?"
                 message={`Bạn có chắc muốn xóa "${driveFileToDelete?.name}" khỏi Google Drive?`}
+                confirmButtonVariant="danger"
+            />
+
+            {/* Restore Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={restoreConfirm.open}
+                onClose={() => setRestoreConfirm({open:false, data:null, source:''})}
+                onConfirm={handleConfirmRestore}
+                title="⚠️ Xác nhận Khôi phục dữ liệu"
+                message={`Bạn sắp khôi phục dữ liệu từ ${restoreConfirm.source}. Thao tác này sẽ GHI ĐÈ toàn bộ dữ liệu hiện tại của tất cả trung tâm. Hãy chắc chắn đã sao lưu trước khi tiếp tục!`}
+                confirmationKeyword="KHÔI PHỤC"
                 confirmButtonVariant="danger"
             />
         </div>
