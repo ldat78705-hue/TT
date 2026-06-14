@@ -310,7 +310,7 @@ function applySmartWindowFilter(data: any) {
         });
     }
     if (filtered.settings) {
-        const { adminPassword, ...safeSettings } = filtered.settings;
+        const { adminPassword, zaloAccessToken, zaloTokenExpiresAt, ...safeSettings } = filtered.settings;
         filtered.settings = safeSettings;
     }
 
