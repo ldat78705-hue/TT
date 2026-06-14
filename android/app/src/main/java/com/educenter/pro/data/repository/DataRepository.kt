@@ -193,11 +193,13 @@ class DataRepository @Inject constructor(
     }
 
     // Single attendance (kept for backward compat)
-    suspend fun recordAttendance(classId: String, studentId: String, dateStr: String, status: String) = withContext(Dispatchers.IO) {
+    suspend fun recordAttendance(classId: String, studentId: String, dateStr: String, status: String, note: String? = null) = withContext(Dispatchers.IO) {
         try {
-            val op = OperationPayload("updateSingleAttendance", mapOf(
+            val payload = mutableMapOf(
                 "classId" to classId, "studentId" to studentId, "date" to dateStr, "status" to status
-            ))
+            )
+            if (!note.isNullOrBlank()) payload["note"] = note
+            val op = OperationPayload("updateSingleAttendance", payload)
             val updatedData = apiService.executeOperation(op)
             saveAndCache(updatedData)
         } catch (e: Exception) {

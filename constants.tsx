@@ -62,6 +62,7 @@ export const ROUTES = {
   PARENT_DASHBOARD: '/portal/dashboard',
   PARENT_REPORTS: '/portal/reports',
   PARENT_FINANCE: '/portal/finance',
+  PARENT_ATTENDANCE: '/portal/attendance',
 };
 
 export const ICONS = {

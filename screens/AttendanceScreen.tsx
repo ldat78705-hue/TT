@@ -368,7 +368,7 @@ export const AttendanceScreen: React.FC = () => {
                                 onClick={() => {
                                     const statusLabel: Record<string, string> = {
                                         PRESENT: 'Có mặt', ABSENT: 'Có phép', UNEXCUSED_ABSENT: 'Không phép',
-                                        LATE: 'Trễ', UNMARKED: 'Chưa ĐD'
+                                        EXCUSED_ABSENT: 'Nghỉ phép', LATE: 'Trễ', UNMARKED: 'Chưa ĐD'
                                     };
                                     const rows = classStudents.map((s, i) => {
                                         const data = attendanceData.get(s.id);

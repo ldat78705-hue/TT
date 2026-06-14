@@ -150,6 +150,7 @@ export const updateClass = (payload: { originalId: string, updatedClass: Class }
 export const deleteClass = (classId: string) => patchData({ op: 'deleteClass', payload: { classId } });
 
 export const updateAttendance = (payload: AttendanceRecord[]) => patchData({ op: 'updateAttendance', payload });
+export const updateSingleAttendance = (payload: { classId: string; studentId: string; date: string; status: string; note?: string }) => patchData({ op: 'updateSingleAttendance', payload });
 export const deleteAttendanceForDate = (payload: { classId: string, date: string }) => patchData({ op: 'deleteAttendanceForDate', payload });
 export const deleteAttendanceByMonth = (payload: { month: number; year: number; }) => patchData({ op: 'deleteAttendanceByMonth', payload });
 

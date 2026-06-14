@@ -182,11 +182,9 @@ class ParentAttendanceViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(leaveRequestLoading = true, leaveRequestError = null, leaveRequestSuccess = false)
             try {
-                // Record attendance with EXCUSED_ABSENT status and the reason as note
-                val entries = mapOf(
-                    studentId to mapOf("status" to "EXCUSED_ABSENT", "note" to "PHHS xin phép: $reason")
-                )
-                repository.recordAttendanceBatch(classId, date, entries)
+                // Use updateSingleAttendance to avoid wiping other students' records
+                val note = "PHHS xin phép: $reason"
+                repository.recordAttendance(classId, studentId, date, "EXCUSED_ABSENT", note)
                 _uiState.value = _uiState.value.copy(leaveRequestLoading = false, leaveRequestSuccess = true)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(leaveRequestLoading = false, leaveRequestError = e.message ?: "Gửi đơn thất bại")

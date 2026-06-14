@@ -658,6 +658,13 @@ export default async function handler(req: any, res: any) {
         if (role === UserRole.VIEWER) {
             return res.status(403).send('Từ chối: Bạn không có quyền sửa đổi dữ liệu');
         }
+        // MANAGER: block dangerous admin-only operations
+        if (role === UserRole.MANAGER) {
+            const blockedManagerOps = ['clearCollections', 'updateSettings'];
+            if (blockedManagerOps.includes(operation.op)) {
+                return res.status(403).send('Từ chối: Chỉ quản trị viên mới được thực hiện thao tác này');
+            }
+        }
         if (role === UserRole.ACCOUNTANT) {
             const allowedOps = [
                 'addIncome', 'updateIncome', 'deleteIncome', 
@@ -682,24 +689,22 @@ export default async function handler(req: any, res: any) {
             }
         }
         if (role === UserRole.PARENT) {
-            const allowedParentOps = ['updateUserPassword', 'updateAttendance'];
+            const allowedParentOps = ['updateUserPassword', 'updateSingleAttendance'];
             if (!allowedParentOps.includes(operation.op)) {
                 return res.status(403).send('Từ chối: Bạn không có quyền sửa đổi dữ liệu');
             }
             if (operation.op === 'updateUserPassword' && operation.payload?.userId !== authPayload.userId) {
                 return res.status(403).send('Từ chối: Bạn chỉ có thể thay đổi mật khẩu của chính mình');
             }
-            if (operation.op === 'updateAttendance') {
+            if (operation.op === 'updateSingleAttendance') {
                 // Parent can only submit EXCUSED_ABSENT for their own student
-                const records = Array.isArray(operation.payload) ? operation.payload : [];
                 const parentStudentId = authPayload.userId;
-                for (const r of records) {
-                    if (r.studentId !== parentStudentId) {
-                        return res.status(403).send('Từ chối: Bạn chỉ có thể xin nghỉ cho con mình');
-                    }
-                    if (r.status !== 'EXCUSED_ABSENT') {
-                        return res.status(403).send('Từ chối: Phụ huynh chỉ có thể xin nghỉ phép');
-                    }
+                const p = operation.payload;
+                if (p.studentId !== parentStudentId) {
+                    return res.status(403).send('Từ chối: Bạn chỉ có thể xin nghỉ cho con mình');
+                }
+                if (p.status !== 'EXCUSED_ABSENT') {
+                    return res.status(403).send('Từ chối: Phụ huynh chỉ có thể xin nghỉ phép');
                 }
             }
         }

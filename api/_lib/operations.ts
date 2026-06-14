@@ -340,10 +340,11 @@ export function applyOperation(
             break;
         }
         case 'updateSingleAttendance': {
-            const { classId, studentId, date, status } = payload;
+            const { classId, studentId, date, status, note } = payload;
             const existingIndex = data.attendance.findIndex(a => a.classId === classId && a.date === date && a.studentId === studentId);
             if (existingIndex >= 0) {
                 data.attendance[existingIndex].status = status;
+                if (note !== undefined) data.attendance[existingIndex].note = note;
             } else {
                 const cls = data.classes.find(c => c.id === classId);
                 const currentTeacherIds = cls ? cls.teacherIds : [];
@@ -353,6 +354,7 @@ export function applyOperation(
                     studentId,
                     date,
                     status,
+                    note: note || '',
                     teacherIds: currentTeacherIds
                 });
             }

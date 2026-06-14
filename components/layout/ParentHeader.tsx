@@ -14,7 +14,8 @@ export const ParentHeader: React.FC = () => {
 
     const navLinks = [
         { to: ROUTES.PARENT_DASHBOARD, label: 'Tổng quan' },
-        { to: ROUTES.PARENT_REPORTS, label: 'Báo cáo Học tập' },
+        { to: ROUTES.PARENT_ATTENDANCE, label: 'Điểm danh' },
+        { to: ROUTES.PARENT_REPORTS, label: 'Báo cáo' },
         { to: ROUTES.PARENT_FINANCE, label: 'Học phí' },
     ];
 

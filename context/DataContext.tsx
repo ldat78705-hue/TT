@@ -63,6 +63,7 @@ interface DataContextType {
     updateClass: (payload: { originalId: string, updatedClass: Class }) => Promise<void>;
     deleteClass: (classId: string) => Promise<void>;
     updateAttendance: (records: AttendanceRecord[]) => Promise<void>;
+    updateSingleAttendance: (payload: { classId: string; studentId: string; date: string; status: string; note?: string }) => Promise<void>;
     addProgressReport: (data: Omit<ProgressReport, 'id'>) => Promise<void>;
     addBulkProgressReports: (records: Omit<ProgressReport, 'id'>[]) => Promise<void>;
     updateProgressReport: (data: ProgressReport) => Promise<void>;
@@ -198,6 +199,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     deleteClass: handleStateUpdateOperation(api.deleteClass, 'deleteClass'),
     
     updateAttendance: handleStateUpdateOperation(api.updateAttendance, 'updateAttendance'),
+    updateSingleAttendance: handleStateUpdateOperation(api.updateSingleAttendance, 'updateSingleAttendance'),
     deleteAttendanceForDate: handleStateUpdateOperation(api.deleteAttendanceForDate, 'deleteAttendanceForDate'),
     deleteAttendanceByMonth: handleStateUpdateOperation(api.deleteAttendanceByMonth, 'deleteAttendanceByMonth'),
     

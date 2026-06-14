@@ -38,6 +38,7 @@ const AuditLogScreen = React.lazy(() => import('./screens/AuditLogScreen').then(
 const ParentDashboardScreen = React.lazy(() => import('./screens/parent/ParentDashboardScreen').then(m => ({ default: m.ParentDashboardScreen })));
 const ParentReportsScreen = React.lazy(() => import('./screens/parent/ParentReportsScreen').then(m => ({ default: m.ParentReportsScreen })));
 const ParentFinanceScreen = React.lazy(() => import('./screens/parent/ParentFinanceScreen').then(m => ({ default: m.ParentFinanceScreen })));
+const ParentAttendanceScreen = React.lazy(() => import('./screens/parent/ParentAttendanceScreen').then(m => ({ default: m.ParentAttendanceScreen })));
 const SuperAdminScreen = React.lazy(() => import('./screens/SuperAdminScreen').then(m => ({ default: m.SuperAdminScreen })));
 const LandingPage = React.lazy(() => import('./screens/LandingPage').then(m => ({ default: m.LandingPage })));
 const GuidePage = React.lazy(() => import('./screens/GuidePage').then(m => ({ default: m.GuidePage })));
@@ -315,6 +316,7 @@ const AppRoutes: React.FC = () => {
                     <Route path={ROUTES.PARENT_DASHBOARD} element={<ParentDashboardScreen />} />
                     <Route path={ROUTES.PARENT_REPORTS} element={<ParentReportsScreen />} />
                     <Route path={ROUTES.PARENT_FINANCE} element={<ParentFinanceScreen />} />
+                    <Route path={ROUTES.PARENT_ATTENDANCE} element={<ParentAttendanceScreen />} />
                 </Route>
 
                 <Route path="*" element={<Navigate to={isAuthenticated ? (role === UserRole.PARENT ? ROUTES.PARENT_DASHBOARD : ROUTES.DASHBOARD) : ROUTES.LANDING} replace />} />
