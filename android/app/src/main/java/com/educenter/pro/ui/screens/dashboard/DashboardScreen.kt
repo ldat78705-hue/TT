@@ -167,6 +167,7 @@ fun DashboardScreen(
 
         // === QUICK ACCESS GRID ===
         item {
+            val canViewFinance = uiState.currentUserRole == UserRole.ADMIN || uiState.currentUserRole == UserRole.MANAGER || uiState.currentUserRole == UserRole.ACCOUNTANT
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -178,7 +179,15 @@ fun DashboardScreen(
                     onClick = onNavigateToClasses,
                     modifier = Modifier.weight(1f)
                 )
-                if (uiState.currentUserRole != UserRole.TEACHER) {
+                if (uiState.currentUserRole == UserRole.TEACHER) {
+                    QuickAccessButton(
+                        label = "Lịch dạy",
+                        icon = Icons.Default.CalendarMonth,
+                        color = Color(0xFF3B82F6),
+                        onClick = onNavigateToTeacherCalendar,
+                        modifier = Modifier.weight(1f)
+                    )
+                } else if (uiState.currentUserRole != UserRole.VIEWER) {
                     QuickAccessButton(
                         label = "Giáo viên",
                         icon = Icons.Default.Person,
@@ -186,19 +195,13 @@ fun DashboardScreen(
                         onClick = onNavigateToTeachers,
                         modifier = Modifier.weight(1f)
                     )
+                }
+                if (canViewFinance) {
                     QuickAccessButton(
                         label = "Tài chính",
                         icon = Icons.Default.MonetizationOn,
                         color = Color(0xFF10B981),
                         onClick = onNavigateToFinance,
-                        modifier = Modifier.weight(1f)
-                    )
-                } else {
-                    QuickAccessButton(
-                        label = "Lịch dạy",
-                        icon = Icons.Default.CalendarMonth,
-                        color = Color(0xFF3B82F6),
-                        onClick = onNavigateToTeacherCalendar,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -246,8 +249,9 @@ fun DashboardScreen(
             }
         }
 
-        // === REVENUE CHART (Admin/Manager only) ===
-        if (uiState.currentUserRole != UserRole.TEACHER && uiState.revenueChartData.isNotEmpty()) {
+        // === REVENUE CHART (Admin/Manager/Accountant only, hide for Teacher and Viewer) ===
+        val canViewFinancials = uiState.currentUserRole == UserRole.ADMIN || uiState.currentUserRole == UserRole.MANAGER || uiState.currentUserRole == UserRole.ACCOUNTANT
+        if (canViewFinancials && uiState.revenueChartData.isNotEmpty()) {
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -369,8 +373,8 @@ fun DashboardScreen(
                         }
                     }
 
-                    // Summary card - hide financial data for teacher
-                    if (uiState.currentUserRole != UserRole.TEACHER) {
+                    // Summary card - hide financial data for teacher and viewer
+                    if (canViewFinancials) {
                         Card(
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(16.dp),
@@ -496,8 +500,8 @@ fun DashboardScreen(
             }
         }
 
-        // === STAT CARDS ROW 2 (hide financial for teacher) ===
-        if (uiState.currentUserRole != UserRole.TEACHER) {
+        // === STAT CARDS ROW 2 (hide financial for teacher and viewer) ===
+        if (canViewFinancials) {
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -521,8 +525,8 @@ fun DashboardScreen(
             }
         }
 
-        // === TOP DEBTORS (hide for teacher) ===
-        if (uiState.currentUserRole != UserRole.TEACHER && uiState.topDebtors.isNotEmpty()) {
+        // === TOP DEBTORS (hide for teacher and viewer) ===
+        if (canViewFinancials && uiState.topDebtors.isNotEmpty()) {
             item {
                 SectionHeader(
                     icon = Icons.Default.TrendingDown,

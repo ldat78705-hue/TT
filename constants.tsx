@@ -23,6 +23,7 @@ import {
   Moon,
   CheckCircle2,
   Calendar,
+  CalendarDays,
   Circle,
   Search,
   Download,
@@ -105,4 +106,5 @@ export const ICONS = {
     drive: <Cloud size={24} />,
     rooms: <Building size={24} />,
     history: <History size={24} />,
+    teacherCalendar: <CalendarDays size={24} />,
 };
