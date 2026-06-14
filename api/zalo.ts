@@ -13,7 +13,7 @@
 import { verifyToken } from './_lib/jwt.js';
 import { UserRole } from '../types.js';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
 import { authenticateServer } from './_lib/serverAuth.js';
 import fs from 'fs';
 import path from 'path';
@@ -119,17 +119,21 @@ async function getValidAccessToken(centerId: string, settings: any): Promise<{ a
         throw new Error(`Lỗi refresh token Zalo: ${result.error_description || result.error}. Vui lòng lấy Refresh Token mới.`);
     }
     
-    // Save new tokens to Firestore
+    // Save new tokens to Firestore — must write into 'data' wrapper field
     const colName = getCollectionName(centerId);
     const settingsRef = doc(db, colName, 'settings');
-    const updateData: any = {
+    const updatedSettings = {
+        ...settings,
         zaloAccessToken: result.access_token,
         zaloTokenExpiresAt: now + (result.expires_in * 1000), // expires_in is seconds
     };
     if (result.refresh_token) {
-        updateData.zaloRefreshToken = result.refresh_token;
+        updatedSettings.zaloRefreshToken = result.refresh_token;
     }
-    await updateDoc(settingsRef, updateData);
+    await updateDoc(settingsRef, { data: updatedSettings });
+    // Invalidate data.ts cache
+    const syncRef = doc(db, colName, '_sync');
+    await setDoc(syncRef, { syncId: Date.now().toString() + '_' + Math.random().toString(36).substring(2), lastUpdatedAt: Date.now() });
     
     return { 
         accessToken: result.access_token,
@@ -172,9 +176,10 @@ export default async function handler(req: any, res: any) {
         await authenticateServer();
         
         // Get center settings
+        // IMPORTANT: data.ts stores settings as { data: { ...fields } } in Firestore
         const colName = getCollectionName(centerId);
         const settingsDoc = await getDoc(doc(db, colName, 'settings'));
-        const settings = settingsDoc.exists() ? settingsDoc.data() : {};
+        const settings = settingsDoc.exists() ? (settingsDoc.data()?.data || settingsDoc.data() || {}) : {};
         
         switch (action) {
             // ===== TEST CONNECTION =====
@@ -200,9 +205,10 @@ export default async function handler(req: any, res: any) {
                 // Get OA info
                 const oaInfo = await getZaloOAInfo(tokenResult.access_token);
                 
-                // Save tokens
+                // Save tokens — must write into the 'data' wrapper field to match data.ts format
                 const settingsRef = doc(db, colName, 'settings');
-                const saveData: any = {
+                const updatedSettings = {
+                    ...settings,
                     zaloAppId: appId,
                     zaloSecretKey: secretKey,
                     zaloRefreshToken: tokenResult.refresh_token || refreshToken,
@@ -210,7 +216,10 @@ export default async function handler(req: any, res: any) {
                     zaloTokenExpiresAt: Date.now() + (tokenResult.expires_in * 1000),
                     zaloOaEnabled: true,
                 };
-                await updateDoc(settingsRef, saveData);
+                await updateDoc(settingsRef, { data: updatedSettings });
+                // Invalidate data.ts cache by updating _sync document
+                const newSyncId = Date.now().toString() + '_' + Math.random().toString(36).substring(2);
+                await setDoc(doc(db, colName, '_sync'), { syncId: newSyncId, lastUpdatedAt: Date.now() });
                 
                 return res.status(200).json({ 
                     success: true, 
