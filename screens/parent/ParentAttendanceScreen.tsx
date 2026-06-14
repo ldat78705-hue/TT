@@ -1,11 +1,11 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useData } from '../../hooks/useDataContext';
-import { Student, AttendanceRecord, AttendanceStatus, Class } from '../../types';
+import { Student, AttendanceRecord, AttendanceStatus } from '../../types';
 import { Button } from '../../components/common/Button';
 import { useToast } from '../../context/ToastContext';
 
-const DAYS_VN = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+
 const MONTHS_VN = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
 
 const statusConfig: Record<string, { label: string; dot: string; bg: string; text: string }> = {
@@ -21,7 +21,7 @@ const toDateStr = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).pa
 export const ParentAttendanceScreen: React.FC = () => {
     const { user } = useAuth();
     const { state, updateSingleAttendance } = useData();
-    const { addToast } = useToast();
+    const { showToast } = useToast();
     const student = user as Student;
 
     const [currentMonth, setCurrentMonth] = useState(() => {
@@ -116,14 +116,14 @@ export const ParentAttendanceScreen: React.FC = () => {
                 status: 'EXCUSED_ABSENT',
                 note: `PHHS xin phép: ${leaveReason || 'Không ghi lý do'}`,
             });
-            addToast('Đã gửi xin nghỉ phép thành công!', 'success');
+            showToast('Đã gửi xin nghỉ phép thành công!', 'success');
             setShowLeaveDialog(false);
             setLeaveReason('');
         } catch (err: any) {
-            addToast(err.message || 'Gửi đơn thất bại', 'error');
+            showToast(err.message || 'Gửi đơn thất bại', 'error');
         }
         setLeaveLoading(false);
-    }, [leaveDate, leaveClassId, leaveReason, student, myClasses, updateSingleAttendance, addToast]);
+    }, [leaveDate, leaveClassId, leaveReason, student, myClasses, updateSingleAttendance, showToast]);
 
     if (!student) {
         return <div className="text-center py-20 text-gray-500">Đang tải...</div>;

@@ -632,7 +632,7 @@ export default async function handler(req: any, res: any) {
             // Apply PARENT-specific data filter: only return data for their student
             const role = authPayload.role as UserRole;
             if (role === UserRole.PARENT) {
-                responseData = applyParentFilter(responseData, authPayload.userId);
+                responseData = applyParentFilter(responseData, (authPayload as any).userId as string);
             }
 
             // Set ETag from syncId for client-side caching

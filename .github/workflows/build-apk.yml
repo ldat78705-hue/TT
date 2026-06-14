@@ -2,8 +2,7 @@ name: Build Android APK
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -21,6 +20,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: gradle
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
@@ -28,57 +28,65 @@ jobs:
       - name: Create local.properties
         run: echo "sdk.dir=$ANDROID_HOME" > android/local.properties
 
-      - name: Verify Java version
-        run: |
-          echo "JAVA_HOME=$JAVA_HOME"
-          java -version
-
       - name: Make gradlew executable
         working-directory: android
         run: chmod +x gradlew
 
-      - name: Build Debug APK
-        working-directory: android
+      - name: Get version info
+        id: version
         run: |
-          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee build_output.log
-          exit ${PIPESTATUS[0]}
-
-      - name: Upload build log on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-log
-          path: android/build_output.log
+          VERSION_NAME=$(grep 'versionName' android/app/build.gradle.kts | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          VERSION_CODE=$(grep 'versionCode' android/app/build.gradle.kts | head -1 | sed 's/[^0-9]*//g')
+          echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
+          echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
+          echo "Building v$VERSION_NAME (build $VERSION_CODE)"
 
       - name: Build Release APK
         working-directory: android
         run: ./gradlew assembleRelease --no-daemon --stacktrace
-        continue-on-error: true
 
-      - name: Prepare APKs
+      - name: Rename APK
         run: |
-          mkdir -p release-apks
-          if [ -f "android/app/build/outputs/apk/debug/app-debug.apk" ]; then
-            cp android/app/build/outputs/apk/debug/app-debug.apk release-apks/EduCenterPro-${{ github.ref_name }}.apk
-          fi
-          if [ -f "android/app/build/outputs/apk/release/app-release-unsigned.apk" ]; then
-            cp android/app/build/outputs/apk/release/app-release-unsigned.apk release-apks/EduCenterPro-${{ github.ref_name }}-release.apk
-          fi
-          ls -la release-apks/
+          APK_NAME="EduCenterPro-v${{ steps.version.outputs.version_name }}.apk"
+          cp android/app/build/outputs/apk/release/app-release.apk "$APK_NAME"
+          echo "apk_name=$APK_NAME" >> $GITHUB_OUTPUT
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: EduCenterPro-v${{ steps.version.outputs.version_name }}
+          path: EduCenterPro-v${{ steps.version.outputs.version_name }}.apk
+
+      - name: Delete existing release (if any)
+        run: |
+          gh release delete "v${{ steps.version.outputs.version_name }}" --yes || true
+          git push origin :refs/tags/v${{ steps.version.outputs.version_name }} || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: release-apks/*.apk
+          tag_name: v${{ steps.version.outputs.version_name }}
+          name: "📱 EduCenter Pro v${{ steps.version.outputs.version_name }}"
+          files: EduCenterPro-v${{ steps.version.outputs.version_name }}.apk
           body: |
-            ## 📱 EduCenter Pro ${{ github.ref_name }}
+            ## 📱 EduCenter Pro v${{ steps.version.outputs.version_name }} (Build ${{ steps.version.outputs.version_code }})
             
-            ### 📥 Tải & cài đặt:
-            1. Bấm vào file **EduCenterPro-${{ github.ref_name }}.apk** bên dưới để tải
-            2. Mở file vừa tải → Bấm **Cài đặt**
+            ### 📥 Cách cài đặt:
+            1. Tải file **EduCenterPro-v${{ steps.version.outputs.version_name }}.apk** bên dưới
+            2. Mở file trên điện thoại → Bấm **Cài đặt**
             3. Mở app **EduCenter Pro** → Đăng nhập
             
             > ⚠️ Lần đầu cần cho phép "Cài từ nguồn không xác định" trong Cài đặt điện thoại
+            
+            ### ✨ Tính năng mới v2.4:
+            - 📅 Lịch dạy GV: Nhấn vào lớp → Điểm danh ngay (Web + App)
+            - 🗓️ Lịch dạy Web: Giao diện Calendar mới, đẹp hơn
+            - 📝 Tin nhắn mẫu: Cấu hình trên Web, App tự lấy
+            - 🔧 Sửa lỗi TypeScript & cải thiện UX
           generate_release_notes: true
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

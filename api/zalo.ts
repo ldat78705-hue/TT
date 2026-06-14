@@ -312,7 +312,7 @@ export default async function handler(req: any, res: any) {
                     return res.status(400).json({ error: 'Zalo OA chưa được kích hoạt' });
                 }
                 
-                const { studentName, parentName, parentPhone, zaloUserId: tuitionZaloUserId, amount, centerName: cn } = payload;
+                const { studentName, parentName, parentPhone: _parentPhone, zaloUserId: tuitionZaloUserId, amount, centerName: cn } = payload;
                 
                 if (!tuitionZaloUserId) {
                     return res.status(400).json({ error: 'Học viên chưa liên kết Zalo. Vào Học viên → Liên kết Zalo trước.' });
@@ -429,7 +429,7 @@ export default async function handler(req: any, res: any) {
     }
 }
 
-function normalizePhone(phone: string): string {
+export function normalizePhone(phone: string): string {
     let p = phone.replace(/[\s\-\.\(\)]/g, '');
     if (p.startsWith('+84')) p = '0' + p.substring(3);
     if (p.startsWith('84') && p.length > 9) p = '0' + p.substring(2);

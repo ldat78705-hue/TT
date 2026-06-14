@@ -16,7 +16,7 @@ const normalizeAccountName = (name: string) => {
     return name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toUpperCase();
 };
 
-export const DebtNotice: React.FC<DebtNoticeProps> = ({ student, transactions, settings, attendance = [], classes = [] }) => {
+export const DebtNotice: React.FC<DebtNoticeProps> = ({ student, transactions: _transactions, settings, attendance = [], classes = [] }) => {
     const totalDue = student.balance < 0 ? Math.abs(student.balance) : 0;
 
     // Get student's classes
