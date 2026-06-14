@@ -47,7 +47,7 @@ fun StudentsScreen(
     var showAddDialog by remember { mutableStateOf(false) }
     var selectedStudentForFee by remember { mutableStateOf<Student?>(null) }
     var feeAmountText by remember { mutableStateOf("") }
-    var selectedPaymentMethod by remember { mutableStateOf("Tiền mặt") }
+    var selectedPaymentMethod by remember { mutableStateOf("Chuyển khoản") }
     
     var selectedStudentForEdit by remember { mutableStateOf<Student?>(null) }
     var selectedStudentForDetails by remember { mutableStateOf<Student?>(null) }
@@ -235,13 +235,13 @@ fun StudentsScreen(
                                 selected = selectedPaymentMethod == "Tiền mặt",
                                 onClick = { selectedPaymentMethod = "Tiền mặt" }
                             )
-                            Text("💵 Tiền mặt")
+                            Text("Tiền mặt")
                             Spacer(modifier = Modifier.width(16.dp))
                             RadioButton(
                                 selected = selectedPaymentMethod == "Chuyển khoản",
                                 onClick = { selectedPaymentMethod = "Chuyển khoản" }
                             )
-                            Text("🏦 Chuyển khoản")
+                            Text("Chuyển khoản")
                         }
 
                         // Preview after payment
@@ -279,7 +279,7 @@ fun StudentsScreen(
                             }
                             selectedStudentForFee = null
                             feeAmountText = ""
-                            selectedPaymentMethod = "Tiền mặt"
+                            selectedPaymentMethod = "Chuyển khoản"
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981))
                     ) {

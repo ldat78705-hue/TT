@@ -52,8 +52,6 @@ fun ReportsScreen(
                             appendLine("❌ HS tạm nghỉ: ${uiState.inactiveStudents}")
                             appendLine("📋 Tổng buổi học: ${uiState.totalSessions}")
                             appendLine("✅ Chuyên cần: ${"%.1f".format(uiState.attendanceRate)}%")
-                            appendLine("━━━━━━━━━━━━━━━")
-                            appendLine("📱 EduCenter Pro")
                         }
                         val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
                             type = "text/plain"

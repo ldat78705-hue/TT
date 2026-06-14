@@ -521,7 +521,6 @@ private fun PaymentDialog(
                                     val receipt = buildString {
                                         appendLine("📄 PHIẾU THU HỌC PHÍ")
                                         appendLine("━━━━━━━━━━━━━━━━━━")
-                                        appendLine("🏫 EduCenter Pro")
                                         appendLine("📅 Ngày: $dateDisplay")
                                         appendLine("━━━━━━━━━━━━━━━━━━")
                                         appendLine("👤 Học viên: ${student.name}")

@@ -435,9 +435,8 @@ private fun shareClassDebtReport(context: Context, cls: ClassModel, students: Li
     canvas.drawLine(colX[2], tableTop, colX[2], y, paintLine)
     canvas.drawLine(colX[3], tableTop, colX[3], y, paintLine)
 
-    // Footer
+    // Footer spacing only
     y += 30f
-    canvas.drawText("EduCenter Pro", width - 50f, y, paintFooter)
 
     // Save and share
     try {

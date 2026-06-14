@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Campaign
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Class
 import androidx.compose.material.icons.filled.EventNote
 import androidx.compose.material.icons.filled.MonetizationOn
@@ -95,7 +96,14 @@ fun DashboardScreen(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                     modifier = Modifier.fillMaxWidth().height(48.dp),
-                    placeholder = { Text("🔍 Tìm học viên, lớp, giáo viên...", fontSize = 14.sp, maxLines = 1) },
+                    placeholder = {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.CenterStart) {
+                            Text("Tìm học viên, lớp, giáo viên...", fontSize = 14.sp, maxLines = 1, color = Color(0xFF94A3B8))
+                        }
+                    },
+                    leadingIcon = {
+                        Icon(Icons.Default.Search, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(20.dp))
+                    },
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
                     textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp),
@@ -241,10 +249,11 @@ fun DashboardScreen(
                                         .padding(horizontal = 8.dp, vertical = 4.dp)
                                 ) {
                                     Text(
-                                        "${if (isPositive) "↑" else "↓"} ${"%.1f".format(kotlin.math.abs(uiState.revenueGrowth))}%",
+                                        "${if (isPositive) "↑" else "↓"}${"%.1f".format(kotlin.math.abs(uiState.revenueGrowth))}%",
                                         color = if (isPositive) Color(0xFF10B981) else Color(0xFFEF4444),
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1
                                     )
                                 }
                             }

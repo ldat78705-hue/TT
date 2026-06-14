@@ -39,12 +39,12 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 
-// Premium color palette
-private val PrimaryGradientStart = Color(0xFF667EEA)
-private val PrimaryGradientEnd = Color(0xFF764BA2)
-private val AccentBlue = Color(0xFF3B82F6)
-private val SurfaceWhite = Color(0xFFFAFAFC)
-private val SubtleGray = Color(0xFFCBD5E1)
+// Premium color palette - matching splash screen
+private val PrimaryGradientStart = Color(0xFF6366F1)
+private val PrimaryGradientEnd = Color(0xFF8B5CF6)
+private val AccentBlue = Color(0xFF818CF8)
+private val SurfaceWhite = Color(0xFFF8FAFC)
+private val SubtleGray = Color(0xFF94A3B8)
 
 @Composable
 fun LoginScreen(
@@ -95,7 +95,7 @@ fun LoginScreen(
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(Color(0xFF0F172A), MaterialTheme.colorScheme.onSurface, Color(0xFF0F172A))
+                    colors = listOf(Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF334155))
                 )
             )
     ) {
@@ -164,7 +164,7 @@ fun LoginScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B).copy(alpha = 0.85f)),
                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
             ) {
                 Column(
@@ -191,14 +191,14 @@ fun LoginScreen(
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = PrimaryGradientStart,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedBorderColor = Color(0xFF334155),
                             focusedTextColor = Color.White,
                             unfocusedTextColor = Color(0xFFCBD5E1),
                             cursorColor = PrimaryGradientStart,
                             focusedLabelColor = PrimaryGradientStart,
                             unfocusedLabelColor = SubtleGray,
-                            focusedContainerColor = Color(0xFF0F172A).copy(alpha = 0.5f),
-                            unfocusedContainerColor = Color(0xFF0F172A).copy(alpha = 0.3f)
+                            focusedContainerColor = Color(0xFF0F172A).copy(alpha = 0.6f),
+                            unfocusedContainerColor = Color(0xFF0F172A).copy(alpha = 0.4f)
                         )
                     )
 
@@ -234,14 +234,14 @@ fun LoginScreen(
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = PrimaryGradientStart,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedBorderColor = Color(0xFF334155),
                             focusedTextColor = Color.White,
                             unfocusedTextColor = Color(0xFFCBD5E1),
                             cursorColor = PrimaryGradientStart,
                             focusedLabelColor = PrimaryGradientStart,
                             unfocusedLabelColor = SubtleGray,
-                            focusedContainerColor = Color(0xFF0F172A).copy(alpha = 0.5f),
-                            unfocusedContainerColor = Color(0xFF0F172A).copy(alpha = 0.3f)
+                            focusedContainerColor = Color(0xFF0F172A).copy(alpha = 0.6f),
+                            unfocusedContainerColor = Color(0xFF0F172A).copy(alpha = 0.4f)
                         )
                     )
 

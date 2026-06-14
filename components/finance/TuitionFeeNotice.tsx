@@ -129,15 +129,51 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                             <td className="py-2 px-2 align-top">
                                 <p className="font-bold text-base">Học phí tháng {invoice.month.split('-')[1]}/{invoice.month.split('-')[0]}</p>
                                 {invoice.details && (
-                                    <div className="text-xs pl-2 mt-1 space-y-1">
-                                        {invoice.details.split('\n').map((line, idx) => {
-                                            if (!line.trim()) return null;
-                                            const match = line.match(/(.*?)(\(Đi học:\s+\d+\/\d+\s+buổi[^\)]*\))(.*)/);
-                                            if (match) {
-                                                return <div key={idx}>{match[1]}<strong className="font-bold underline text-[13px]">{match[2]}</strong>{match[3]}</div>;
+                                    <div className="text-xs pl-2 mt-1 space-y-0.5">
+                                        {(() => {
+                                            // Parse details to extract summary per class
+                                            const lines = invoice.details.split('\n');
+                                            const summaries: { className: string; sessions: string; rate: string; amount: string }[] = [];
+                                            let currentClass = '';
+                                            let currentRate = '';
+
+                                            for (const line of lines) {
+                                                // Match class header: "📚 Toán 9 cơ bản 2026 (50.000 đ/buổi)"
+                                                const classMatch = line.match(/^[📚🎓]*\s*(.+?)\s*\(([^)]+đ\/buổi)\)/);
+                                                if (classMatch) {
+                                                    currentClass = classMatch[1].trim();
+                                                    currentRate = classMatch[2].trim();
+                                                    continue;
+                                                }
+                                                // Match result line: "✔ 6 có mặt → 300.000 đ" or "6 có mặt → 300.000"
+                                                const resultMatch = line.match(/[✔✓]\s*(\d+)\s*có mặt\s*→\s*([\d.,]+\s*đ?)/);
+                                                if (resultMatch && currentClass) {
+                                                    summaries.push({
+                                                        className: currentClass,
+                                                        sessions: resultMatch[1],
+                                                        rate: currentRate,
+                                                        amount: resultMatch[2].includes('đ') ? resultMatch[2] : resultMatch[2] + ' đ'
+                                                    });
+                                                    currentClass = '';
+                                                    continue;
+                                                }
                                             }
-                                            return <div key={idx}>{line}</div>;
-                                        })}
+
+                                            if (summaries.length > 0) {
+                                                return summaries.map((s, i) => (
+                                                    <div key={i} className="py-0.5">
+                                                        <span className="font-semibold">{s.className}</span>
+                                                        <span className="text-indigo-700">: {s.sessions} buổi × {s.rate} = </span>
+                                                        <strong className="font-bold">{s.amount}</strong>
+                                                    </div>
+                                                ));
+                                            }
+
+                                            // Fallback: show raw lines if parsing fails (but skip date details)
+                                            return lines
+                                                .filter(l => l.trim() && !l.match(/^\s*\d+[✔✓✗❌⏰]/) && !l.match(/^\s*Tháng \d/))
+                                                .map((line, idx) => <div key={idx}>{line.trim()}</div>);
+                                        })()}
                                     </div>
                                 )}
                             </td>
