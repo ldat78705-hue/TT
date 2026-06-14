@@ -12,6 +12,10 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,6 +50,7 @@ import com.educenter.pro.data.model.UserRole
 
 import androidx.compose.runtime.collectAsState
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.launch
 
 sealed class Screen(val route: String, val title: String? = null, val icon: ImageVector? = null) {
     object Splash : Screen("splash")
@@ -318,14 +323,14 @@ fun MoreScreen(
     } catch (e: Exception) { "1.0" }
 
     // Change Password state
-    var showChangePwd by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
-    var currentPwd by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
-    var newPwd by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
-    var confirmPwd by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
-    var pwdError by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
-    var pwdSuccess by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
-    var pwdLoading by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
-    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
+    var showChangePwd by remember { mutableStateOf(false) }
+    var currentPwd by remember { mutableStateOf("") }
+    var newPwd by remember { mutableStateOf("") }
+    var confirmPwd by remember { mutableStateOf("") }
+    var pwdError by remember { mutableStateOf<String?>(null) }
+    var pwdSuccess by remember { mutableStateOf(false) }
+    var pwdLoading by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier
