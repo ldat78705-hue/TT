@@ -80,17 +80,19 @@ fun StudentsScreen(
                 onValueChange = viewModel::onSearchQueryChange,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                placeholder = { Text("Tìm tên hoặc số điện thoại...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
+                    .height(48.dp),
+                placeholder = { Text("Tìm tên hoặc số điện thoại...", fontSize = 14.sp, maxLines = 1) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(20.dp)) },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { viewModel.onSearchQueryChange("") }) {
-                            Icon(Icons.Default.Clear, contentDescription = "Xóa tìm kiếm")
+                        IconButton(onClick = { viewModel.onSearchQueryChange("") }, modifier = Modifier.size(32.dp)) {
+                            Icon(Icons.Default.Clear, contentDescription = "Xóa tìm kiếm", modifier = Modifier.size(16.dp))
                         }
                     }
                 },
                 singleLine = true,
+                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp),
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
             )
 

@@ -94,10 +94,11 @@ fun DashboardScreen(
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("🔍 Tìm học viên, lớp, giáo viên...") },
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    placeholder = { Text("🔍 Tìm học viên, lớp, giáo viên...", fontSize = 14.sp, maxLines = 1) },
                     singleLine = true,
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = BlueAccent,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
@@ -106,8 +107,8 @@ fun DashboardScreen(
                     ),
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Default.Close, contentDescription = "Xóa", tint = Color(0xFF64748B), modifier = Modifier.size(18.dp))
+                            IconButton(onClick = { searchQuery = "" }, modifier = Modifier.size(32.dp)) {
+                                Icon(Icons.Default.Close, contentDescription = "Xóa", tint = Color(0xFF64748B), modifier = Modifier.size(16.dp))
                             }
                         }
                     }

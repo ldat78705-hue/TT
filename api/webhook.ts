@@ -9,8 +9,12 @@ export default async function webhookHandler(req: any, res: any) {
     try {
         const payload = req.body || {};
         
+        // Multi-tenant: extract centerId from query param
+        const url = new URL(req.url, `http://${req.headers.host}`);
+        const centerId = url.searchParams.get('center') || '_legacy';
+        
         // Read settings from database
-        const currentData = await getSplitData();
+        const currentData = await getSplitData(centerId);
         const settings = currentData.settings || {};
         
         // Check if webhook is enabled
@@ -86,7 +90,7 @@ export default async function webhookHandler(req: any, res: any) {
         };
 
         try {
-            await executeOperationInternal(operation);
+            await executeOperationInternal(operation, centerId);
             return res.status(200).json({ success: true, message: `Ghi nhận thanh toán ${amount} cho ${studentId} thành công.` });
         } catch (opError) {
             console.error('Data Operation error:', opError);

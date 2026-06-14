@@ -371,27 +371,7 @@ export const SettingsScreen: React.FC = () => {
                             </div>
                         </fieldset>
 
-                        <fieldset className="form-fieldset" disabled={isViewer}>
-                            <legend className="form-legend">Tùy chỉnh Trang đăng nhập</legend>
-                             <div className="mt-2 space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium">Nội dung Tiêu đề</label>
-                                    <textarea
-                                        name="loginHeaderContent"
-                                        value={settings.loginHeaderContent || ''}
-                                        onChange={handleChange}
-                                        rows={6}
-                                        className="form-textarea mt-1 font-mono"
-                                        placeholder="Nhập văn bản hoặc mã HTML..."
-                                    />
-                                    <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                                        Bạn có thể sử dụng các thẻ HTML cơ bản để định dạng, ví dụ:
-                                        <br />
-                                        <code>&lt;strong&gt;Chữ in đậm&lt;/strong&gt;</code>, <code>&lt;img src="..." /&gt;</code>, hoặc nhúng video YouTube.
-                                    </p>
-                                </div>
-                            </div>
-                        </fieldset>
+
 
                         <fieldset className="form-fieldset" disabled={isViewer}>
                             <legend className="form-legend">Thông tin Thanh toán (cho mã QR)</legend>
@@ -479,7 +459,7 @@ export const SettingsScreen: React.FC = () => {
                                         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm">
                                             <p className="font-medium text-blue-800 dark:text-blue-300 mb-1">🔗 URL Webhook của bạn:</p>
                                             <code className="block bg-white dark:bg-black/30 p-2 rounded text-xs font-mono break-all text-blue-700 dark:text-blue-400">
-                                                {window.location.origin}/api/webhook
+                                                {(() => { try { const s = JSON.parse(localStorage.getItem('educenter_user_session') || '{}'); return `${window.location.origin}/api/webhook${s.centerId ? `?center=${s.centerId}` : ''}`; } catch { return `${window.location.origin}/api/webhook`; } })()}
                                             </code>
                                             <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
                                                 Dán URL này vào SePay, CassVN, hoặc cấu hình MacroDroid/Tasker để tự động gửi thông báo chuyển khoản.
@@ -702,8 +682,17 @@ export const SettingsScreen: React.FC = () => {
                     </div>
 
                     <div className="p-4 border border-red-200 dark:border-red-800 bg-red-50 dark:bg-gray-700 rounded-lg">
-                        <h3 className="font-semibold text-red-800 dark:text-red-200">Khu vực Nguy hiểm</h3>
+                        <button type="button" onClick={() => {
+                            const el = document.getElementById('danger-zone-content');
+                            if (el) el.classList.toggle('hidden');
+                            const arrow = document.getElementById('danger-zone-arrow');
+                            if (arrow) arrow.classList.toggle('rotate-90');
+                        }} className="w-full flex items-center justify-between text-left">
+                            <h3 className="font-semibold text-red-800 dark:text-red-200">⚠️ Khu vực Nguy hiểm</h3>
+                            <span id="danger-zone-arrow" className="text-red-500 transition-transform duration-200">▶</span>
+                        </button>
                         
+                        <div id="danger-zone-content" className="hidden">
                         <div className="mt-4">
                             <h4 className="font-semibold">Xóa dữ liệu theo Module</h4>
                             <p className="text-sm text-red-700 dark:text-red-300 mt-1 mb-3">Thao tác này sẽ xóa vĩnh viễn tất cả dữ liệu trong các module được chọn. Hãy cẩn thận.</p>
@@ -762,6 +751,7 @@ export const SettingsScreen: React.FC = () => {
                                 Khôi phục Dữ liệu Mặc định
                             </Button>
                         </div>
+                        </div> {/* end danger-zone-content */}
                     </div>
                 </div>
             </div>
