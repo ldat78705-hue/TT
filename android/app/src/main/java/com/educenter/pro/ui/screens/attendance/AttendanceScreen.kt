@@ -72,6 +72,7 @@ fun AttendanceScreen(
     val pendingOpsCount by viewModel.pendingOpsCount.collectAsState()
     val attendedClassIds by viewModel.attendedClassIds.collectAsState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
+    val isViewer by viewModel.isViewer.collectAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
 
     val selectedClassName = classes.find { it.id == selectedClassId }?.name ?: ""
@@ -132,7 +133,8 @@ fun AttendanceScreen(
                 attendedClassIds = attendedClassIds,
                 onDateChange = { viewModel.selectDate(it) },
                 onClassClick = { viewModel.selectClass(it) },
-                onNavigateToQR = onNavigateToQR
+                onNavigateToQR = onNavigateToQR,
+                isViewer = isViewer
             )
             }
         } else {
@@ -160,10 +162,12 @@ fun AttendanceScreen(
                         ) {
                             // Quick actions header
                             item {
-                                QuickActionsCard(
-                                    onBulkChange = { viewModel.setAllStatus(it) },
-                                    onReset = { viewModel.setAllStatus("UNMARKED") }
-                                )
+                                if (!isViewer) {
+                                    QuickActionsCard(
+                                        onBulkChange = { viewModel.setAllStatus(it) },
+                                        onReset = { viewModel.setAllStatus("UNMARKED") }
+                                    )
+                                }
                             }
 
                             // Summary bar
@@ -185,11 +189,12 @@ fun AttendanceScreen(
                                     monthlyCount = monthCount,
                                     entry = entry,
                                     onStatusChange = { status ->
-                                        viewModel.setStudentStatus(student.id, status)
+                                        if (!isViewer) viewModel.setStudentStatus(student.id, status)
                                     },
                                     onNoteChange = { note ->
-                                        viewModel.setStudentNote(student.id, note)
-                                    }
+                                        if (!isViewer) viewModel.setStudentNote(student.id, note)
+                                    },
+                                    isReadOnly = isViewer
                                 )
                             }
 
@@ -197,25 +202,27 @@ fun AttendanceScreen(
                             item { Spacer(modifier = Modifier.height(80.dp)) }
                         }
 
-                        // Save button bar - fixed at bottom
-                        SaveButtonBar(
-                            isSaving = isSaving,
-                            saveSuccess = saveSuccess,
-                            pendingCount = pendingOpsCount,
-                            hasMarkedStudents = attendanceMap.any { it.value.status != "UNMARKED" },
-                            onSave = { viewModel.saveAttendance() },
-                            onDelete = { viewModel.deleteAttendance() },
-                            onShare = {
-                                val report = viewModel.buildAbsenceReport()
-                                if (report != null) {
-                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                        type = "text/plain"
-                                        putExtra(Intent.EXTRA_TEXT, report)
+                        // Save button bar - fixed at bottom (hide for VIEWER)
+                        if (!isViewer) {
+                            SaveButtonBar(
+                                isSaving = isSaving,
+                                saveSuccess = saveSuccess,
+                                pendingCount = pendingOpsCount,
+                                hasMarkedStudents = attendanceMap.any { it.value.status != "UNMARKED" },
+                                onSave = { viewModel.saveAttendance() },
+                                onDelete = { viewModel.deleteAttendance() },
+                                onShare = {
+                                    val report = viewModel.buildAbsenceReport()
+                                    if (report != null) {
+                                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                            type = "text/plain"
+                                            putExtra(Intent.EXTRA_TEXT, report)
+                                        }
+                                        context.startActivity(Intent.createChooser(shareIntent, "Gửi thông báo vắng qua..."))
                                     }
-                                    context.startActivity(Intent.createChooser(shareIntent, "Gửi thông báo vắng qua..."))
                                 }
-                            }
-                        )
+                            )
+                        }
                     }
                 }
             }
@@ -232,7 +239,8 @@ private fun ScheduleView(
     attendedClassIds: Set<String>,
     onDateChange: (String) -> Unit,
     onClassClick: (String) -> Unit,
-    onNavigateToQR: () -> Unit = {}
+    onNavigateToQR: () -> Unit = {},
+    isViewer: Boolean = false
 ) {
     var showAllClasses by remember { mutableStateOf(false) }
 
@@ -368,17 +376,19 @@ private fun ScheduleView(
             }
         }
 
-        // QR Scanner button
-        item {
-            Button(
-                onClick = onNavigateToQR,
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B5CF6))
-            ) {
-                Icon(Icons.Default.QrCodeScanner, contentDescription = null, modifier = Modifier.size(20.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("📷 Quét QR Điểm danh", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+        // QR Scanner button (hide for VIEWER)
+        if (!isViewer) {
+            item {
+                Button(
+                    onClick = onNavigateToQR,
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B5CF6))
+                ) {
+                    Icon(Icons.Default.QrCodeScanner, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("📷 Quét QR Điểm danh", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                }
             }
         }
 
@@ -641,7 +651,8 @@ private fun StudentAttendanceCard(
     monthlyCount: Int,
     entry: AttendanceEntry,
     onStatusChange: (String) -> Unit,
-    onNoteChange: (String) -> Unit = {}
+    onNoteChange: (String) -> Unit = {},
+    isReadOnly: Boolean = false
 ) {
     val borderColor by animateColorAsState(
         targetValue = when (entry.status) {
@@ -1025,6 +1036,7 @@ fun AttendanceFromCalendarScreen(
     val isSaving by viewModel.isSaving.collectAsState()
     val saveSuccess by viewModel.saveSuccess.collectAsState()
     val pendingOpsCount by viewModel.pendingOpsCount.collectAsState()
+    val isViewer by viewModel.isViewer.collectAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
 
     val selectedClassName = classes.find { it.id == selectedClassId }?.name ?: ""
@@ -1085,11 +1097,13 @@ fun AttendanceFromCalendarScreen(
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        item {
-                            QuickActionsCard(
-                                onBulkChange = { viewModel.setAllStatus(it) },
-                                onReset = { viewModel.setAllStatus("UNMARKED") }
-                            )
+                        if (!isViewer) {
+                            item {
+                                QuickActionsCard(
+                                    onBulkChange = { viewModel.setAllStatus(it) },
+                                    onReset = { viewModel.setAllStatus("UNMARKED") }
+                                )
+                            }
                         }
                         item {
                             AttendanceSummaryBar(
@@ -1105,30 +1119,33 @@ fun AttendanceFromCalendarScreen(
                                 studentName = student.name,
                                 monthlyCount = monthCount,
                                 entry = entry,
-                                onStatusChange = { status -> viewModel.setStudentStatus(student.id, status) },
-                                onNoteChange = { note -> viewModel.setStudentNote(student.id, note) }
+                                onStatusChange = { status -> if (!isViewer) viewModel.setStudentStatus(student.id, status) },
+                                onNoteChange = { note -> if (!isViewer) viewModel.setStudentNote(student.id, note) },
+                                isReadOnly = isViewer
                             )
                         }
                         item { Spacer(modifier = Modifier.height(80.dp)) }
                     }
-                    SaveButtonBar(
-                        isSaving = isSaving,
-                        saveSuccess = saveSuccess,
-                        pendingCount = pendingOpsCount,
-                        hasMarkedStudents = attendanceMap.any { it.value.status != "UNMARKED" },
-                        onSave = { viewModel.saveAttendance() },
-                        onDelete = { viewModel.deleteAttendance() },
-                        onShare = {
-                            val report = viewModel.buildAbsenceReport()
-                            if (report != null) {
-                                val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                    type = "text/plain"
-                                    putExtra(Intent.EXTRA_TEXT, report)
+                    if (!isViewer) {
+                        SaveButtonBar(
+                            isSaving = isSaving,
+                            saveSuccess = saveSuccess,
+                            pendingCount = pendingOpsCount,
+                            hasMarkedStudents = attendanceMap.any { it.value.status != "UNMARKED" },
+                            onSave = { viewModel.saveAttendance() },
+                            onDelete = { viewModel.deleteAttendance() },
+                            onShare = {
+                                val report = viewModel.buildAbsenceReport()
+                                if (report != null) {
+                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(Intent.EXTRA_TEXT, report)
+                                    }
+                                    context.startActivity(Intent.createChooser(shareIntent, "Gửi thông báo vắng qua..."))
                                 }
-                                context.startActivity(Intent.createChooser(shareIntent, "Gửi thông báo vắng qua..."))
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }

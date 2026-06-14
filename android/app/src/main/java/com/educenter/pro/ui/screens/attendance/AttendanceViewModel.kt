@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
+import com.educenter.pro.data.model.UserRole
 
 data class AttendanceEntry(
     val status: String = "UNMARKED",
@@ -54,6 +55,10 @@ class AttendanceViewModel @Inject constructor(
 
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing = _isRefreshing.asStateFlow()
+
+    val isViewer: StateFlow<Boolean> = dataRepository.currentUserRole
+        .map { it == UserRole.VIEWER }
+        .stateIn(viewModelScope, SharingStarted.Lazily, false)
 
     fun refresh() {
         viewModelScope.launch {
