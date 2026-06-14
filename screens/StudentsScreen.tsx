@@ -763,6 +763,13 @@ export const StudentsScreen: React.FC = () => {
                     onSort={handleSort}
                     actions={canManage ? (student) => (
                         <>
+                            {state.settings.zaloOaEnabled && (
+                                (student as any).zaloUserId ? (
+                                    <span className="text-blue-500 text-xs" title="Đã liên kết Zalo">✅</span>
+                                ) : (
+                                    <button onClick={() => setZaloLinkStudent(student)} className="text-orange-500 hover:text-orange-700" title="Liên kết Zalo">🔗</button>
+                                )
+                            )}
                             <button onClick={() => setResetPasswordModalState({ isOpen: true, student: student })} className="text-gray-500 hover:text-gray-800" title="Đặt lại mật khẩu">{React.cloneElement(ICONS.key as React.ReactElement<{ width?: number | string; height?: number | string }>, {width: 20, height: 20})}</button>
                             <button onClick={() => handleOpenModal(student)} className="text-indigo-600 hover:text-indigo-900">{ICONS.edit}</button>
                             <button onClick={() => handleDeleteClick(student)} className="text-red-600 hover:text-red-900">{ICONS.delete}</button>
