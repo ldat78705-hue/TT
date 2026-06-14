@@ -408,7 +408,7 @@ fun MoreScreen(
                     UserRole.TEACHER -> "Giáo viên"
                     UserRole.ACCOUNTANT -> "Kế toán"
                     UserRole.PARENT -> "Phụ huynh"
-                    UserRole.VIEWER -> "Xem"
+                    UserRole.VIEWER -> "Giám sát"
                 }}", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
             }
         }
@@ -425,7 +425,7 @@ fun MoreScreen(
                 if (currentUserRole != UserRole.ACCOUNTANT) {
                     MoreMenuItem(Icons.Default.Class, "Lớp học", Color(0xFF8B5CF6)) { onNavigateTo(Screen.Classes.route) }
                 }
-                if (currentUserRole == UserRole.ADMIN || currentUserRole == UserRole.MANAGER) {
+                if (currentUserRole == UserRole.ADMIN || currentUserRole == UserRole.MANAGER || currentUserRole == UserRole.VIEWER) {
                     MoreMenuItem(Icons.Default.Person, "Giáo viên", Color(0xFF0EA5E9)) { onNavigateTo(Screen.Teachers.route) }
                     MoreMenuItem(Icons.Default.Group, "Nhân viên", Color(0xFF6366F1)) { onNavigateTo(Screen.Staff.route) }
                 }

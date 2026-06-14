@@ -18,7 +18,7 @@ const toLocalDateString = (date: Date): string => {
     return `${year}-${month}-${day}`;
 };
 
-const TodaysScheduleWidget: React.FC<{ classes: Class[], teachers: Teacher[] }> = ({ classes, teachers }) => {
+const TodaysScheduleWidget: React.FC<{ classes: Class[], teachers: Teacher[], isViewer?: boolean }> = ({ classes, teachers, isViewer = false }) => {
     // Get current Vietnam time to ensure accurate schedule display regardless of user's local timezone
     const vnTimeStr = getVietnamTime();
     const todayDateString = vnTimeStr.split('T')[0];
@@ -56,7 +56,7 @@ const TodaysScheduleWidget: React.FC<{ classes: Class[], teachers: Teacher[] }> 
                                 </p>
                             </div>
                             <Link to={ROUTES.ATTENDANCE_DETAIL.replace(':classId', session.id).replace(':date', todayDateString)} state={{ returnTo: ROUTES.DASHBOARD }} className="w-full sm:w-auto">
-                                <Button variant="secondary" className="w-full">Điểm danh</Button>
+                                <Button variant="secondary" className="w-full">{isViewer ? 'Xem' : 'Điểm danh'}</Button>
                             </Link>
                         </div>
                     ))
@@ -376,7 +376,7 @@ const AdminDashboard: React.FC = () => {
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <OnboardingWizard />
+                {role === UserRole.ADMIN && <OnboardingWizard />}
                 <div className="relative ml-auto flex-shrink-0">
                     <button 
                         onClick={() => setShowWidgetSettings(p => !p)}
@@ -428,7 +428,7 @@ const AdminDashboard: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {widgetVisibility.schedule !== false && (
                     <div className="lg:col-span-1">
-                         <TodaysScheduleWidget classes={classes} teachers={teachers} />
+                         <TodaysScheduleWidget classes={classes} teachers={teachers} isViewer={role === UserRole.VIEWER} />
                     </div>
                 )}
                 {widgetVisibility.alerts !== false && (
