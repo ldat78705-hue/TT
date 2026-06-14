@@ -4,45 +4,93 @@ import { ROUTES } from '../constants';
 
 // Default content - can be overridden by super admin via CMS
 const DEFAULT_LANDING = {
-    heroTagline: 'Miễn phí 3 tháng đầu — Không cần thẻ tín dụng',
-    heroTitle1: 'Quản lý trung tâm',
-    heroTitle2: 'dạy thêm chuyên nghiệp',
-    heroDesc: 'Từ điểm danh, quản lý học viên, tài chính đến thông báo phụ huynh — tất cả trong một nền tảng duy nhất. Dùng trên Web lẫn App Android.',
+    heroTagline: 'Dùng thử miễn phí 3 tháng — Không ràng buộc',
+    heroTitle1: 'Giải pháp quản lý',
+    heroTitle2: 'trung tâm dạy thêm',
+    heroDesc: 'Điểm danh — Thu học phí — Chốt công nợ — Thông báo phụ huynh. Tất cả trong một nền tảng duy nhất, chạy trên cả Web và App Android. Được thiết kế riêng cho mô hình dạy thêm, luyện thi tại Việt Nam.',
     heroCtaPrimary: 'Dùng thử miễn phí',
     heroCtaSecondary: 'Xem hướng dẫn',
-    heroFootnote: 'Đang được tin dùng bởi các trung tâm dạy thêm tại Việt Nam',
-    featuresTitle: 'Tất cả những gì bạn cần',
-    featuresSubtitle: 'Giải pháp toàn diện giúp bạn tập trung vào giảng dạy',
+    heroFootnote: 'Liên hệ tư vấn: 0822.448.444',
+    featuresTitle: 'Tính năng nổi bật',
+    featuresSubtitle: 'Giải quyết trọn vẹn mọi vấn đề vận hành trung tâm dạy thêm',
     features: [
-        { icon: '📋', title: 'Điểm danh QR', desc: 'Quét mã QR hoặc chấm thủ công. Tự động tính buổi, thông báo vắng.' },
-        { icon: '👨‍🎓', title: 'Quản lý học viên', desc: 'Hồ sơ chi tiết, công nợ, phân lớp, in thẻ QR hàng loạt.' },
-        { icon: '💰', title: 'Tài chính minh bạch', desc: 'Thu học phí, ghi thu chi, tính lương giáo viên tự động.' },
-        { icon: '📊', title: 'Báo cáo chi tiết', desc: 'Biểu đồ doanh thu, chuyên cần, xuất Excel mọi dữ liệu.' },
-        { icon: '📱', title: 'App Android', desc: 'Quản lý mọi lúc trên điện thoại, hoạt động offline.' },
-        { icon: '👨‍👩‍👧', title: 'Cổng phụ huynh', desc: 'Phụ huynh tự xem điểm danh, công nợ, đánh giá.' },
+        {
+            icon: '📋',
+            title: 'Điểm danh linh hoạt',
+            desc: 'Chấm điểm danh thủ công hoặc quét mã QR trên App. Hệ thống tự động đếm buổi, tính chuyên cần, và gợi ý lớp cần điểm danh theo lịch học hàng ngày.'
+        },
+        {
+            icon: '💰',
+            title: 'Thu phí theo buổi hoặc theo khóa',
+            desc: 'Hỗ trợ tính học phí theo số buổi thực học hoặc trọn gói theo tháng/khóa. Tự động tổng hợp công nợ, xuất phiếu thu học phí kèm mã QR chuyển khoản ngân hàng.'
+        },
+        {
+            icon: '📄',
+            title: 'Chốt công nợ & Xuất phiếu thu',
+            desc: 'Chốt công nợ hàng tháng cho từng học viên hoặc cả lớp. Xuất phiếu thông báo học phí dạng ảnh, sao chép nhanh để gửi qua Zalo cho phụ huynh — hoàn toàn miễn phí.'
+        },
+        {
+            icon: '👥',
+            title: 'Phân quyền rõ ràng',
+            desc: 'Phân quyền Quản trị, Kế toán, Giáo viên, Nhân viên. Kế toán chỉ thấy tài chính. Giáo viên chỉ điểm danh và đánh giá lớp mình dạy. Kiểm soát chặt chẽ, minh bạch.'
+        },
+        {
+            icon: '📱',
+            title: 'Thông báo phụ huynh tự động',
+            desc: 'Nếu phụ huynh cài App trung tâm: tự động nhận thông báo điểm danh, công nợ, đánh giá. Nếu không cài App: bạn chỉ cần sao chép phiếu và tự gửi qua Zalo nhóm lớp — miễn phí hoàn toàn.'
+        },
+        {
+            icon: '📊',
+            title: 'Theo dõi chuyên cần & Báo cáo',
+            desc: 'Biểu đồ tỷ lệ chuyên cần, doanh thu, lợi nhuận theo tháng/quý/năm. Lọc theo lớp, xuất Excel toàn bộ dữ liệu bất cứ lúc nào.'
+        },
+    ],
+    whyTitle: 'Tại sao chọn EduCenter Pro?',
+    whyItems: [
+        {
+            icon: '✅',
+            title: 'Không phát sinh chi phí ẩn',
+            desc: 'Tính năng gửi tin nhắn qua Zalo OA hoặc thu phí tự động qua cổng thanh toán cần trả phí cho nhà cung cấp bên thứ ba. Nhưng bạn hoàn toàn có thể thay thế bằng cách sao chép phiếu công nợ và tự gửi qua Zalo — miễn phí 100%.'
+        },
+        {
+            icon: '✅',
+            title: 'Thiết kế cho người Việt',
+            desc: 'Giao diện hoàn toàn tiếng Việt, quy trình nghiệp vụ đúng thực tế trung tâm dạy thêm Việt Nam: điểm danh hàng buổi, học phí theo buổi, phiếu thu kèm QR ngân hàng nội địa.'
+        },
+        {
+            icon: '✅',
+            title: 'Dùng trên mọi thiết bị',
+            desc: 'Web hoạt động trên máy tính, tablet, điện thoại. App Android riêng cho quản lý di động, hỗ trợ offline — điểm danh không cần mạng, tự đồng bộ khi có kết nối.'
+        },
+        {
+            icon: '✅',
+            title: 'Hỗ trợ tận tâm',
+            desc: 'Liên hệ trực tiếp qua Zalo hoặc gọi 0822.448.444 để được tư vấn, hỗ trợ cài đặt và hướng dẫn sử dụng.'
+        },
     ],
     pricingTitle: 'Bảng giá',
-    pricingSubtitle: 'Đơn giản, minh bạch. Chọn gói phù hợp với quy mô của bạn.',
+    pricingSubtitle: 'Đơn giản, minh bạch. Không phí ẩn. Chọn gói phù hợp với quy mô của bạn.',
     plans: [
         {
-            name: 'Dùng thử', price: '0₫', period: '3 tháng đầu', subtitle: 'Trải nghiệm đầy đủ',
-            items: ['Tất cả tính năng', 'Tối đa 50 học viên', 'Web + App Android', 'Cổng phụ huynh'],
+            name: 'Dùng thử', price: '0₫', period: '3 tháng đầu', subtitle: 'Trải nghiệm đầy đủ tính năng',
+            items: ['Tất cả tính năng', 'Tối đa 50 học viên', 'Web + App Android', 'Cổng phụ huynh', 'Gửi phiếu công nợ qua Zalo (tự gửi)'],
             cta: 'Bắt đầu miễn phí', highlight: false
         },
         {
-            name: 'Cơ bản', price: '199K', period: '/tháng', subtitle: '~6.600₫/ngày',
+            name: 'Cơ bản', price: '199K', period: '/tháng', subtitle: 'Chỉ ~6.600₫/ngày',
             items: ['Tất cả tính năng', 'Tối đa 200 học viên', 'Web + App Android', 'Cổng phụ huynh', 'Sao lưu tự động', 'Hỗ trợ qua Zalo'],
             cta: 'Chọn gói này', highlight: true, badge: 'PHỔ BIẾN'
         },
         {
-            name: 'Nâng cao', price: '499K', period: '/tháng', subtitle: '~16.600₫/ngày',
-            items: ['Mọi tính năng Cơ bản', 'Không giới hạn học viên', 'Nhiều chi nhánh', 'Zalo OA tự động', 'Hỗ trợ ưu tiên 24/7', 'Tùy chỉnh theo yêu cầu'],
+            name: 'Nâng cao', price: '499K', period: '/tháng', subtitle: 'Chỉ ~16.600₫/ngày',
+            items: ['Mọi tính năng Cơ bản', 'Không giới hạn học viên', 'Nhiều chi nhánh', 'Zalo OA tự động (phí OA do Zalo thu)', 'Hỗ trợ ưu tiên 24/7', 'Tùy chỉnh theo yêu cầu'],
             cta: 'Liên hệ tư vấn', highlight: false
         },
     ],
-    ctaTitle: 'Sẵn sàng chuyên nghiệp hóa?',
-    ctaDesc: 'Đăng ký ngay — 3 tháng miễn phí, không ràng buộc.',
+    ctaTitle: 'Bạn đang quản lý bằng sổ tay hoặc Excel?',
+    ctaDesc: 'Hãy để EduCenter Pro giúp bạn chuyên nghiệp hóa — dùng thử 3 tháng miễn phí, không ràng buộc. Liên hệ 0822.448.444 để được tư vấn.',
     ctaButton: 'Dùng thử miễn phí ngay',
+    contactPhone: '0822.448.444',
 };
 
 export const LandingPage: React.FC = () => {
@@ -135,8 +183,30 @@ export const LandingPage: React.FC = () => {
                 </div>
             </section>
 
+            {/* Why Choose Us */}
+            {(c as any).whyItems && (c as any).whyItems.length > 0 && (
+                <section className="py-20 px-5">
+                    <div className="max-w-4xl mx-auto">
+                        <div className="text-center mb-14">
+                            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">{(c as any).whyTitle || 'Tại sao chọn EduCenter Pro?'}</h2>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            {((c as any).whyItems || []).map((item: any, i: number) => (
+                                <div key={i} className="flex gap-3">
+                                    <span className="text-xl flex-shrink-0 mt-0.5">{item.icon}</span>
+                                    <div>
+                                        <h3 className="font-bold text-slate-900 mb-1">{item.title}</h3>
+                                        <p className="text-sm text-slate-500 leading-relaxed">{item.desc}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            )}
+
             {/* Pricing */}
-            <section className="py-20 px-5" id="pricing">
+            <section className="py-20 px-5 bg-slate-50" id="pricing">
                 <div className="max-w-4xl mx-auto">
                     <div className="text-center mb-14">
                         <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">{c.pricingTitle}</h2>
@@ -178,14 +248,19 @@ export const LandingPage: React.FC = () => {
             </section>
 
             {/* CTA */}
-            <section className="py-20 px-5 bg-slate-50">
+            <section className="py-20 px-5">
                 <div className="max-w-2xl mx-auto text-center">
                     <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">{c.ctaTitle}</h2>
                     <p className="mt-3 text-slate-500">{c.ctaDesc}</p>
-                    <div className="mt-6">
+                    <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
                         <Link to={ROUTES.LOGIN} className="inline-block px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-indigo-200">
                             {c.ctaButton} →
                         </Link>
+                        {(c as any).contactPhone && (
+                            <a href={`tel:${(c as any).contactPhone}`} className="inline-flex items-center gap-2 px-6 py-3 border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 rounded-xl text-sm font-semibold text-slate-700 transition-all">
+                                📞 Gọi {(c as any).contactPhone}
+                            </a>
+                        )}
                     </div>
                 </div>
             </section>
@@ -200,6 +275,9 @@ export const LandingPage: React.FC = () => {
                     <div className="flex items-center gap-5 text-sm text-slate-400">
                         <Link to={ROUTES.GUIDE} className="hover:text-slate-700 transition-colors">Hướng dẫn</Link>
                         <Link to={ROUTES.LOGIN} className="hover:text-slate-700 transition-colors">Đăng nhập</Link>
+                        {(c as any).contactPhone && (
+                            <a href={`tel:${(c as any).contactPhone}`} className="hover:text-slate-700 transition-colors">📞 {(c as any).contactPhone}</a>
+                        )}
                     </div>
                     <p className="text-xs text-slate-300">© 2026 EduCenter Pro</p>
                 </div>
