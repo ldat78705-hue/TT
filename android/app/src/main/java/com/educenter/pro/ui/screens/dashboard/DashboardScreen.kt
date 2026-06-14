@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Class
@@ -36,6 +37,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.educenter.pro.data.model.UserRole
 import com.educenter.pro.ui.components.ShimmerLoadingList
 import com.educenter.pro.ui.components.PullRefreshWrapper
 import java.text.NumberFormat
@@ -53,6 +55,7 @@ fun DashboardScreen(
     onNavigateToTeachers: () -> Unit = {},
     onNavigateToFinance: () -> Unit = {},
     onNavigateToAnnouncements: () -> Unit = {},
+    onNavigateToTeacherCalendar: () -> Unit = {},
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -95,11 +98,9 @@ fun DashboardScreen(
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     placeholder = {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.CenterStart) {
-                            Text("Tìm học viên, lớp, giáo viên...", fontSize = 14.sp, maxLines = 1, color = Color(0xFF94A3B8))
-                        }
+                        Text("Tìm học viên, lớp, giáo viên...", fontSize = 14.sp, maxLines = 1, color = Color(0xFF94A3B8))
                     },
                     leadingIcon = {
                         Icon(Icons.Default.Search, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(20.dp))
@@ -199,20 +200,30 @@ fun DashboardScreen(
                     onClick = onNavigateToClasses,
                     modifier = Modifier.weight(1f)
                 )
-                QuickAccessButton(
-                    label = "Giáo viên",
-                    icon = Icons.Default.Person,
-                    color = Color(0xFF3B82F6),
-                    onClick = onNavigateToTeachers,
-                    modifier = Modifier.weight(1f)
-                )
-                QuickAccessButton(
-                    label = "Tài chính",
-                    icon = Icons.Default.MonetizationOn,
-                    color = Color(0xFF10B981),
-                    onClick = onNavigateToFinance,
-                    modifier = Modifier.weight(1f)
-                )
+                if (uiState.currentUserRole != UserRole.TEACHER) {
+                    QuickAccessButton(
+                        label = "Giáo viên",
+                        icon = Icons.Default.Person,
+                        color = Color(0xFF3B82F6),
+                        onClick = onNavigateToTeachers,
+                        modifier = Modifier.weight(1f)
+                    )
+                    QuickAccessButton(
+                        label = "Tài chính",
+                        icon = Icons.Default.MonetizationOn,
+                        color = Color(0xFF10B981),
+                        onClick = onNavigateToFinance,
+                        modifier = Modifier.weight(1f)
+                    )
+                } else {
+                    QuickAccessButton(
+                        label = "Lịch dạy",
+                        icon = Icons.Default.CalendarMonth,
+                        color = Color(0xFF3B82F6),
+                        onClick = onNavigateToTeacherCalendar,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
                 QuickAccessButton(
                     label = "Thông báo",
                     icon = Icons.Default.Campaign,
@@ -223,8 +234,42 @@ fun DashboardScreen(
             }
         }
 
-        // === REVENUE CHART ===
-        if (uiState.revenueChartData.isNotEmpty()) {
+        // === TEACHER PERSONAL STATS ===
+        if (uiState.currentUserRole == UserRole.TEACHER) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFEEF2FF)),
+                    elevation = CardDefaults.cardElevation(2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("👋 Xin chào, ${uiState.teacherName}", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("${uiState.myTeacherClasses.size}", fontWeight = FontWeight.ExtraBold, fontSize = 28.sp, color = Color(0xFF3B82F6))
+                                Text("Lớp đang dạy", fontSize = 12.sp, color = Color(0xFF64748B))
+                            }
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("${uiState.myTodayClasses.size}", fontWeight = FontWeight.ExtraBold, fontSize = 28.sp, color = Color(0xFF10B981))
+                                Text("Buổi hôm nay", fontSize = 12.sp, color = Color(0xFF64748B))
+                            }
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("${uiState.myWeekSessions}", fontWeight = FontWeight.ExtraBold, fontSize = 28.sp, color = Color(0xFFF59E0B))
+                                Text("Buổi/tuần", fontSize = 12.sp, color = Color(0xFF64748B))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // === REVENUE CHART (Admin/Manager only) ===
+        if (uiState.currentUserRole != UserRole.TEACHER && uiState.revenueChartData.isNotEmpty()) {
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -238,10 +283,11 @@ fun DashboardScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("📊 Doanh thu 6 tháng gần nhất", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onBackground)
+                            Text("📊 Doanh thu 6 tháng gần nhất", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.weight(1f))
                             // Growth badge
-                            if (uiState.revenueGrowth != 0.0) {
+                            if (uiState.revenueGrowth != 0.0 && !uiState.revenueGrowth.isNaN() && !uiState.revenueGrowth.isInfinite()) {
                                 val isPositive = uiState.revenueGrowth > 0
+                                val growthText = "${if (isPositive) "↑" else "↓"}${"%.1f".format(kotlin.math.abs(uiState.revenueGrowth))}%"
                                 Box(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(8.dp))
@@ -249,11 +295,12 @@ fun DashboardScreen(
                                         .padding(horizontal = 8.dp, vertical = 4.dp)
                                 ) {
                                     Text(
-                                        "${if (isPositive) "↑" else "↓"}${"%.1f".format(kotlin.math.abs(uiState.revenueGrowth))}%",
+                                        growthText,
                                         color = if (isPositive) Color(0xFF10B981) else Color(0xFFEF4444),
-                                        fontSize = 11.sp,
+                                        fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
-                                        maxLines = 1
+                                        maxLines = 1,
+                                        softWrap = false
                                     )
                                 }
                             }
@@ -313,7 +360,7 @@ fun DashboardScreen(
                             Spacer(modifier = Modifier.height(12.dp))
 
                             // Circle progress
-                            val rate = uiState.attendanceRate.toFloat()
+                            val rate = uiState.attendanceRate.toFloat().coerceIn(0f, 100f)
                             Box(contentAlignment = Alignment.Center, modifier = Modifier.size(80.dp)) {
                                 androidx.compose.foundation.Canvas(modifier = Modifier.size(80.dp)) {
                                     val strokeWidth = 10.dp.toPx()
@@ -333,7 +380,7 @@ fun DashboardScreen(
                                     )
                                 }
                                 Text(
-                                    "${"%.0f".format(uiState.attendanceRate)}%",
+                                    "${uiState.attendanceRate.toInt()}%",
                                     fontWeight = FontWeight.ExtraBold,
                                     fontSize = 18.sp,
                                     color = MaterialTheme.colorScheme.onBackground
@@ -344,38 +391,41 @@ fun DashboardScreen(
                         }
                     }
 
-                    // Summary card
-                    Card(
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        elevation = CardDefaults.cardElevation(2.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text("📈 Tổng quan", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Spacer(modifier = Modifier.height(12.dp))
-                            val fmt = java.text.NumberFormat.getCurrencyInstance(java.util.Locale("vi", "VN"))
-                            Text("Doanh thu tháng", fontSize = 12.sp, color = Color(0xFF94A3B8))
-                            Text(fmt.format(uiState.monthlyRevenue), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF10B981))
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text("Nợ phải thu", fontSize = 12.sp, color = Color(0xFF94A3B8))
-                            Text(fmt.format(uiState.totalUncollected), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFFEF4444))
+                    // Summary card - hide financial data for teacher
+                    if (uiState.currentUserRole != UserRole.TEACHER) {
+                        Card(
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            elevation = CardDefaults.cardElevation(2.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text("📈 Tổng quan", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Spacer(modifier = Modifier.height(12.dp))
+                                val fmt = java.text.NumberFormat.getCurrencyInstance(java.util.Locale("vi", "VN"))
+                                Text("Doanh thu tháng", fontSize = 12.sp, color = Color(0xFF94A3B8))
+                                Text(fmt.format(uiState.monthlyRevenue), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF10B981))
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text("Nợ phải thu", fontSize = 12.sp, color = Color(0xFF94A3B8))
+                                Text(fmt.format(uiState.totalUncollected), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFFEF4444))
+                            }
                         }
                     }
                 }
             }
         }
 
-        // === TODAY'S CLASSES (moved to top) ===
+        // === TODAY'S CLASSES ===
         item {
             SectionHeader(
                 icon = Icons.Default.EventNote,
-                title = "Lịch học hôm nay",
+                title = if (uiState.currentUserRole == UserRole.TEACHER) "Lịch dạy hôm nay" else "Lịch học hôm nay",
                 color = BlueAccent
             )
         }
 
-        if (uiState.todayClasses.isEmpty()) {
+        val todayClassList = if (uiState.currentUserRole == UserRole.TEACHER) uiState.myTodayClasses else uiState.todayClasses
+        if (todayClassList.isEmpty()) {
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -386,12 +436,15 @@ fun DashboardScreen(
                         modifier = Modifier.fillMaxWidth().padding(24.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("Không có lịch học nào hôm nay 🎉", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 15.sp)
+                        Text(
+                            if (uiState.currentUserRole == UserRole.TEACHER) "Hôm nay không có buổi dạy 🎉" else "Không có lịch học nào hôm nay 🎉",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 15.sp
+                        )
                     }
                 }
             }
         } else {
-            items(uiState.todayClasses) { classModel ->
+            items(todayClassList) { classModel ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
@@ -457,7 +510,7 @@ fun DashboardScreen(
                 )
                 StatCard(
                     title = "Lớp học",
-                    value = uiState.totalClasses.toString(),
+                    value = if (uiState.currentUserRole == UserRole.TEACHER) uiState.myTeacherClasses.size.toString() else uiState.totalClasses.toString(),
                     icon = Icons.Default.Class,
                     gradientColors = listOf(Color(0xFFf093fb), Color(0xFFf5576c)),
                     modifier = Modifier.weight(1f)
@@ -465,31 +518,33 @@ fun DashboardScreen(
             }
         }
 
-        // === STAT CARDS ROW 2 ===
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                StatCard(
-                    title = "Thu tháng này",
-                    value = currencyFormatter.format(uiState.monthlyRevenue),
-                    icon = Icons.Default.MonetizationOn,
-                    gradientColors = listOf(Color(0xFF43e97b), Color(0xFF38f9d7)),
-                    modifier = Modifier.weight(1f)
-                )
-                StatCard(
-                    title = "Chưa thu",
-                    value = currencyFormatter.format(uiState.totalUncollected),
-                    icon = Icons.Default.Warning,
-                    gradientColors = listOf(Color(0xFFf97316), Color(0xFFfbbf24)),
-                    modifier = Modifier.weight(1f)
-                )
+        // === STAT CARDS ROW 2 (hide financial for teacher) ===
+        if (uiState.currentUserRole != UserRole.TEACHER) {
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    StatCard(
+                        title = "Thu tháng này",
+                        value = currencyFormatter.format(uiState.monthlyRevenue),
+                        icon = Icons.Default.MonetizationOn,
+                        gradientColors = listOf(Color(0xFF43e97b), Color(0xFF38f9d7)),
+                        modifier = Modifier.weight(1f)
+                    )
+                    StatCard(
+                        title = "Chưa thu",
+                        value = currencyFormatter.format(uiState.totalUncollected),
+                        icon = Icons.Default.Warning,
+                        gradientColors = listOf(Color(0xFFf97316), Color(0xFFfbbf24)),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
         }
 
-        // === TOP DEBTORS ===
-        if (uiState.topDebtors.isNotEmpty()) {
+        // === TOP DEBTORS (hide for teacher) ===
+        if (uiState.currentUserRole != UserRole.TEACHER && uiState.topDebtors.isNotEmpty()) {
             item {
                 SectionHeader(
                     icon = Icons.Default.TrendingDown,

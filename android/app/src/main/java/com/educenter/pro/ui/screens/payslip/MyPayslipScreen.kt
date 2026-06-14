@@ -37,7 +37,7 @@ class MyPayslipViewModel @Inject constructor(
     val myPayrolls: StateFlow<List<Payroll>> = dataRepository.appData
         .map { data ->
             val email = dataRepository.getLoggedInUserEmail()
-            val teacher = data?.teachers?.find { it.email == email }
+            val teacher = data?.teachers?.find { it.email == email || it.id == email }
             if (teacher != null) {
                 data.payrolls
                     .filter { it.teacherId == teacher.id }
@@ -51,7 +51,7 @@ class MyPayslipViewModel @Inject constructor(
     val teacherName: StateFlow<String> = dataRepository.appData
         .map { data ->
             val email = dataRepository.getLoggedInUserEmail()
-            data?.teachers?.find { it.email == email }?.name ?: ""
+            data?.teachers?.find { it.email == email || it.id == email }?.name ?: ""
         }
         .stateIn(kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main), SharingStarted.Lazily, "")
 }

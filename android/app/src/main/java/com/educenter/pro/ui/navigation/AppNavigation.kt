@@ -210,7 +210,8 @@ fun AppNavigation() {
                     onNavigateToClasses = { navController.navigate(Screen.Classes.route) },
                     onNavigateToTeachers = { navController.navigate(Screen.Teachers.route) },
                     onNavigateToFinance = { navController.navigate(Screen.Finance.route) },
-                    onNavigateToAnnouncements = { navController.navigate(Screen.Announcements.route) }
+                    onNavigateToAnnouncements = { navController.navigate(Screen.Announcements.route) },
+                    onNavigateToTeacherCalendar = { navController.navigate(Screen.TeacherCalendar.route) }
                 )
             }
             composable(Screen.Classes.route) {

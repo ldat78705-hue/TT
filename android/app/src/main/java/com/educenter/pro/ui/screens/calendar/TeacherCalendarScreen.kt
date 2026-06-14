@@ -86,7 +86,7 @@ class TeacherCalendarViewModel @Inject constructor(
             repository.appData.collect { appData ->
                 if (appData != null) {
                     val email = repository.getLoggedInUserEmail()
-                    val teacher = appData.teachers.find { it.email == email }
+                    val teacher = appData.teachers.find { it.email == email || it.id == email }
                     val teacherId = teacher?.id ?: ""
                     val teacherName = teacher?.name ?: email
 

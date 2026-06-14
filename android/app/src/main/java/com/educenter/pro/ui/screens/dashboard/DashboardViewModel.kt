@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.educenter.pro.data.model.ClassModel
 import com.educenter.pro.data.model.Student
+import com.educenter.pro.data.model.UserRole
 import com.educenter.pro.data.repository.DataRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,6 +46,7 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.launch {
             dataRepository.appData.collect { appData ->
                 if (appData != null) {
+                    val role = dataRepository.currentUserRole.value
                     val activeStudents = appData.students.count { it.status.name == "ACTIVE" }
                     val activeStudentIds = appData.students.filter { it.status.name == "ACTIVE" }.map { it.id }.toSet()
                     
@@ -143,7 +145,32 @@ class DashboardViewModel @Inject constructor(
                     val presentRecords = appData.attendance.filter { it.date >= thirtyDaysAgo && (it.status == "PRESENT" || it.status == "LATE") }.size
                     val attendanceRate = if (totalAttRecords > 0) (presentRecords.toDouble() / totalAttRecords * 100) else 0.0
 
+                    // === TEACHER-SPECIFIC DATA ===
+                    val loggedInEmail = dataRepository.getLoggedInUserEmail()
+                    val teacher = appData.teachers.find { it.email == loggedInEmail || it.id == loggedInEmail }
+                    val teacherId = teacher?.id ?: ""
+                    val teacherName = teacher?.name ?: loggedInEmail
+
+                    val myTeacherClasses = if (role == UserRole.TEACHER && teacherId.isNotEmpty()) {
+                        appData.classes.filter { it.teacherIds.contains(teacherId) }
+                    } else emptyList()
+
+                    val myTodayClasses = if (role == UserRole.TEACHER) {
+                        myTeacherClasses.filter { c ->
+                            c.schedule.any { it.dayOfWeek.equals(todayDayOfWeek, ignoreCase = true) }
+                        }
+                    } else emptyList()
+
+                    // This week sessions for teacher
+                    val weekDays = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+                    val myWeekSessions = if (role == UserRole.TEACHER) {
+                        myTeacherClasses.sumOf { cls ->
+                            cls.schedule.count { sched -> weekDays.any { it.equals(sched.dayOfWeek, ignoreCase = true) } }
+                        }
+                    } else 0
+
                     _uiState.value = DashboardUiState(
+                        currentUserRole = role,
                         totalStudents = activeStudents,
                         totalClasses = appData.classes.size,
                         totalTeachers = appData.teachers.size,
@@ -161,6 +188,10 @@ class DashboardViewModel @Inject constructor(
                         allClasses = appData.classes,
                         revenueChartData = monthlyRevenueChart,
                         attendanceRate = attendanceRate,
+                        teacherName = teacherName,
+                        myTeacherClasses = myTeacherClasses,
+                        myTodayClasses = myTodayClasses,
+                        myWeekSessions = myWeekSessions,
                         isLoading = false
                     )
                 }
@@ -170,6 +201,7 @@ class DashboardViewModel @Inject constructor(
 }
 
 data class DashboardUiState(
+    val currentUserRole: UserRole = UserRole.VIEWER,
     val totalStudents: Int = 0,
     val totalClasses: Int = 0,
     val totalTeachers: Int = 0,
@@ -187,6 +219,11 @@ data class DashboardUiState(
     val allClasses: List<ClassModel> = emptyList(),
     val revenueChartData: List<Pair<String, Double>> = emptyList(),
     val attendanceRate: Double = 0.0,
+    // Teacher-specific
+    val teacherName: String = "",
+    val myTeacherClasses: List<ClassModel> = emptyList(),
+    val myTodayClasses: List<ClassModel> = emptyList(),
+    val myWeekSessions: Int = 0,
     val isLoading: Boolean = true,
     val isRefreshing: Boolean = false
 )
