@@ -20,4 +20,9 @@ interface ApiService {
 
     @POST("api/data")
     suspend fun executeOperation(@Body operation: OperationPayload): AppData
+
+    @POST("api/zalo")
+    suspend fun sendZaloMessage(@Body body: Map<String, @JvmSuppressWildcards Any>): ZaloResponse
 }
+
+data class ZaloResponse(val success: Boolean?, val message: String?, val error: String?)

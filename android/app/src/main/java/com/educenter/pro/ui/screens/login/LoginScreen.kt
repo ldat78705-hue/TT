@@ -368,8 +368,11 @@ fun LoginScreen(
             Spacer(modifier = Modifier.weight(0.2f))
 
             // Footer
+            val versionName = try {
+                context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0"
+            } catch (_: Exception) { "1.0" }
             Text(
-                "Phiên bản 1.7 • EduCenter Pro",
+                "Phiên bản $versionName • EduCenter Pro",
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 24.dp)

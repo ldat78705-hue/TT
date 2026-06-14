@@ -136,4 +136,41 @@ class StudentsViewModel @Inject constructor(
     fun getStudentClassIds(studentId: String): List<String> {
         return classes.value.filter { it.studentIds.contains(studentId) }.map { it.id }
     }
+
+    val settings = dataRepository.appData
+        .map { it?.settings }
+        .stateIn(viewModelScope, SharingStarted.Lazily, null)
+
+    private val _zaloSendState = MutableStateFlow<ZaloSendState>(ZaloSendState.Idle)
+    val zaloSendState = _zaloSendState.asStateFlow()
+
+    fun sendZaloTuition(student: com.educenter.pro.data.model.Student) {
+        viewModelScope.launch {
+            _zaloSendState.value = ZaloSendState.Sending
+            try {
+                val centerName = settings.value?.name ?: ""
+                val result = dataRepository.sendZaloTuition(
+                    studentName = student.name,
+                    parentName = student.parentName.ifBlank { "Phụ huynh" },
+                    parentPhone = student.phone,
+                    amount = student.balance,
+                    centerName = centerName
+                )
+                _zaloSendState.value = ZaloSendState.Success(result)
+            } catch (e: Exception) {
+                _zaloSendState.value = ZaloSendState.Error(e.message ?: "Lỗi không xác định")
+            }
+        }
+    }
+
+    fun resetZaloState() {
+        _zaloSendState.value = ZaloSendState.Idle
+    }
+}
+
+sealed class ZaloSendState {
+    object Idle : ZaloSendState()
+    object Sending : ZaloSendState()
+    data class Success(val message: String) : ZaloSendState()
+    data class Error(val error: String) : ZaloSendState()
 }

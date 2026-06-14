@@ -298,13 +298,16 @@ fun StudentsScreen(
         if (selectedStudentForDetails != null) {
             val studentTx = transactions.filter { it.studentId == selectedStudentForDetails!!.id }
             val studentAtt = attendanceRecords.filter { it.studentId == selectedStudentForDetails!!.id }
+            val zaloState by viewModel.zaloSendState.collectAsState()
             
             StudentDetailDialog(
                 student = selectedStudentForDetails!!,
                 transactions = studentTx,
                 attendanceRecords = studentAtt,
                 classes = classes,
-                onDismiss = { selectedStudentForDetails = null }
+                onDismiss = { selectedStudentForDetails = null; viewModel.resetZaloState() },
+                onSendZalo = { viewModel.sendZaloTuition(it) },
+                zaloSendState = zaloState
             )
         }
     }
@@ -546,7 +549,9 @@ fun StudentDetailDialog(
     transactions: List<com.educenter.pro.data.model.Transaction>,
     attendanceRecords: List<com.educenter.pro.data.model.AttendanceRecord>,
     classes: List<ClassModel>,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onSendZalo: (Student) -> Unit = {},
+    zaloSendState: ZaloSendState = ZaloSendState.Idle
 ) {
     val currencyFormatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
     var selectedTab by remember { mutableStateOf(0) }
@@ -604,6 +609,36 @@ fun StudentDetailDialog(
                 if (studentClasses.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(6.dp))
                     Text("Lớp: ${studentClasses.joinToString { it.name }}", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+
+                // Zalo send tuition button
+                if (student.phone.isNotBlank() && student.balance < 0) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    val isSending = zaloSendState is ZaloSendState.Sending
+                    Button(
+                        onClick = { onSendZalo(student) },
+                        enabled = !isSending && zaloSendState !is ZaloSendState.Success,
+                        modifier = Modifier.fillMaxWidth().height(40.dp),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0068FF))
+                    ) {
+                        if (isSending) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Đang gửi...", fontSize = 13.sp)
+                        } else {
+                            Text("📱 Gửi công nợ qua Zalo (${student.phone})", fontSize = 13.sp)
+                        }
+                    }
+                    when (zaloSendState) {
+                        is ZaloSendState.Success -> {
+                            Text("✅ ${zaloSendState.message}", fontSize = 12.sp, color = Color(0xFF10B981), modifier = Modifier.padding(top = 4.dp))
+                        }
+                        is ZaloSendState.Error -> {
+                            Text("❌ ${zaloSendState.error}", fontSize = 12.sp, color = Color(0xFFEF4444), modifier = Modifier.padding(top = 4.dp))
+                        }
+                        else -> {}
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
