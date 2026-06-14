@@ -296,7 +296,7 @@ function applySmartWindowFilter(data: any) {
         });
     }
 
-    // Strip passwords
+    // Strip passwords from ALL user types
     if (filtered.teachers) {
         filtered.teachers = filtered.teachers.map((t: any) => {
             const { password, ...rest } = t;
@@ -309,10 +309,90 @@ function applySmartWindowFilter(data: any) {
             return rest;
         });
     }
+    if (filtered.students) {
+        filtered.students = filtered.students.map((s: any) => {
+            const { password, ...rest } = s;
+            return rest;
+        });
+    }
     if (filtered.settings) {
         const { adminPassword, zaloAccessToken, zaloTokenExpiresAt, ...safeSettings } = filtered.settings;
         filtered.settings = safeSettings;
     }
+
+    return filtered;
+}
+
+/**
+ * Filter data for PARENT role: only return data relevant to their student.
+ * Hides: staff, income, expenses, payrolls, auditLogs, other students' data.
+ */
+function applyParentFilter(data: any, studentId: string): any {
+    const filtered = { ...data };
+
+    // Only their own student
+    if (filtered.students) {
+        filtered.students = filtered.students.filter((s: any) => s.id === studentId);
+    }
+
+    // Only classes the student is enrolled in
+    const myClassIds = new Set<string>();
+    if (filtered.classes) {
+        filtered.classes = filtered.classes.filter((c: any) => {
+            const enrolled = (c.studentIds || []).includes(studentId);
+            if (enrolled) myClassIds.add(c.id);
+            return enrolled;
+        });
+    }
+
+    // Only teachers who teach the student's classes
+    const myTeacherIds = new Set<string>();
+    if (filtered.classes) {
+        filtered.classes.forEach((c: any) => {
+            (c.teacherIds || []).forEach((tid: string) => myTeacherIds.add(tid));
+        });
+    }
+    if (filtered.teachers) {
+        filtered.teachers = filtered.teachers.filter((t: any) => myTeacherIds.has(t.id));
+    }
+
+    // Only the student's attendance
+    if (filtered.attendance) {
+        filtered.attendance = filtered.attendance.filter((a: any) => a.studentId === studentId);
+    }
+
+    // Only the student's transactions
+    if (filtered.transactions) {
+        filtered.transactions = filtered.transactions.filter((t: any) => t.studentId === studentId);
+    }
+
+    // Only the student's invoices
+    if (filtered.invoices) {
+        filtered.invoices = filtered.invoices.filter((inv: any) => inv.studentId === studentId);
+    }
+
+    // Only the student's progress reports
+    if (filtered.progressReports) {
+        filtered.progressReports = filtered.progressReports.filter((p: any) => p.studentId === studentId);
+    }
+
+    // Filter announcements: only ALL, STUDENTS, or targeted to this student/class
+    if (filtered.announcements) {
+        filtered.announcements = filtered.announcements.filter((ann: any) => {
+            if (!ann.targetAudience || ann.targetAudience === 'ALL' || ann.targetAudience === 'STUDENTS') return true;
+            if (ann.targetAudience === 'CLASS' && ann.classId) return myClassIds.has(ann.classId);
+            if (ann.targetAudience === 'SPECIFIC_STUDENTS' && ann.targetStudentIds) return ann.targetStudentIds.includes(studentId);
+            return false;
+        });
+    }
+
+    // Hide sensitive center data entirely
+    filtered.staff = [];
+    filtered.income = [];
+    filtered.expenses = [];
+    filtered.payrolls = [];
+    filtered.auditLogs = [];
+    filtered.rooms = [];
 
     return filtered;
 }
@@ -547,7 +627,13 @@ export default async function handler(req: any, res: any) {
             }
 
             const data = await getSplitData(centerId);
-            const responseData = applySmartWindowFilter(data);
+            let responseData = applySmartWindowFilter(data);
+
+            // Apply PARENT-specific data filter: only return data for their student
+            const role = authPayload.role as UserRole;
+            if (role === UserRole.PARENT) {
+                responseData = applyParentFilter(responseData, authPayload.userId);
+            }
 
             // Set ETag from syncId for client-side caching
             if (cache.localSyncId) {
@@ -581,6 +667,18 @@ export default async function handler(req: any, res: any) {
             ];
             if (!allowedOps.includes(operation.op)) {
                  return res.status(403).send('Từ chối: Kế toán chỉ được thay đổi dữ liệu tài chính');
+            }
+        }
+        // TEACHER: whitelist allowed operations
+        if (role === UserRole.TEACHER) {
+            const allowedTeacherOps = [
+                'updateAttendance',
+                'addProgressReport', 'updateProgressReport', 'deleteProgressReport',
+                'addAnnouncement', 'updateAnnouncement', 'deleteAnnouncement',
+                'updateUserPassword', 'addAuditLog'
+            ];
+            if (!allowedTeacherOps.includes(operation.op)) {
+                return res.status(403).send('Từ chối: Giáo viên không có quyền thực hiện thao tác này');
             }
         }
         if (role === UserRole.PARENT) {
