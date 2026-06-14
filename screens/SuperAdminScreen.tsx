@@ -3,6 +3,10 @@ import { Button } from '../components/common/Button';
 import { ConfirmationModal } from '../components/common/ConfirmationModal';
 
 const LOCAL_STORAGE_KEY = 'educenter_superadmin_session';
+const SA_DRIVE_TOKEN_KEY = 'educenter_sa_drive_token';
+const SA_AUTO_BACKUP_KEY = 'educenter_sa_last_auto_backup';
+const SA_CLIENT_ID = '182151372613-mj0tk721j82m8kgog01bq3mt1id0hj0u.apps.googleusercontent.com';
+const SA_DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 
 const getToken = () => {
     try {
@@ -114,6 +118,168 @@ const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
     const [credTab, setCredTab] = useState<'set'|'admin'|'accounts'>('set');
     const [centerAccounts, setCenterAccounts] = useState<any[]>([]);
     const [isLoadingAccounts, setIsLoadingAccounts] = useState(false);
+
+    // === Google Drive Backup State ===
+    const [driveToken, setDriveToken] = useState<string | null>(localStorage.getItem(SA_DRIVE_TOKEN_KEY));
+    const [driveTokenClient, setDriveTokenClient] = useState<any>(null);
+    const [isGisReady, setIsGisReady] = useState(false);
+    const [isBackingUp, setIsBackingUp] = useState(false);
+    const [showDriveManager, setShowDriveManager] = useState(false);
+    const [driveFiles, setDriveFiles] = useState<{id:string,name:string,modifiedTime?:string}[]>([]);
+    const [isDriveLoading, setIsDriveLoading] = useState(false);
+    const [driveFileToDelete, setDriveFileToDelete] = useState<{id:string,name:string}|null>(null);
+
+    // Init Google Identity Services
+    useEffect(() => {
+        if ((window as any).google?.accounts) { setIsGisReady(true); return; }
+        const script = document.createElement('script');
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.async = true; script.defer = true;
+        script.onload = () => setIsGisReady(true);
+        document.body.appendChild(script);
+    }, []);
+
+    useEffect(() => {
+        if (isGisReady && (window as any).google) {
+            const client = (window as any).google.accounts.oauth2.initTokenClient({
+                client_id: SA_CLIENT_ID, scope: SA_DRIVE_SCOPE,
+                callback: (resp: any) => {
+                    if (resp?.access_token) {
+                        setDriveToken(resp.access_token);
+                        localStorage.setItem(SA_DRIVE_TOKEN_KEY, resp.access_token);
+                        setMessage('✅ Đã kết nối Google Drive!');
+                    }
+                },
+            });
+            setDriveTokenClient(client);
+        }
+    }, [isGisReady]);
+
+    const handleDriveConnect = () => {
+        if (driveTokenClient) driveTokenClient.requestAccessToken();
+        else setMessage('❌ Lỗi khởi tạo Google. Vui lòng tải lại trang.');
+    };
+
+    const handleDriveDisconnect = () => {
+        if (driveToken) {
+            (window as any).google?.accounts?.oauth2?.revoke?.(driveToken, () => {});
+        }
+        setDriveToken(null);
+        localStorage.removeItem(SA_DRIVE_TOKEN_KEY);
+        setMessage('✅ Đã ngắt kết nối Google Drive.');
+    };
+
+    const doBackupToDrive = async (isAuto = false) => {
+        if (!driveToken) { setMessage('❌ Chưa kết nối Google Drive.'); return; }
+        setIsBackingUp(true);
+        if (!isAuto) setMessage('⏳ Đang sao lưu toàn hệ thống lên Google Drive...');
+        try {
+            const backupData = await apiCall('backup_all', {});
+            const fileContent = JSON.stringify(backupData, null, 2);
+            const blob = new Blob([fileContent], { type: 'application/json' });
+            const now = new Date();
+            const dateStr = now.toISOString().replace(/[:.]/g, '-').substring(0, 19);
+            const fileName = `EduCenterPro_FULL_${isAuto ? 'Auto_' : ''}Backup_${dateStr}.json`;
+
+            const metadata = { name: fileName, mimeType: 'application/json', parents: ['root'] };
+            const form = new FormData();
+            form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+            form.append('file', blob);
+
+            const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                method: 'POST', headers: { 'Authorization': `Bearer ${driveToken}` }, body: form,
+            });
+            if (resp.ok) {
+                localStorage.setItem(SA_AUTO_BACKUP_KEY, now.toISOString());
+                setMessage(`✅ ${isAuto ? 'Tự động sao' : 'Sao'} lưu thành công! (${backupData.centersCount} trung tâm, file: ${fileName})`);
+            } else {
+                const errText = await resp.text();
+                if (errText.includes('invalid_grant') || errText.includes('Invalid Credentials')) {
+                    localStorage.removeItem(SA_DRIVE_TOKEN_KEY); setDriveToken(null);
+                    setMessage('❌ Token Drive hết hạn. Vui lòng kết nối lại.');
+                } else throw new Error(errText);
+            }
+        } catch (err: any) {
+            console.error('Drive Backup Error:', err);
+            setMessage('❌ Sao lưu Drive thất bại: ' + (err.message || 'Unknown'));
+        } finally { setIsBackingUp(false); }
+    };
+
+    const handleDownloadBackup = async () => {
+        setMessage('⏳ Đang tải dữ liệu sao lưu...');
+        try {
+            const backupData = await apiCall('backup_all', {});
+            const dataStr = JSON.stringify(backupData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            const dateStr = new Date().toISOString().split('T')[0];
+            link.download = `EduCenterPro_FULL_Backup_${dateStr}.json`;
+            document.body.appendChild(link); link.click();
+            document.body.removeChild(link); URL.revokeObjectURL(url);
+            setMessage(`✅ Đã tải về bản sao lưu (${backupData.centersCount} trung tâm)`);
+        } catch (err: any) { setMessage('❌ Tải sao lưu thất bại: ' + err.message); }
+    };
+
+    // Auto-backup weekly
+    useEffect(() => {
+        if (!driveToken) return;
+        const lastBackup = localStorage.getItem(SA_AUTO_BACKUP_KEY);
+        const lastDate = lastBackup ? new Date(lastBackup) : null;
+        const daysSince = lastDate ? Math.floor((Date.now() - lastDate.getTime()) / (1000*60*60*24)) : 999;
+        if (daysSince >= 7) {
+            const timer = setTimeout(() => doBackupToDrive(true), 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [driveToken]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const handleOpenDriveManager = async () => {
+        if (!driveToken) { setMessage('❌ Chưa kết nối Google Drive.'); return; }
+        setShowDriveManager(true); setIsDriveLoading(true); setDriveFiles([]);
+        try {
+            const resp = await fetch(
+                "https://www.googleapis.com/drive/v3/files?q=mimeType='application/json' and name contains 'EduCenterPro_' and trashed=false&spaces=drive&fields=files(id,name,modifiedTime)&orderBy=modifiedTime desc",
+                { headers: { 'Authorization': `Bearer ${driveToken}` } }
+            );
+            if (!resp.ok) throw new Error('Không thể tải danh sách');
+            const data = await resp.json();
+            setDriveFiles(data.files || []);
+        } catch (err: any) {
+            setMessage('❌ ' + err.message);
+        } finally { setIsDriveLoading(false); }
+    };
+
+    const handleDriveDownload = async (fileId: string, fileName: string) => {
+        if (!driveToken) return;
+        try {
+            const resp = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+                headers: { 'Authorization': `Bearer ${driveToken}` },
+            });
+            if (!resp.ok) throw new Error('Tải thất bại');
+            const blob = await resp.blob();
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a'); link.href = url; link.download = fileName;
+            document.body.appendChild(link); link.click();
+            document.body.removeChild(link); URL.revokeObjectURL(url);
+        } catch (err: any) { setMessage('❌ ' + err.message); }
+    };
+
+    const handleDriveDeleteConfirm = async () => {
+        if (!driveFileToDelete || !driveToken) return;
+        try {
+            const resp = await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileToDelete.id}`, {
+                method: 'DELETE', headers: { 'Authorization': `Bearer ${driveToken}` },
+            });
+            if (resp.ok) {
+                setDriveFiles(prev => prev.filter(f => f.id !== driveFileToDelete.id));
+                setMessage('✅ Đã xóa file sao lưu.');
+            } else throw new Error('Xóa thất bại');
+        } catch (err: any) { setMessage('❌ ' + err.message); }
+        finally { setDriveFileToDelete(null); }
+    };
+
+    const lastAutoBackupStr = localStorage.getItem(SA_AUTO_BACKUP_KEY);
 
     const refresh = async () => {
         setIsLoading(true);
@@ -273,7 +439,14 @@ const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                             <p className="text-purple-200 text-xs">Quản trị hệ thống EduCenter Pro</p>
                         </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
+                        {driveToken ? (
+                            <button onClick={handleDriveDisconnect}
+                                className="px-3 py-2 text-sm bg-green-500/20 hover:bg-green-500/40 rounded-lg transition-colors">☁️ Drive ✓</button>
+                        ) : (
+                            <button onClick={handleDriveConnect}
+                                className="px-3 py-2 text-sm bg-white/10 hover:bg-white/20 rounded-lg transition-colors">☁️ Kết nối Drive</button>
+                        )}
                         <button onClick={() => setShowChangePassword(!showChangePassword)}
                             className="px-3 py-2 text-sm bg-white/10 hover:bg-white/20 rounded-lg transition-colors">🔑 Đổi mật khẩu</button>
                         <button onClick={onLogout}
@@ -284,7 +457,7 @@ const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
 
             <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
                 {/* Stats */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                     <div className="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border dark:border-slate-700">
                         <p className="text-sm text-gray-500 dark:text-gray-400">Tổng trung tâm</p>
                         <p className="text-3xl font-bold text-gray-800 dark:text-white mt-1">{centers.length}</p>
@@ -297,6 +470,40 @@ const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                         <p className="text-sm text-red-500">Hết hạn / Khóa</p>
                         <p className="text-3xl font-bold text-red-500 mt-1">{expiredCenters + centers.filter(c => c.status === 'LOCKED').length}</p>
                     </div>
+                    <div className="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border dark:border-slate-700">
+                        <p className="text-sm text-purple-500">Sao lưu gần nhất</p>
+                        <p className="text-sm font-bold text-purple-600 dark:text-purple-400 mt-1">{lastAutoBackupStr ? new Date(lastAutoBackupStr).toLocaleDateString('vi-VN', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : 'Chưa có'}</p>
+                    </div>
+                </div>
+
+                {/* Backup Section */}
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border dark:border-slate-700 p-5">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <div>
+                            <h2 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">💾 Sao lưu Hệ thống</h2>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Sao lưu toàn bộ dữ liệu của tất cả trung tâm ({centers.length} TT)</p>
+                        </div>
+                        <div className="flex gap-2 flex-wrap">
+                            <button onClick={handleDownloadBackup} disabled={isBackingUp}
+                                className="px-3 py-2 text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors disabled:opacity-50">
+                                📥 Tải về máy
+                            </button>
+                            <button onClick={() => doBackupToDrive(false)} disabled={isBackingUp || !driveToken}
+                                className="px-3 py-2 text-sm bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors disabled:opacity-50"
+                                title={!driveToken ? 'Kết nối Google Drive trước' : ''}>
+                                {isBackingUp ? '⏳ Đang sao lưu...' : '☁️ Lưu lên Drive'}
+                            </button>
+                            <button onClick={handleOpenDriveManager} disabled={!driveToken}
+                                className="px-3 py-2 text-sm bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors disabled:opacity-50">
+                                📋 Quản lý bản sao lưu
+                            </button>
+                        </div>
+                    </div>
+                    {!driveToken && (
+                        <p className="mt-3 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 p-2 rounded">
+                            ⚠️ Chưa kết nối Google Drive. Bấm "☁️ Kết nối Drive" ở thanh trên để kích hoạt sao lưu tự động hàng tuần.
+                        </p>
+                    )}
                 </div>
 
                 {/* Message */}
@@ -536,6 +743,50 @@ const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                 title={`Xóa trung tâm "${deleteTarget?.name}"?`}
                 message={`Thao tác này sẽ xóa đăng ký trung tâm "${deleteTarget?.slug}". Dữ liệu (collection) sẽ KHÔNG bị xóa.`}
                 confirmationKeyword="XÓA"
+                confirmButtonVariant="danger"
+            />
+
+            {/* Drive Manager Modal */}
+            {showDriveManager && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                    <div className="bg-white dark:bg-slate-800 rounded-xl p-6 max-w-2xl w-full mx-4 shadow-2xl max-h-[80vh] overflow-y-auto">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-bold">📋 Bản sao lưu trên Google Drive</h3>
+                            <button onClick={() => setShowDriveManager(false)} className="text-gray-500 hover:text-gray-700 text-xl">✕</button>
+                        </div>
+                        {isDriveLoading ? (
+                            <div className="text-center py-8 text-gray-500">Đang tải...</div>
+                        ) : driveFiles.length === 0 ? (
+                            <div className="text-center py-8 text-gray-500">Chưa có bản sao lưu nào trên Drive.</div>
+                        ) : (
+                            <div className="divide-y dark:divide-slate-700">
+                                {driveFiles.map(f => (
+                                    <div key={f.id} className="py-3 flex items-center justify-between gap-3">
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium truncate">{f.name}</p>
+                                            {f.modifiedTime && <p className="text-xs text-gray-500">{new Date(f.modifiedTime).toLocaleString('vi-VN')}</p>}
+                                        </div>
+                                        <div className="flex gap-2 flex-shrink-0">
+                                            <button onClick={() => handleDriveDownload(f.id, f.name)}
+                                                className="px-2 py-1 text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 rounded hover:bg-blue-200">📥 Tải</button>
+                                            <button onClick={() => setDriveFileToDelete(f)}
+                                                className="px-2 py-1 text-xs bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 rounded hover:bg-red-200">🗑️</button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Drive File Delete Confirm */}
+            <ConfirmationModal
+                isOpen={!!driveFileToDelete}
+                onClose={() => setDriveFileToDelete(null)}
+                onConfirm={handleDriveDeleteConfirm}
+                title="Xóa file sao lưu?"
+                message={`Bạn có chắc muốn xóa "${driveFileToDelete?.name}" khỏi Google Drive?`}
                 confirmButtonVariant="danger"
             />
         </div>

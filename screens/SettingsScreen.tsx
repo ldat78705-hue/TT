@@ -6,17 +6,10 @@ import { CenterSettings, UserRole, AppData } from '../types';
 import { ICONS } from '../constants';
 import { ConfirmationModal } from '../components/common/ConfirmationModal';
 import { useAuth } from '../hooks/useAuth';
-import { Modal } from '../components/common/Modal';
+
 import { zaloTestConnection } from '../services/api';
 
-// For Google Drive Integration
-declare global {
-    interface Window {
-        google: any;
-    }
-}
-const CLIENT_ID = '182151372613-mj0tk721j82m8kgog01bq3mt1id0hj0u.apps.googleusercontent.com';
-const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+
 
 
 const AdminPasswordSettings: React.FC = () => {
@@ -131,15 +124,7 @@ export const SettingsScreen: React.FC = () => {
     const [deleteAttMonth, setDeleteAttMonth] = useState(new Date().getMonth() + 1);
     const [deleteAttYear, setDeleteAttYear] = useState(new Date().getFullYear());
 
-    // Google Drive State
-    const [tokenClient, setTokenClient] = useState<any>(null);
-    const [accessToken, setAccessToken] = useState<string | null>(null);
-    const [isGisInitialized, setIsGisInitialized] = useState(false);
-    const [isBackupLoading, setIsBackupLoading] = useState(false);
-    const [isManageBackupModalOpen, setManageBackupModalOpen] = useState(false);
-    const [driveFiles, setDriveFiles] = useState<{ id: string, name: string }[]>([]);
-    const [isFetchingFiles, setIsFetchingFiles] = useState(false);
-    const [fileToDelete, setFileToDelete] = useState<{ id: string, name: string } | null>(null);
+
 
 
     const isViewer = role === UserRole.VIEWER;
@@ -151,55 +136,7 @@ export const SettingsScreen: React.FC = () => {
         });
     }, [state.settings]);
 
-    // Initialize Google Identity Services
-    useEffect(() => {
-        if (window.google?.accounts) {
-             setIsGisInitialized(true);
-             return;
-        }
-        const script = document.createElement('script');
-        script.src = 'https://accounts.google.com/gsi/client';
-        script.async = true;
-        script.defer = true;
-        script.onload = () => setIsGisInitialized(true);
-        document.body.appendChild(script);
-        return () => {
-            document.body.removeChild(script);
-        }
-    }, []);
 
-    useEffect(() => {
-        if (isGisInitialized && window.google) {
-            const client = window.google.accounts.oauth2.initTokenClient({
-                client_id: CLIENT_ID,
-                scope: DRIVE_SCOPE,
-                callback: (tokenResponse: any) => {
-                    if (tokenResponse && tokenResponse.access_token) {
-                        setAccessToken(tokenResponse.access_token);
-                        toast.success("Đã kết nối với Google Drive!");
-                    }
-                },
-            });
-            setTokenClient(client);
-        }
-    }, [isGisInitialized, toast]);
-
-    const handleAuthClick = () => {
-        if (tokenClient) {
-            tokenClient.requestAccessToken();
-        } else {
-            toast.error("Lỗi khởi tạo Google. Vui lòng tải lại trang.");
-        }
-    };
-    
-    const handleSignOutClick = () => {
-        if (accessToken) {
-            window.google.accounts.oauth2.revoke(accessToken, () => {
-                setAccessToken(null);
-                toast.info("Đã ngắt kết nối khỏi Google Drive.");
-            });
-        }
-    };
 
     const handleSignatureUpload = (file: File) => {
         if (!file.type.startsWith('image/')) {
@@ -282,95 +219,7 @@ export const SettingsScreen: React.FC = () => {
         }
     };
 
-    const handleBackupToDrive = async () => {
-        if (!accessToken) {
-            toast.error("Chưa kết nối Google Drive.");
-            return;
-        }
-        setIsBackupLoading(true);
-        toast.info("Đang sao lưu lên Google Drive...");
-        try {
-            const dataToBackup = await backupData();
-            const fileContent = JSON.stringify(dataToBackup, null, 2);
-            const blob = new Blob([fileContent], { type: 'application/json' });
-            const fileName = `EduCenterPro_Backup_${getVietnamTime()}.json`;
 
-            const metadata = {
-                name: fileName,
-                mimeType: 'application/json',
-                parents: ['root']
-            };
-
-            const form = new FormData();
-            form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-            form.append('file', blob);
-
-            const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${accessToken}` },
-                body: form,
-            });
-
-            if (response.ok) {
-                toast.success('Sao lưu lên Google Drive thành công!');
-            } else {
-                throw new Error(await response.text());
-            }
-        } catch (error) {
-            console.error("Drive Backup Error:", error);
-            toast.error('Sao lưu lên Drive thất bại.');
-        } finally {
-            setIsBackupLoading(false);
-        }
-    };
-
-    // === AUTO-BACKUP: check monthly ===
-    const AUTO_BACKUP_KEY = 'educenter_last_auto_backup';
-    const AUTO_BACKUP_INTERVAL_DAYS = 30;
-
-    useEffect(() => {
-        if (!accessToken) return;
-        const lastBackup = localStorage.getItem(AUTO_BACKUP_KEY);
-        const lastDate = lastBackup ? new Date(lastBackup) : null;
-        const now = new Date();
-        const daysSince = lastDate ? Math.floor((now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)) : 999;
-        
-        if (daysSince >= AUTO_BACKUP_INTERVAL_DAYS) {
-            // Auto-backup in background
-            const doAutoBackup = async () => {
-                try {
-                    toast.info('🔄 Đang tự động sao lưu hàng tháng lên Google Drive...');
-                    const dataToBackup = await backupData();
-                    const fileContent = JSON.stringify(dataToBackup, null, 2);
-                    const blob = new Blob([fileContent], { type: 'application/json' });
-                    const fileName = `EduCenterPro_AutoBackup_${getVietnamTime()}.json`;
-
-                    const metadata = { name: fileName, mimeType: 'application/json', parents: ['root'] };
-                    const form = new FormData();
-                    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-                    form.append('file', blob);
-
-                    const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${accessToken}` },
-                        body: form,
-                    });
-
-                    if (response.ok) {
-                        localStorage.setItem(AUTO_BACKUP_KEY, now.toISOString());
-                        toast.success('✅ Tự động sao lưu hàng tháng thành công!');
-                    }
-                } catch (e) {
-                    console.error('Auto-backup failed:', e);
-                }
-            };
-            // Delay 5s after page load to not block UI
-            const timer = setTimeout(doAutoBackup, 5000);
-            return () => clearTimeout(timer);
-        }
-    }, [accessToken]); // eslint-disable-line react-hooks/exhaustive-deps
-
-    const lastAutoBackupDate = localStorage.getItem(AUTO_BACKUP_KEY);
     
     const handleRestoreFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -392,70 +241,7 @@ export const SettingsScreen: React.FC = () => {
         reader.readAsText(file);
     };
 
-    const handleOpenManageBackups = async () => {
-        if (!accessToken) {
-            toast.error("Chưa kết nối Google Drive.");
-            return;
-        }
-        setManageBackupModalOpen(true);
-        setIsFetchingFiles(true);
-        setDriveFiles([]);
-        try {
-            const response = await fetch("https://www.googleapis.com/drive/v3/files?q=mimeType='application/json' and name contains 'EduCenterPro_Backup' and trashed=false&spaces=drive&fields=files(id,name)", {
-                headers: { 'Authorization': `Bearer ${accessToken}` },
-            });
-            if (!response.ok) throw new Error("Không thể tải danh sách tệp.");
-            const fileData = await response.json();
-            setDriveFiles(fileData.files || []);
-        } catch (error) {
-            toast.error("Lỗi khi tải danh sách tệp từ Drive.");
-            console.error(error);
-        } finally {
-            setIsFetchingFiles(false);
-        }
-    };
 
-    const handleSelectDriveFileForRestore = async (fileId: string) => {
-        if (!accessToken) return;
-        toast.info("Đang tải dữ liệu từ Drive...");
-        try {
-            const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-                headers: { 'Authorization': `Bearer ${accessToken}` },
-            });
-            if (!response.ok) throw new Error("Không thể tải nội dung tệp.");
-            const data = await response.json();
-            setRestoreConfirm({ open: true, data });
-            setManageBackupModalOpen(false); // Close restore list modal
-        } catch (error) {
-            toast.error("Lỗi khi phục hồi từ Drive.");
-            console.error(error);
-        }
-    };
-
-    const handleConfirmDeleteDriveFile = async () => {
-        if (!fileToDelete || !accessToken) return;
-
-        toast.info(`Đang xóa tệp "${fileToDelete.name}"...`);
-        try {
-            const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileToDelete.id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${accessToken}` },
-            });
-
-            if (response.ok) {
-                toast.success('Đã xóa tệp sao lưu thành công!');
-                // Update UI immediately
-                setDriveFiles(prevFiles => prevFiles.filter(f => f.id !== fileToDelete.id));
-            } else {
-                throw new Error(await response.text());
-            }
-        } catch (error) {
-            console.error("Drive Delete Error:", error);
-            toast.error('Xóa tệp thất bại.');
-        } finally {
-            setFileToDelete(null); // Close the confirmation modal
-        }
-    };
 
     const handleConfirmRestore = async () => {
         if (restoreConfirm.data) {
@@ -889,44 +675,7 @@ export const SettingsScreen: React.FC = () => {
             <div className="card-base">
                 <h2 className="text-2xl font-bold mb-6">Thao tác Dữ liệu</h2>
                 <div className="space-y-6">
-                    <div className="p-4 border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-gray-700 rounded-lg">
-                        <h3 className="font-semibold text-blue-800 dark:text-blue-200">Sao lưu & Phục hồi qua Google Drive</h3>
-                        <p className="text-sm text-blue-700 dark:text-blue-300 mt-1 mb-3">
-                            Lưu trữ và phục hồi dữ liệu an toàn bằng tài khoản Google Drive cá nhân của bạn. Ứng dụng chỉ có quyền truy cập vào các tệp sao lưu do chính nó tạo ra.
-                        </p>
-                        {accessToken ? (
-                            <>
-                            <div className="flex flex-col sm:flex-row gap-4">
-                                <Button onClick={handleBackupToDrive} isLoading={isBackupLoading} disabled={isViewer}>
-                                    {ICONS.backup} Sao lưu lên Drive
-                                </Button>
-                                <Button onClick={handleOpenManageBackups} variant="secondary" disabled={isViewer}>
-                                    {ICONS.settings} Quản lý Sao lưu
-                                </Button>
-                                <Button onClick={handleSignOutClick} variant="danger" disabled={isViewer}>
-                                    {ICONS.close} Ngắt kết nối
-                                </Button>
-                            </div>
-                            {lastAutoBackupDate && (
-                                <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/30 rounded-lg text-sm text-green-700 dark:text-green-300">
-                                    <strong>🔄 Tự động sao lưu:</strong> Lần cuối {new Date(lastAutoBackupDate).toLocaleString('vi-VN')} • 
-                                    Tiếp theo: {new Date(new Date(lastAutoBackupDate).getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('vi-VN')}
-                                </div>
-                            )}
-                            {!lastAutoBackupDate && (
-                                <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/30 rounded-lg text-sm text-yellow-700 dark:text-yellow-300">
-                                    <strong>⏰ Tự động sao lưu:</strong> Chưa có lần sao lưu tự động nào. Hệ thống sẽ tự động sao lưu khi bạn truy cập trang này.
-                                </div>
-                            )}
-                            </>
-                        ) : (
-                            <Button onClick={handleAuthClick} className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700">
-                                {ICONS.drive} Kết nối Google Drive
-                            </Button>
-                        )}
-                    </div>
-
-                     <div className="p-4 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-gray-700/50 rounded-lg">
+                    <div className="p-4 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-gray-700/50 rounded-lg">
                         <h3 className="font-semibold text-slate-800 dark:text-slate-200">Sao lưu & Phục hồi Cục bộ (Thủ công)</h3>
                         <p className="text-sm text-slate-700 dark:text-slate-300 mt-1 mb-3">
                            Tạo một bản sao của toàn bộ dữ liệu để lưu trữ an toàn trên máy tính của bạn.
@@ -1017,56 +766,6 @@ export const SettingsScreen: React.FC = () => {
                 </div>
             </div>
 
-            <Modal isOpen={isManageBackupModalOpen} onClose={() => setManageBackupModalOpen(false)} title="Quản lý Sao lưu trên Google Drive">
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {isFetchingFiles && <div className="text-center p-8">{ICONS.loading} Đang tải...</div>}
-                    {!isFetchingFiles && driveFiles.length === 0 && <div className="text-center p-8 text-gray-500">Không tìm thấy tệp sao lưu nào.</div>}
-                    {!isFetchingFiles && driveFiles.map(file => (
-                       <div
-                            key={file.id}
-                            className="w-full text-left p-3 rounded-md bg-slate-100 dark:bg-slate-700 flex justify-between items-center"
-                        >
-                            <span className="font-semibold truncate pr-4">{file.name}</span>
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                                <Button
-                                    size="sm"
-                                    variant="secondary"
-                                    onClick={() => handleSelectDriveFileForRestore(file.id)}
-                                    title="Phục hồi từ tệp này"
-                                >
-                                    {ICONS.restore}
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    variant="danger"
-                                    onClick={() => setFileToDelete(file)}
-                                    title="Xóa tệp này"
-                                >
-                                    {ICONS.delete}
-                                </Button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </Modal>
-            
-            <ConfirmationModal
-                isOpen={!!fileToDelete}
-                onClose={() => setFileToDelete(null)}
-                onConfirm={handleConfirmDeleteDriveFile}
-                title="Xác nhận Xóa Tệp Sao lưu"
-                message={
-                    <p>
-                        Bạn có chắc chắn muốn xóa vĩnh viễn tệp sao lưu
-                        <br />
-                        <strong className="break-all">{fileToDelete?.name}</strong>
-                        <br />
-                        khỏi Google Drive không? Hành động này không thể hoàn tác.
-                    </p>
-                }
-                confirmButtonText="Xác nhận Xóa"
-                confirmButtonVariant="danger"
-            />
 
             <ConfirmationModal
                 isOpen={restoreConfirm.open}

@@ -534,10 +534,26 @@ export default async function handler(req: any, res: any) {
 
     if (req.method === 'GET') {
         try {
+            // ETag-based caching: check if client already has latest data
+            const clientETag = req.headers['if-none-match'];
+            const cache = getCenterCache(centerId);
+            
+            // If client has an ETag and server cache exists with matching syncId,
+            // return 304 without reading Firestore at all
+            if (clientETag && cache.localSyncId && clientETag === cache.localSyncId && cache.cachedData) {
+                res.setHeader('ETag', cache.localSyncId);
+                res.setHeader('Cache-Control', 'no-cache');
+                return res.status(304).end();
+            }
+
             const data = await getSplitData(centerId);
             const responseData = applySmartWindowFilter(data);
 
-            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            // Set ETag from syncId for client-side caching
+            if (cache.localSyncId) {
+                res.setHeader('ETag', cache.localSyncId);
+            }
+            res.setHeader('Cache-Control', 'no-cache');
             return res.status(200).json(responseData);
         } catch (error) {
             console.error('Firestore GET Error:', error);
@@ -691,6 +707,12 @@ export default async function handler(req: any, res: any) {
                         executeOperationInternal({ op: 'addAuditLog', payload: auditEntry }, centerId).catch(() => {});
                     }
                 } catch (logErr) { /* silently ignore audit failures */ }
+
+                // Set ETag in response for client cache sync
+                const cacheAfterWrite = getCenterCache(centerId);
+                if (cacheAfterWrite.localSyncId) {
+                    res.setHeader('ETag', cacheAfterWrite.localSyncId);
+                }
 
                 return res.status(200).json(responseData);
             } catch (error) {

@@ -381,6 +381,58 @@ export default async function handler(req: any, res: any) {
             });
         }
 
+        // Backup all centers' data
+        if (body.action === 'backup_all') {
+            try {
+                const querySnapshot = await getDocs(collection(db, REGISTRY_COLLECTION));
+                const allBackup: Record<string, any> = {};
+
+                for (const centerDoc of querySnapshot.docs) {
+                    const slug = centerDoc.id;
+                    const colName = `center_${slug}`;
+                    const data: any = {
+                        students: [], teachers: [], staff: [], classes: [], attendance: [],
+                        invoices: [], progressReports: [], transactions: [], income: [],
+                        expenses: [], payrolls: [], announcements: [], settings: {}, auditLogs: [], rooms: []
+                    };
+
+                    const docsSnapshot = await getDocs(collection(db, colName));
+                    docsSnapshot.forEach((docSnap) => {
+                        const id = docSnap.id;
+                        if (id === '_sync') return;
+                        const docData = docSnap.data().data;
+
+                        let baseCol = id;
+                        if (id.startsWith('attendance_')) baseCol = 'attendance';
+                        else if (id.startsWith('invoices_')) baseCol = 'invoices';
+                        else if (id.startsWith('transactions_')) baseCol = 'transactions';
+                        else if (id.startsWith('income_')) baseCol = 'income';
+                        else if (id.startsWith('expenses_')) baseCol = 'expenses';
+                        else if (id.startsWith('payrolls_')) baseCol = 'payrolls';
+
+                        if (Array.isArray(docData)) {
+                            if (!data[baseCol]) data[baseCol] = [];
+                            data[baseCol].push(...docData);
+                        } else {
+                            data[baseCol] = docData;
+                        }
+                    });
+
+                    allBackup[slug] = data;
+                }
+
+                return res.status(200).json({
+                    backupDate: new Date().toISOString(),
+                    version: '1.8.0',
+                    centersCount: Object.keys(allBackup).length,
+                    centers: allBackup
+                });
+            } catch (error: any) {
+                console.error('Backup All Error:', error);
+                return res.status(500).json({ error: 'Sao lưu thất bại: ' + (error.message || 'Unknown') });
+            }
+        }
+
         return res.status(400).json({ error: 'Action không hợp lệ' });
     }
 

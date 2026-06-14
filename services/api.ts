@@ -48,11 +48,32 @@ export async function fetchCenters(): Promise<{ id: string; name: string; slug: 
     }
 }
 
-// --- Core API Functions ---
+const CACHE_ETAG_KEY = 'educenter_data_etag';
+const CACHE_DATA_KEY = 'educenter_data_cache';
 
 export async function loadInitialData(retries = 2): Promise<Omit<AppData, 'loading'>> {
     try {
-        const response = await fetch('/api/data', { headers: getHeaders() });
+        const headers: Record<string, string> = { ...getHeaders() };
+        
+        // Send ETag for conditional request
+        const cachedETag = sessionStorage.getItem(CACHE_ETAG_KEY);
+        if (cachedETag) {
+            headers['If-None-Match'] = cachedETag;
+        }
+
+        const response = await fetch('/api/data', { headers });
+        
+        if (response.status === 304) {
+            // Data not modified — use cached version
+            const cachedStr = sessionStorage.getItem(CACHE_DATA_KEY);
+            if (cachedStr) {
+                try { return JSON.parse(cachedStr); } catch (e) { /* fall through to full fetch */ }
+            }
+            // Cache corrupted, do full fetch
+            sessionStorage.removeItem(CACHE_ETAG_KEY);
+            return loadInitialData(retries);
+        }
+
         if (!response.ok) {
             if (response.status === 401) {
                 localStorage.removeItem(LOCAL_STORAGE_KEY);
@@ -62,7 +83,17 @@ export async function loadInitialData(retries = 2): Promise<Omit<AppData, 'loadi
             const errorText = await response.text();
             throw new Error(errorText || 'Không thể kết nối đến máy chủ dữ liệu.');
         }
-        return await response.json();
+
+        const data = await response.json();
+        
+        // Cache the data and ETag for future requests
+        const etag = response.headers.get('ETag');
+        if (etag) {
+            sessionStorage.setItem(CACHE_ETAG_KEY, etag);
+            try { sessionStorage.setItem(CACHE_DATA_KEY, JSON.stringify(data)); } catch (e) { /* storage full */ }
+        }
+        
+        return data;
     } catch (error) {
         if (retries > 0 && error instanceof Error && error.message !== 'Unauthorized') {
             console.warn(`Data load failed, retrying... (${retries} attempts left)`);
@@ -88,7 +119,16 @@ async function patchData(operation: { op: string, payload?: any }): Promise<Omit
         const errorText = await response.text();
         throw new Error(errorText || 'Yêu cầu API thất bại');
     }
-    return response.json();
+    const data = await response.json();
+    
+    // Update cache with new data after mutation
+    const etag = response.headers.get('ETag');
+    if (etag) {
+        sessionStorage.setItem(CACHE_ETAG_KEY, etag);
+        try { sessionStorage.setItem(CACHE_DATA_KEY, JSON.stringify(data)); } catch (e) { /* storage full */ }
+    }
+    
+    return data;
 }
 
 // --- API Wrappers for Mutations ---

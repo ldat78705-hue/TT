@@ -44,13 +44,19 @@ class FinanceViewModel @Inject constructor(
             dataRepository.appData.collect { appData ->
                 if (appData == null) return@collect
 
-                val cashRevenue = appData.transactions
+                // Cash Revenue = Tuition collected (positive transactions) + Other Income
+                val tuitionCollected = appData.transactions
                     .filter { it.amount > 0 }
                     .sumOf { it.amount }
 
-                val totalExpenses = appData.transactions
-                    .filter { it.amount < 0 }
-                    .sumOf { -it.amount }
+                val otherIncome = appData.income
+                    .sumOf { it.amount }
+
+                val cashRevenue = tuitionCollected + otherIncome
+
+                // Total Expenses = from expenses records (NOT negative transactions)
+                val totalExpenses = appData.expenses
+                    .sumOf { it.amount }
 
                 val totalReceivables = appData.students
                     .filter { it.balance < 0 }
