@@ -146,20 +146,6 @@ export const LoginScreen: React.FC = () => {
                             </div>
                             <Button type="submit" className="w-full !py-3 text-lg" isLoading={isLoading}>Đăng nhập</Button>
                         </form>
-                        
-                        <div className="mt-8 login-help-box p-4">
-                            <h4 className="font-semibold text-center mb-3 text-sm">Hướng dẫn đăng nhập</h4>
-                            <ul className="space-y-3 text-xs">
-                                <li className="flex gap-2">
-                                    <strong className="font-bold w-16 text-right flex-shrink-0">Quản trị:</strong>
-                                    <span>Dùng tài khoản <code className="font-mono px-1 rounded">admin</code>, mật khẩu mặc định là <code className="font-mono px-1 rounded">123456</code>.</span>
-                                </li>
-                                <li className="flex gap-2">
-                                    <strong className="font-bold w-16 text-right flex-shrink-0">GV / NV:</strong>
-                                    <span>Dùng mã số được cấp. Mật khẩu mặc định là ngày sinh (ddmmyyyy).</span>
-                                </li>
-                            </ul>
-                        </div>
                     </div>
                 </div>
             </div>

@@ -16,13 +16,6 @@ const normalizeAccountName = (name: string) => {
     return name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toUpperCase();
 };
 
-const statusVN: Record<string, string> = {
-    'PRESENT': '✔', 'ABSENT': '✘', 'UNEXCUSED_ABSENT': '✘', 'LATE': '⏰', 'UNMARKED': '?'
-};
-const statusLabel: Record<string, string> = {
-    'PRESENT': 'Có mặt', 'ABSENT': 'Vắng', 'UNEXCUSED_ABSENT': 'Vắng KP', 'LATE': 'Đi muộn', 'UNMARKED': 'Chưa ĐD'
-};
-
 export const DebtNotice: React.FC<DebtNoticeProps> = ({ student, transactions, settings, attendance = [], classes = [] }) => {
     const totalDue = student.balance < 0 ? Math.abs(student.balance) : 0;
 
@@ -31,8 +24,8 @@ export const DebtNotice: React.FC<DebtNoticeProps> = ({ student, transactions, s
         return classes.filter(c => c.studentIds.includes(student.id));
     }, [classes, student.id]);
 
-    // Get student attendance, group by class then by month
-    const attendanceByClass = useMemo(() => {
+    // Build monthly summaries from attendance data grouped by class and month
+    const monthlySummaries = useMemo(() => {
         const studentAttendance = attendance.filter(a => a.studentId === student.id);
         
         // Group by classId -> month(YYYY-MM) -> records
@@ -40,55 +33,48 @@ export const DebtNotice: React.FC<DebtNoticeProps> = ({ student, transactions, s
         
         studentAttendance.forEach(record => {
             const classId = record.classId;
-            const month = record.date.substring(0, 7); // "YYYY-MM"
+            const month = record.date.substring(0, 7);
             if (!grouped[classId]) grouped[classId] = {};
             if (!grouped[classId][month]) grouped[classId][month] = [];
             grouped[classId][month].push(record);
         });
 
-        // Only show last 2 months of data to keep compact
-        const now = new Date();
-        const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-        const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        const prevMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
-        
-        const result: { className: string; classId: string; fee: { type: string; amount: number }; months: { month: string; records: AttendanceRecord[] }[] }[] = [];
+        const result: { month: string; monthLabel: string; className: string; sessions: number; rate: number; feeType: string; total: number }[] = [];
 
         for (const cls of studentClasses) {
             const classData = grouped[cls.id];
             if (!classData) continue;
 
-            const months: { month: string; records: AttendanceRecord[] }[] = [];
+            // Get all months, sorted
+            const months = Object.keys(classData).sort();
             
-            // Show current month and previous month
-            [prevMonth, currentMonth].forEach(m => {
-                if (classData[m] && classData[m].length > 0) {
-                    months.push({
-                        month: m,
-                        records: classData[m].sort((a, b) => a.date.localeCompare(b.date))
-                    });
-                }
-            });
+            for (const month of months) {
+                const records = classData[month];
+                const presentCount = records.filter(r => r.status === 'PRESENT' || r.status === 'LATE').length;
+                if (presentCount === 0) continue;
+                
+                const [y, m] = month.split('-');
+                const monthFee = cls.fee.type === 'PER_SESSION' 
+                    ? presentCount * cls.fee.amount 
+                    : cls.fee.type === 'MONTHLY' 
+                        ? cls.fee.amount 
+                        : 0;
 
-            if (months.length > 0) {
                 result.push({
+                    month,
+                    monthLabel: `Tháng ${parseInt(m)}/${y}`,
                     className: cls.name,
-                    classId: cls.id,
-                    fee: cls.fee,
-                    months
+                    sessions: presentCount,
+                    rate: cls.fee.amount,
+                    feeType: cls.fee.type,
+                    total: monthFee,
                 });
             }
         }
 
-        return result;
+        // Sort by month descending (newest first)
+        return result.sort((a, b) => b.month.localeCompare(a.month));
     }, [attendance, student.id, studentClasses]);
-
-    // Recent transactions (last 5 to keep compact)
-    const recentTransactions = useMemo(() => {
-        return [...transactions]
-            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-            .slice(0, 5);
-    }, [transactions]);
 
     const qrCodeUrl = useMemo(() => {
         const { bankAccountNumber, bankBin, bankAccountHolder } = settings;
@@ -105,11 +91,6 @@ export const DebtNotice: React.FC<DebtNoticeProps> = ({ student, transactions, s
         }
         return `https://img.vietqr.io/image/${bankBin}-${bankAccountNumber}-compact2.png?${new URLSearchParams(params).toString()}`;
     }, [settings, student.id, totalDue]);
-
-    const formatMonth = (m: string) => {
-        const [y, month] = m.split('-');
-        return `Tháng ${parseInt(month)}/${y}`;
-    };
 
     return (
         <div className="bg-white p-3 text-gray-900 border border-gray-300 flex flex-col text-[10px]" style={{ fontFamily: "Arial, sans-serif", maxWidth: '320px', margin: '0 auto' }}>
@@ -129,67 +110,29 @@ export const DebtNotice: React.FC<DebtNoticeProps> = ({ student, transactions, s
                 {student.parentName && <p><span className="font-bold">Phụ huynh:</span> {student.parentName}</p>}
             </div>
 
-            {/* === CHI TIẾT ĐIỂM DANH (GỌN) === */}
-            {attendanceByClass.length > 0 && (
-                <div className="border-t border-gray-300 pt-1 mb-1">
-                    <p className="font-bold text-[10px] mb-1 uppercase">Chi tiết điểm danh:</p>
-                    {attendanceByClass.map((classInfo, idx) => (
-                        <div key={classInfo.classId} className={idx > 0 ? 'mt-1' : ''}>
-                            <p className="font-bold text-[10px]" style={{ color: settings.themeColor }}>
-                                📚 {classInfo.className}
-                                {classInfo.fee.amount > 0 && (
-                                    <span className="font-normal text-gray-600">
-                                        {' '}({formatCurrency(classInfo.fee.amount)}/{classInfo.fee.type === 'PER_SESSION' ? 'buổi' : classInfo.fee.type === 'MONTHLY' ? 'tháng' : 'khóa'})
-                                    </span>
-                                )}
-                            </p>
-                            {classInfo.months.map(monthData => {
-                                const presentCount = monthData.records.filter(r => r.status === 'PRESENT' || r.status === 'LATE').length;
-                                const monthFee = classInfo.fee.type === 'PER_SESSION' 
-                                    ? presentCount * classInfo.fee.amount 
-                                    : classInfo.fee.type === 'MONTHLY' 
-                                        ? classInfo.fee.amount 
-                                        : 0;
-                                return (
-                                    <p key={monthData.month} className="ml-2 text-[9px] py-0.5">
-                                        {formatMonth(monthData.month)}: <span className="font-bold">{presentCount} buổi</span>
-                                        {classInfo.fee.type === 'PER_SESSION' && classInfo.fee.amount > 0 && (
-                                            <span> × {formatCurrency(classInfo.fee.amount)} = <span className="font-bold">{formatCurrency(monthFee)}</span></span>
-                                        )}
-                                        {classInfo.fee.type === 'MONTHLY' && monthFee > 0 && (
-                                            <span> → <span className="font-bold">{formatCurrency(monthFee)}</span></span>
-                                        )}
-                                    </p>
-                                );
-                            })}
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            {/* === GIAO DỊCH GẦN ĐÂY === */}
-            <div className="border-t border-b border-gray-200 py-1 mb-1">
+            {/* === GIAO DỊCH - Tích hợp từ điểm danh === */}
+            <div className="border-t border-b border-gray-300 py-1 mb-1">
                 <p className="font-bold text-[10px] mb-1 uppercase">Giao dịch gần đây:</p>
-                <table className="w-full text-left">
-                    <thead>
-                        <tr className="font-bold border-b border-gray-200">
-                            <th className="pb-1 w-14">Ngày</th>
-                            <th className="pb-1">Nội dung</th>
-                            <th className="pb-1 text-right">Tiền</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {recentTransactions.map(t => (
-                            <tr key={t.id}>
-                                <td className="py-0.5 align-top">{new Date(t.date).toLocaleDateString('vi-VN', {day: '2-digit', month:'2-digit'})}</td>
-                                <td className="py-0.5 align-top">{t.description.substring(0, 25)}{t.description.length > 25 ? '...' : ''}</td>
-                                <td className={`py-0.5 align-top text-right font-semibold ${t.amount >= 0 ? 'text-green-600' : 'text-black'}`}>
-                                    {formatCurrency(t.amount)}
-                                </td>
-                            </tr>
+                {monthlySummaries.length > 0 ? (
+                    <div className="space-y-0.5">
+                        {monthlySummaries.map((item, idx) => (
+                            <div key={idx} className="ml-1 text-[9px] py-0.5">
+                                <span className="font-semibold">{item.monthLabel}</span>
+                                {' - '}<span style={{ color: settings.themeColor }}>{item.className}</span>
+                                {': '}
+                                <span className="font-bold">{item.sessions} buổi</span>
+                                {item.feeType === 'PER_SESSION' && item.rate > 0 && (
+                                    <span> × {formatCurrency(item.rate)} = <span className="font-bold">{formatCurrency(item.total)}</span></span>
+                                )}
+                                {item.feeType === 'MONTHLY' && item.total > 0 && (
+                                    <span> → <span className="font-bold">{formatCurrency(item.total)}</span></span>
+                                )}
+                            </div>
                         ))}
-                    </tbody>
-                </table>
+                    </div>
+                ) : (
+                    <p className="text-gray-500 italic ml-1">Chưa có dữ liệu điểm danh.</p>
+                )}
             </div>
             
             <div className="flex justify-between items-center my-1 py-2 border-t border-b border-gray-800">
