@@ -59,6 +59,7 @@ fun ParentDashboardScreen(
     }
 
     val student = uiState.student!!
+    var showAllReports by remember { mutableStateOf(false) }
 
     PullRefreshWrapper(
         isRefreshing = uiState.isRefreshing,
@@ -349,13 +350,76 @@ fun ParentDashboardScreen(
                 }
             }
 
-            // === TEACHER COMMENTS ===
-            if (uiState.recentReports.isNotEmpty()) {
+            // === INVOICES ===
+            if (uiState.invoices.isNotEmpty()) {
+                item {
+                    SectionTitle(icon = Icons.Default.Description, title = "Hóa đơn học phí", color = BlueAccent)
+                }
+                items(uiState.invoices) { inv ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        elevation = CardDefaults.cardElevation(1.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp).fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Kỳ: ${inv.month}", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onBackground)
+                                Text("Ngày tạo: ${inv.generatedDate.take(10)}", fontSize = 12.sp, color = Color(0xFF94A3B8))
+                            }
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text(
+                                    currencyFormatter.format(inv.amount),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.onBackground
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(
+                                            when (inv.status) {
+                                                "PAID" -> GreenAccent.copy(alpha = 0.1f)
+                                                "CANCELLED" -> Color(0xFF94A3B8).copy(alpha = 0.1f)
+                                                else -> OrangeAccent.copy(alpha = 0.1f)
+                                            }
+                                        )
+                                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        when (inv.status) {
+                                            "PAID" -> "Đã trả"
+                                            "CANCELLED" -> "Đã hủy"
+                                            else -> "Chưa trả"
+                                        },
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = when (inv.status) {
+                                            "PAID" -> GreenAccent
+                                            "CANCELLED" -> Color(0xFF94A3B8)
+                                            else -> OrangeAccent
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // === TEACHER COMMENTS (All Reports) ===
+            if (uiState.allReports.isNotEmpty()) {
                 item {
                     SectionTitle(icon = Icons.Default.RateReview, title = "Nhận xét từ giáo viên", color = PurpleAccent)
                 }
-                items(uiState.recentReports) { report ->
+                val displayedReports = if (showAllReports) uiState.allReports else uiState.allReports.take(5)
+                items(displayedReports) { report ->
                     val cls = uiState.allClasses.find { it.id == report.classId }
+                    val teacher = uiState.allTeachers.find { it.id == report.createdBy }
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
@@ -367,17 +431,37 @@ fun ParentDashboardScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(cls?.name ?: "", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = PurpleAccent)
-                                Text(report.date, fontSize = 12.sp, color = Color(0xFF94A3B8))
-                            }
-                            if (report.score != null) {
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text("Điểm: ${report.score}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = OrangeAccent)
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(cls?.name ?: "", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = PurpleAccent)
+                                    if (teacher != null) {
+                                        Text("GV: ${teacher.name}", fontSize = 12.sp, color = Color(0xFF64748B))
+                                    }
+                                }
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text(report.date, fontSize = 12.sp, color = Color(0xFF94A3B8))
+                                    if (report.score != null) {
+                                        Text("${report.score}/10", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = OrangeAccent)
+                                    }
+                                }
                             }
                             if (report.comments.isNotBlank()) {
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(report.comments, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
+                        }
+                    }
+                }
+                if (uiState.allReports.size > 5) {
+                    item {
+                        TextButton(
+                            onClick = { showAllReports = !showAllReports },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                if (showAllReports) "Thu gọn" else "Xem tất cả ${uiState.allReports.size} nhận xét",
+                                color = PurpleAccent,
+                                fontWeight = FontWeight.SemiBold
+                            )
                         }
                     }
                 }

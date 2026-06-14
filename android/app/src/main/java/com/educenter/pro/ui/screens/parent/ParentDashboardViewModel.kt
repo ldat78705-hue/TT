@@ -27,10 +27,15 @@ data class ParentUiState(
     val totalAttendance: Int = 0,
     val recentTransactions: List<Transaction> = emptyList(),
     val recentReports: List<ProgressReport> = emptyList(),
+    val allReports: List<ProgressReport> = emptyList(),
+    val invoices: List<Invoice> = emptyList(),
     val announcements: List<Announcement> = emptyList(),
     val allAttendance: List<AttendanceRecord> = emptyList(),
     val allClasses: List<ClassModel> = emptyList(),
     val allTeachers: List<Teacher> = emptyList(),
+    val bankBin: String = "",
+    val bankAccountNumber: String = "",
+    val bankAccountHolder: String = "",
     val isLoading: Boolean = true,
     val isRefreshing: Boolean = false
 )
@@ -118,6 +123,21 @@ class ParentDashboardViewModel @Inject constructor(
                         .sortedByDescending { it.createdAt }
                         .take(5)
 
+                    // All progress reports (for full history view)
+                    val allReports = appData.progressReports
+                        .filter { it.studentId == studentId }
+                        .sortedByDescending { it.date }
+
+                    // Invoices
+                    val myInvoices = appData.invoices
+                        .filter { it.studentId == studentId }
+                        .sortedByDescending { it.generatedDate }
+
+                    // Bank info for QR
+                    val bankBin = appData.settings?.bankName ?: ""
+                    val bankAccountNumber = appData.settings?.bankAccountNumber ?: ""
+                    val bankAccountHolder = appData.settings?.bankAccountHolder ?: ""
+
                     _uiState.value = ParentUiState(
                         student = student,
                         centerName = centerName,
@@ -130,10 +150,15 @@ class ParentDashboardViewModel @Inject constructor(
                         totalAttendance = totalAtt,
                         recentTransactions = myTransactions,
                         recentReports = myReports,
+                        allReports = allReports,
+                        invoices = myInvoices,
                         announcements = myAnnouncements,
                         allAttendance = allMyAttendance,
                         allClasses = myClasses,
                         allTeachers = appData.teachers,
+                        bankBin = bankBin,
+                        bankAccountNumber = bankAccountNumber,
+                        bankAccountHolder = bankAccountHolder,
                         isLoading = false
                     )
                 }
