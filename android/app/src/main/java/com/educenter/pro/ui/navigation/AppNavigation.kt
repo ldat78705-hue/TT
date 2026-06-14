@@ -79,6 +79,7 @@ sealed class Screen(val route: String, val title: String? = null, val icon: Imag
 
 // Bottom nav: 4 tabs for clean UX
 val bottomNavItems = listOf(Screen.Home, Screen.Students, Screen.Attendance, Screen.More)
+val teacherNavItems = listOf(Screen.Home, Screen.Classes, Screen.Attendance, Screen.More)
 
 @Composable
 fun AppNavigation() {
@@ -87,8 +88,10 @@ fun AppNavigation() {
     val currentUserRole by profileViewModel.currentUserRole.collectAsState()
 
     val visibleNavItems = when (currentUserRole) {
+        UserRole.TEACHER -> teacherNavItems
         UserRole.ACCOUNTANT -> listOf(Screen.Students, Screen.More)
         UserRole.PARENT -> listOf(Screen.ParentHome, Screen.ParentAttendance, Screen.More)
+        UserRole.VIEWER -> bottomNavItems // Same tabs as Admin but read-only enforced by API
         else -> bottomNavItems
     }
 
@@ -440,7 +443,7 @@ fun MoreScreen(
                 MoreMenuItem(Icons.Default.RateReview, "Nhận xét Học viên", Color(0xFF8B5CF6)) { onNavigateTo(Screen.ProgressReport.route) }
             }
 
-            if (currentUserRole != UserRole.TEACHER && currentUserRole != UserRole.PARENT) {
+            if (currentUserRole != UserRole.TEACHER && currentUserRole != UserRole.PARENT && currentUserRole != UserRole.VIEWER) {
                 MoreMenuItem(Icons.Default.Payments, "Tài chính", Color(0xFFF59E0B)) { onNavigateTo(Screen.Finance.route) }
             }
 
@@ -463,7 +466,9 @@ fun MoreScreen(
                 enabled = !isSyncing
             ) { profileViewModel.manualSync() }
 
-            MoreMenuItem(Icons.Default.Receipt, "Lịch sử Thu / Chi", Color(0xFF10B981)) { onNavigateTo(Screen.Transactions.route) }
+            if (currentUserRole == UserRole.ADMIN || currentUserRole == UserRole.MANAGER || currentUserRole == UserRole.ACCOUNTANT) {
+                MoreMenuItem(Icons.Default.Receipt, "Lịch sử Thu / Chi", Color(0xFF10B981)) { onNavigateTo(Screen.Transactions.route) }
+            }
 
             // Change Password
             MoreMenuItem(Icons.Default.Lock, "Đổi mật khẩu", Color(0xFFF97316)) { showChangePwd = true }

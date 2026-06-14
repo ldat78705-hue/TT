@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useData } from '../hooks/useDataContext';
 import { useToast } from '../hooks/useToast';
-import { Room } from '../types';
+import { useAuth } from '../hooks/useAuth';
+import { Room, UserRole } from '../types';
 import { ICONS } from '../constants';
 import { Button } from '../components/common/Button';
 
@@ -15,6 +16,8 @@ const DAYS = [
 export const RoomsScreen: React.FC = () => {
     const { state, addRoom, updateRoom, deleteRoom } = useData();
     const { toast } = useToast();
+    const { role } = useAuth();
+    const canManage = role === UserRole.ADMIN || role === UserRole.MANAGER;
     const rooms = state.rooms || [];
     const classes = state.classes || [];
     const [showModal, setShowModal] = useState(false);
@@ -74,9 +77,11 @@ export const RoomsScreen: React.FC = () => {
                     <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">🏫 Quản lý Phòng học</h1>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Quản lý phòng học và lịch sử dụng phòng</p>
                 </div>
-                <Button onClick={openAdd} className="!py-2.5 self-start sm:self-auto">
-                    {React.cloneElement(ICONS.plus, { className: 'w-5 h-5 mr-1' })} Thêm phòng
-                </Button>
+                {canManage && (
+                    <Button onClick={openAdd} className="!py-2.5 self-start sm:self-auto">
+                        {React.cloneElement(ICONS.plus, { className: 'w-5 h-5 mr-1' })} Thêm phòng
+                    </Button>
+                )}
             </div>
 
             {/* Room cards */}
@@ -91,10 +96,12 @@ export const RoomsScreen: React.FC = () => {
                                     <h3 className="text-lg font-bold text-gray-900 dark:text-white">{room.name}</h3>
                                     <p className="text-sm text-gray-500 dark:text-gray-400">{room.description || 'Không có mô tả'}</p>
                                 </div>
-                                <div className="flex gap-1">
-                                    <button onClick={() => openEdit(room)} className="p-1.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors">{React.cloneElement(ICONS.edit, { className: 'w-4 h-4' })}</button>
-                                    <button onClick={() => handleDelete(room.id)} className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors">{React.cloneElement(ICONS.delete, { className: 'w-4 h-4' })}</button>
-                                </div>
+                                {canManage && (
+                                    <div className="flex gap-1">
+                                        <button onClick={() => openEdit(room)} className="p-1.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors">{React.cloneElement(ICONS.edit, { className: 'w-4 h-4' })}</button>
+                                        <button onClick={() => handleDelete(room.id)} className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors">{React.cloneElement(ICONS.delete, { className: 'w-4 h-4' })}</button>
+                                    </div>
+                                )}
                             </div>
                             <div className="flex gap-3 text-sm mb-3">
                                 <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-lg font-medium">👥 {room.capacity} chỗ</span>

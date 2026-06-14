@@ -301,7 +301,7 @@ const AppRoutes: React.FC = () => {
                     <Route path={ROUTES.TEACHER_DETAIL} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.VIEWER]}><TeacherDetailScreen /></ProtectedRoute>} />
                     <Route path={ROUTES.STAFF} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.VIEWER]}><StaffScreen /></ProtectedRoute>} />
                     <Route path={ROUTES.ATTENDANCE_HUB} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.TEACHER, UserRole.VIEWER]}><AttendanceHubScreen /></ProtectedRoute>} />
-                    <Route path={ROUTES.FINANCE} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT, UserRole.VIEWER]}><FinanceScreen /></ProtectedRoute>} />
+                    <Route path={ROUTES.FINANCE} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT]}><FinanceScreen /></ProtectedRoute>} />
                     <Route path={ROUTES.REPORTS} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT, UserRole.VIEWER]}><ReportsScreen /></ProtectedRoute>} />
                     <Route path={ROUTES.SETTINGS} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.VIEWER]}><SettingsScreen /></ProtectedRoute>} />
                     <Route path={ROUTES.ANNOUNCEMENTS} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.TEACHER, UserRole.VIEWER]}><AnnouncementsScreen /></ProtectedRoute>} />

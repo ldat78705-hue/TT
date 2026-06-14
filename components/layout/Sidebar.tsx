@@ -28,6 +28,7 @@ const managerNavLinks = [
   { to: ROUTES.CLASSES, icon: ICONS.classes, label: 'Lớp học' },
   { to: ROUTES.ROOMS, icon: ICONS.rooms, label: 'Phòng học' },
   { to: ROUTES.ATTENDANCE_HUB, icon: ICONS.calendar, label: 'Lịch điểm danh' },
+  { to: ROUTES.TEACHER_CALENDAR, icon: ICONS.calendar, label: 'Lịch dạy' },
   { to: ROUTES.FINANCE, icon: ICONS.finance, label: 'Tài chính' },
   { to: ROUTES.ANNOUNCEMENTS, icon: ICONS.announcement, label: 'Thông báo' },
   { to: ROUTES.REPORTS, icon: ICONS.reports, label: 'Báo cáo' },
@@ -48,6 +49,20 @@ const teacherNavLinks = [
     { to: ROUTES.ANNOUNCEMENTS, icon: ICONS.announcement, label: 'Thông báo' },
 ];
 
+const viewerNavLinks = [
+  { to: ROUTES.DASHBOARD, icon: ICONS.dashboard, label: 'Bảng điều khiển' },
+  { to: ROUTES.STUDENTS, icon: ICONS.students, label: 'Học viên' },
+  { to: ROUTES.TEACHERS, icon: ICONS.teachers, label: 'Giáo viên' },
+  { to: ROUTES.STAFF, icon: ICONS.staff, label: 'Nhân viên' },
+  { to: ROUTES.CLASSES, icon: ICONS.classes, label: 'Lớp học' },
+  { to: ROUTES.ROOMS, icon: ICONS.rooms, label: 'Phòng học' },
+  { to: ROUTES.ATTENDANCE_HUB, icon: ICONS.calendar, label: 'Lịch điểm danh' },
+  { to: ROUTES.ANNOUNCEMENTS, icon: ICONS.announcement, label: 'Thông báo' },
+  { to: ROUTES.REPORTS, icon: ICONS.reports, label: 'Báo cáo' },
+  { to: ROUTES.AUDIT_LOG, icon: ICONS.history, label: 'Lịch sử' },
+  { to: ROUTES.SETTINGS, icon: ICONS.settings, label: 'Cài đặt' },
+];
+
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
@@ -60,8 +75,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const getNavLinks = () => {
       switch (role) {
           case UserRole.ADMIN:
-          case UserRole.VIEWER:
             return adminNavLinks;
+          case UserRole.VIEWER:
+            return viewerNavLinks;
           case UserRole.MANAGER: return managerNavLinks;
           case UserRole.ACCOUNTANT: return accountantNavLinks;
           case UserRole.TEACHER: return teacherNavLinks;

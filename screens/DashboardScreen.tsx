@@ -75,10 +75,11 @@ const AlertsAndAnnouncementsWidget: React.FC<{
     students: Student[];
     attendance: AttendanceRecord[];
     announcements: Announcement[];
-}> = ({ students, attendance, announcements }) => {
+    canViewFinancials?: boolean;
+}> = ({ students, attendance, announcements, canViewFinancials = true }) => {
     const [activeTab, setActiveTab] = useState<'alerts' | 'announcements'>('alerts');
 
-    const highDebtStudents = useMemo(() => students.filter(s => s.balance < 0).sort((a, b) => a.balance - b.balance).slice(0, 5), [students]);
+    const highDebtStudents = useMemo(() => canViewFinancials ? students.filter(s => s.balance < 0).sort((a, b) => a.balance - b.balance).slice(0, 5) : [], [students, canViewFinancials]);
 
     const highAbsenceStudents = useMemo(() => {
         const thirtyDaysAgo = new Date(getVietnamTime());
@@ -436,6 +437,7 @@ const AdminDashboard: React.FC = () => {
                             students={students} 
                             attendance={attendance} 
                             announcements={announcements} 
+                            canViewFinancials={canViewFinancials}
                         />
                     </div>
                 )}

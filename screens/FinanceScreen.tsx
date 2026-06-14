@@ -156,7 +156,7 @@ export const FinanceScreen: React.FC = () => {
         );
     }
     
-    const canManageFullFinance = role === UserRole.ADMIN || role === UserRole.ACCOUNTANT;
+    const canManageFullFinance = role === UserRole.ADMIN || role === UserRole.MANAGER || role === UserRole.ACCOUNTANT;
 
     return (
         <div className="space-y-6">
