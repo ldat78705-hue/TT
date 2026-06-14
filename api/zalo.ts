@@ -354,15 +354,28 @@ export default async function handler(req: any, res: any) {
                 
                 while (true) {
                     const result = await getZaloFollowers(accessToken, flOffset, 50);
-                    if (result.error || !result.data?.followers) break;
+                    console.log('Zalo getFollowers response:', JSON.stringify(result));
                     
-                    const followers = result.data.followers;
+                    // Zalo API returns error=0 for success, non-zero for errors
+                    if (result.error !== 0 && result.error !== undefined) {
+                        console.error('Zalo getFollowers error:', result.error, result.message);
+                        // Return error detail to frontend
+                        return res.status(200).json({ 
+                            success: true, 
+                            followers: [],
+                            total: 0,
+                            debug: `Zalo API error: ${result.error} - ${result.message || 'Unknown'}`
+                        });
+                    }
+                    
+                    const followers = result.data?.followers || [];
                     if (followers.length === 0) break;
                     
                     // Get profile for each follower
                     for (const follower of followers) {
                         try {
                             const profile = await getZaloUserProfile(accessToken, follower.user_id);
+                            console.log('Zalo profile for', follower.user_id, ':', JSON.stringify(profile));
                             allFollowers.push({
                                 userId: follower.user_id,
                                 displayName: profile.data?.display_name || 'Không tên',

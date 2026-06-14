@@ -1002,7 +1002,7 @@ export const StudentsScreen: React.FC = () => {
                                         if (result.success) {
                                             setZaloFollowers(result.followers || []);
                                             if ((result.followers || []).length === 0) {
-                                                toast.error('OA chưa có follower nào.');
+                                                toast.error(result.debug || 'OA chưa có follower nào. Phụ huynh cần follow OA trước.');
                                             }
                                         } else {
                                             toast.error(result.error || 'Lỗi tải followers');
