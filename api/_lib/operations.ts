@@ -871,7 +871,8 @@ export function applyOperation(
         // SETTINGS & DATA MANAGEMENT
         case 'updateSettings': {
             const originalSettings = data.settings;
-            data.settings = payload;
+            // Merge: preserve existing server-side fields (zaloAccessToken, zaloTokenExpiresAt, etc.)
+            data.settings = { ...originalSettings, ...payload };
             // Preserve admin password if not provided
             if (originalSettings && originalSettings.adminPassword && !payload.adminPassword) {
                 data.settings.adminPassword = originalSettings.adminPassword;

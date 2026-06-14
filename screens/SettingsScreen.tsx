@@ -572,9 +572,12 @@ export const SettingsScreen: React.FC = () => {
                                                     const result = await zaloTestConnection(settings.zaloAppId, settings.zaloSecretKey, settings.zaloRefreshToken);
                                                     if (result.success) {
                                                         toast.success(result.message || 'Kết nối thành công!');
-                                                        if (result.newRefreshToken) {
-                                                            setSettings(prev => ({ ...prev, zaloRefreshToken: result.newRefreshToken }));
-                                                        }
+                                                        // Update local state with connection result
+                                                        setSettings(prev => ({
+                                                            ...prev,
+                                                            zaloOaEnabled: true,
+                                                            ...(result.newRefreshToken ? { zaloRefreshToken: result.newRefreshToken } : {}),
+                                                        }));
                                                     } else {
                                                         toast.error(result.error || 'Kết nối thất bại');
                                                     }
