@@ -244,7 +244,7 @@ export async function zaloTestConnection(appId: string, secretKey: string, refre
     return response.json();
 }
 
-export async function zaloSendAbsence(students: { name: string; parentName: string; parentPhone: string }[], className: string, date: string, centerName: string) {
+export async function zaloSendAbsence(students: { name: string; parentName: string; parentPhone: string; zaloUserId?: string }[], className: string, date: string, centerName: string) {
     const response = await fetch('/api/zalo', {
         method: 'POST',
         headers: getHeaders(),
@@ -253,11 +253,11 @@ export async function zaloSendAbsence(students: { name: string; parentName: stri
     return response.json();
 }
 
-export async function zaloSendTuition(studentName: string, parentName: string, parentPhone: string, amount: number, centerName: string) {
+export async function zaloSendTuition(studentName: string, parentName: string, parentPhone: string, zaloUserId: string, amount: number, centerName: string) {
     const response = await fetch('/api/zalo', {
         method: 'POST',
         headers: getHeaders(),
-        body: JSON.stringify({ action: 'send_tuition', studentName, parentName, parentPhone, amount, centerName }),
+        body: JSON.stringify({ action: 'send_tuition', studentName, parentName, parentPhone, zaloUserId, amount, centerName }),
     });
     return response.json();
 }
@@ -267,6 +267,15 @@ export async function zaloGetFollowers() {
         method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify({ action: 'get_followers' }),
+    });
+    return response.json();
+}
+
+export async function zaloGetFollowersList() {
+    const response = await fetch('/api/zalo', {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ action: 'get_followers_list' }),
     });
     return response.json();
 }

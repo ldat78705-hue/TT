@@ -521,9 +521,9 @@ const ZaloAbsenceNotifier: React.FC<{
     const copyText = `Kính gửi Quý Phụ huynh, hiện tại đã vào giờ học nhưng chưa thấy các học sinh sau có mặt tại lớp:\n${absentStudentNames.join('\n')}\nQuý Phụ huynh vui lòng kiểm tra và phản hồi lại giúp ạ.\nXin cảm ơn!`;
 
     const handleSendZalo = async () => {
-        const studentsToSend = unexcusedStudents.filter(s => s.parentPhone);
+        const studentsToSend = unexcusedStudents.filter(s => (s as any).zaloUserId);
         if (studentsToSend.length === 0) {
-            toast.error('Không có học viên nào có SĐT Zalo phụ huynh để gửi.');
+            toast.error('Không có học viên nào đã liên kết Zalo. Vào Học viên → Liên kết Zalo.');
             return;
         }
 
@@ -534,6 +534,7 @@ const ZaloAbsenceNotifier: React.FC<{
                     name: s.name,
                     parentName: s.parentName || 'Phụ huynh',
                     parentPhone: s.parentPhone || '',
+                    zaloUserId: (s as any).zaloUserId || '',
                 })),
                 className,
                 new Date(date).toLocaleDateString('vi-VN'),
@@ -553,8 +554,8 @@ const ZaloAbsenceNotifier: React.FC<{
         }
     };
 
-    const studentsWithPhone = unexcusedStudents.filter(s => s.parentPhone);
-    const studentsWithoutPhone = unexcusedStudents.filter(s => !s.parentPhone);
+    const studentsLinked = unexcusedStudents.filter(s => (s as any).zaloUserId);
+    const studentsUnlinked = unexcusedStudents.filter(s => !(s as any).zaloUserId);
 
     return (
         <div className="space-y-4">
@@ -574,14 +575,14 @@ const ZaloAbsenceNotifier: React.FC<{
                         📱 Gửi thông báo qua Zalo OA
                     </h4>
                     
-                    {studentsWithPhone.length > 0 && (
+                    {studentsLinked.length > 0 && (
                         <div className="text-xs text-green-700 dark:text-green-300">
-                            ✅ Có SĐT Zalo: {studentsWithPhone.map(s => s.name).join(', ')} ({studentsWithPhone.length} người)
+                            ✅ Đã liên kết Zalo: {studentsLinked.map(s => s.name).join(', ')} ({studentsLinked.length} người)
                         </div>
                     )}
-                    {studentsWithoutPhone.length > 0 && (
+                    {studentsUnlinked.length > 0 && (
                         <div className="text-xs text-orange-600 dark:text-orange-400">
-                            ⚠️ Chưa có SĐT: {studentsWithoutPhone.map(s => s.name).join(', ')} — Cần cập nhật SĐT Zalo PH
+                            ⚠️ Chưa liên kết Zalo: {studentsUnlinked.map(s => s.name).join(', ')} — Vào Học viên → Liên kết Zalo
                         </div>
                     )}
                     
@@ -589,10 +590,10 @@ const ZaloAbsenceNotifier: React.FC<{
                         <Button
                             onClick={handleSendZalo}
                             isLoading={isSendingZalo}
-                            disabled={studentsWithPhone.length === 0}
+                            disabled={studentsLinked.length === 0}
                             className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                         >
-                            📱 Gửi Zalo cho {studentsWithPhone.length} phụ huynh
+                            📱 Gửi Zalo cho {studentsLinked.length} phụ huynh
                         </Button>
                     )}
 

@@ -237,7 +237,7 @@ export default async function handler(req: any, res: any) {
                 }
                 
                 const { students, className, date, centerName } = payload;
-                // students: [{ name, parentName, parentPhone }]
+                // students: [{ name, parentName, parentPhone, zaloUserId }]
                 
                 if (!students || !Array.isArray(students) || students.length === 0) {
                     return res.status(400).json({ error: 'Không có học viên để gửi thông báo' });
@@ -251,62 +251,17 @@ export default async function handler(req: any, res: any) {
                 const results: any[] = [];
                 
                 for (const student of students) {
-                    if (!student.parentPhone) {
+                    // Use zaloUserId directly — no more phone matching!
+                    if (!student.zaloUserId) {
                         results.push({ 
                             studentName: student.name, 
                             status: 'skipped', 
-                            reason: 'Chưa có SĐT Zalo PH' 
+                            reason: 'Chưa liên kết Zalo (vào Học viên → Liên kết Zalo)' 
                         });
                         continue;
                     }
                     
                     try {
-                        // Try to find user by phone
-                        // First get all followers, then match phone
-                        let userId = null;
-                        
-                        // Zalo OA v3: use getfollowers then getprofile to match phone
-                        // For now, use a simplified approach - store userId mapping in student data
-                        // The phone-to-userId mapping needs to be done via follower list
-                        
-                        // Attempt: Get followers and match
-                        let offset = 0;
-                        let found = false;
-                        const normalizedPhone = normalizePhone(student.parentPhone);
-                        
-                        while (!found) {
-                            const followersResult = await getZaloFollowers(accessToken, offset, 50);
-                            
-                            if (followersResult.error || !followersResult.data?.followers) break;
-                            
-                            const followers = followersResult.data.followers;
-                            if (followers.length === 0) break;
-                            
-                            for (const follower of followers) {
-                                const profile = await getZaloUserProfile(accessToken, follower.user_id);
-                                if (profile.data) {
-                                    const followerPhone = normalizePhone(profile.data.shared_info?.phone || profile.data.phone || '');
-                                    if (followerPhone === normalizedPhone) {
-                                        userId = follower.user_id;
-                                        found = true;
-                                        break;
-                                    }
-                                }
-                            }
-                            
-                            offset += followers.length;
-                            if (followersResult.data.total <= offset) break;
-                        }
-                        
-                        if (!userId) {
-                            results.push({ 
-                                studentName: student.name, 
-                                status: 'failed', 
-                                reason: `SĐT ${student.parentPhone} chưa follow OA` 
-                            });
-                            continue;
-                        }
-                        
                         const message = processTemplate(template, {
                             parentName: student.parentName || 'Phụ huynh',
                             studentName: student.name,
@@ -315,13 +270,13 @@ export default async function handler(req: any, res: any) {
                             centerName: centerName || settings.name || 'Trung tâm',
                         });
                         
-                        const sendResult = await sendZaloMessage(accessToken, userId, message);
+                        const sendResult = await sendZaloMessage(accessToken, student.zaloUserId, message);
                         
                         if (sendResult.error) {
                             results.push({ 
                                 studentName: student.name, 
                                 status: 'failed', 
-                                reason: sendResult.message || 'Lỗi gửi tin' 
+                                reason: sendResult.message || `Lỗi gửi tin (code: ${sendResult.error})` 
                             });
                         } else {
                             results.push({ 
@@ -357,50 +312,16 @@ export default async function handler(req: any, res: any) {
                     return res.status(400).json({ error: 'Zalo OA chưa được kích hoạt' });
                 }
                 
-                const { studentName, parentName, parentPhone, amount, centerName: cn } = payload;
+                const { studentName, parentName, parentPhone, zaloUserId: tuitionZaloUserId, amount, centerName: cn } = payload;
                 
-                if (!parentPhone) {
-                    return res.status(400).json({ error: 'Chưa có SĐT Zalo phụ huynh' });
+                if (!tuitionZaloUserId) {
+                    return res.status(400).json({ error: 'Học viên chưa liên kết Zalo. Vào Học viên → Liên kết Zalo trước.' });
                 }
                 
                 const { accessToken } = await getValidAccessToken(centerId, settings);
                 
                 const template = settings.zaloTuitionTemplate || 
                     'Kính gửi PH {parentName},\n\nTrung tâm {centerName} xin thông báo: Học viên {studentName} hiện có học phí chưa thanh toán: {amount}.\n\nVui lòng thanh toán để đảm bảo quyền lợi học tập.\nTrân trọng!';
-                
-                // Find user by phone (same logic as above)
-                const normalizedPhone = normalizePhone(parentPhone);
-                let userId = null;
-                let offset = 0;
-                
-                while (true) {
-                    const followersResult = await getZaloFollowers(accessToken, offset, 50);
-                    if (followersResult.error || !followersResult.data?.followers) break;
-                    
-                    const followers = followersResult.data.followers;
-                    if (followers.length === 0) break;
-                    
-                    for (const follower of followers) {
-                        const profile = await getZaloUserProfile(accessToken, follower.user_id);
-                        if (profile.data) {
-                            const followerPhone = normalizePhone(profile.data.shared_info?.phone || profile.data.phone || '');
-                            if (followerPhone === normalizedPhone) {
-                                userId = follower.user_id;
-                                break;
-                            }
-                        }
-                    }
-                    if (userId) break;
-                    
-                    offset += followers.length;
-                    if (followersResult.data.total <= offset) break;
-                }
-                
-                if (!userId) {
-                    return res.status(400).json({ 
-                        error: `SĐT ${parentPhone} chưa follow OA. Phụ huynh cần quét QR để follow OA trước.` 
-                    });
-                }
                 
                 const message = processTemplate(template, {
                     parentName: parentName || 'Phụ huynh',
@@ -409,7 +330,7 @@ export default async function handler(req: any, res: any) {
                     centerName: cn || settings.name || 'Trung tâm',
                 });
                 
-                const sendResult = await sendZaloMessage(accessToken, userId, message);
+                const sendResult = await sendZaloMessage(accessToken, tuitionZaloUserId, message);
                 
                 if (sendResult.error) {
                     return res.status(400).json({ error: sendResult.message || 'Lỗi gửi tin Zalo' });
@@ -417,7 +338,55 @@ export default async function handler(req: any, res: any) {
                 
                 return res.status(200).json({ 
                     success: true, 
-                    message: `Đã gửi nhắc học phí cho PH ${parentName || parentPhone} thành công!` 
+                    message: `Đã gửi nhắc học phí cho PH ${parentName || 'phụ huynh'} thành công!` 
+                });
+            }
+            
+            // ===== GET FOLLOWERS LIST (for admin linking) =====
+            case 'get_followers_list': {
+                if (!settings.zaloOaEnabled) {
+                    return res.status(400).json({ error: 'Zalo OA chưa được kích hoạt' });
+                }
+                
+                const { accessToken } = await getValidAccessToken(centerId, settings);
+                const allFollowers: any[] = [];
+                let flOffset = 0;
+                
+                while (true) {
+                    const result = await getZaloFollowers(accessToken, flOffset, 50);
+                    if (result.error || !result.data?.followers) break;
+                    
+                    const followers = result.data.followers;
+                    if (followers.length === 0) break;
+                    
+                    // Get profile for each follower
+                    for (const follower of followers) {
+                        try {
+                            const profile = await getZaloUserProfile(accessToken, follower.user_id);
+                            allFollowers.push({
+                                userId: follower.user_id,
+                                displayName: profile.data?.display_name || 'Không tên',
+                                avatar: profile.data?.avatars?.['120'] || profile.data?.avatar || '',
+                                phone: profile.data?.shared_info?.phone || '',
+                            });
+                        } catch {
+                            allFollowers.push({
+                                userId: follower.user_id,
+                                displayName: 'Không tên',
+                                avatar: '',
+                                phone: '',
+                            });
+                        }
+                    }
+                    
+                    flOffset += followers.length;
+                    if (result.data.total <= flOffset) break;
+                }
+                
+                return res.status(200).json({ 
+                    success: true, 
+                    followers: allFollowers,
+                    total: allFollowers.length
                 });
             }
             
@@ -427,12 +396,12 @@ export default async function handler(req: any, res: any) {
                     return res.status(400).json({ error: 'Zalo OA chưa được kích hoạt' });
                 }
                 
-                const { accessToken } = await getValidAccessToken(centerId, settings);
-                const result = await getZaloFollowers(accessToken, 0, 1);
+                const { accessToken: countToken } = await getValidAccessToken(centerId, settings);
+                const countResult = await getZaloFollowers(countToken, 0, 1);
                 
                 return res.status(200).json({ 
                     success: true, 
-                    totalFollowers: result.data?.total || 0 
+                    totalFollowers: countResult.data?.total || 0 
                 });
             }
             

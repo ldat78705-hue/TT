@@ -13,7 +13,7 @@ import { Pagination } from '../components/common/Pagination';
 import { ResetPasswordModal } from '../components/auth/ChangePasswordModal';
 import { PaymentModal } from '../components/finance/PaymentModal';
 import { ExportButton } from '../components/common/ExportButton';
-import { zaloSendTuition } from '../services/api';
+import { zaloSendTuition, zaloGetFollowersList } from '../services/api';
 
 const removeAccents = (str: string) => {
   if (!str) return '';
@@ -282,6 +282,11 @@ export const StudentsScreen: React.FC = () => {
     const [selectedForQR, setSelectedForQR] = useState<Set<string>>(new Set());
     const [showQRPrintModal, setShowQRPrintModal] = useState(false);
     const [qrLayout, setQrLayout] = useState<'8' | '10' | '12'>('10'); // cards per A4 page
+
+    // Zalo Link State
+    const [zaloLinkStudent, setZaloLinkStudent] = useState<Student | null>(null);
+    const [zaloFollowers, setZaloFollowers] = useState<any[]>([]);
+    const [zaloFollowersLoading, setZaloFollowersLoading] = useState(false);
 
     const canManage = role === UserRole.ADMIN || role === UserRole.MANAGER;
 
@@ -811,6 +816,23 @@ export const StudentsScreen: React.FC = () => {
                             </div>
                         </div>
 
+                        {/* Zalo link status */}
+                        {state.settings.zaloOaEnabled && (
+                            <div className="mt-2 flex items-center gap-2">
+                                {(student as any).zaloUserId ? (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full">
+                                        ✅ Đã liên kết Zalo
+                                    </span>
+                                ) : (
+                                    <button
+                                        onClick={() => setZaloLinkStudent(student)}
+                                        className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 rounded-full hover:bg-orange-200 dark:hover:bg-orange-800 transition-colors cursor-pointer"
+                                    >
+                                        🔗 Liên kết Zalo
+                                    </button>
+                                )}
+                            </div>
+                        )}
                         <div className="mt-4 grid grid-cols-2 gap-4 text-sm border-t border-gray-100 dark:border-gray-700 pt-3">
                             <div>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">Số điện thoại</p>
@@ -831,11 +853,11 @@ export const StudentsScreen: React.FC = () => {
                                         <button onClick={() => setPaymentModalState({ isOpen: true, student: student })} className="p-2 rounded-full text-green-600 hover:bg-green-100 dark:hover:bg-green-900/50" title="Ghi nhận thanh toán">
                                             {React.cloneElement(ICONS.finance as React.ReactElement, {width: 20, height: 20})}
                                         </button>
-                                        {state.settings.zaloOaEnabled && student.parentPhone && (
+                                        {state.settings.zaloOaEnabled && (student as any).zaloUserId && (
                                             <button 
                                                 onClick={async () => {
                                                     try {
-                                                        const result = await zaloSendTuition(student.name, student.parentName || 'Phụ huynh', student.parentPhone || '', student.balance, state.settings.name || '');
+                                                        const result = await zaloSendTuition(student.name, student.parentName || 'Phụ huynh', student.parentPhone || '', (student as any).zaloUserId, student.balance, state.settings.name || '');
                                                         if (result.success) toast.success(result.message);
                                                         else toast.error(result.error || 'Lỗi gửi Zalo');
                                                     } catch (e: any) { toast.error(e.message || 'Lỗi gửi Zalo'); }
@@ -954,6 +976,85 @@ export const StudentsScreen: React.FC = () => {
                     </div>
                 </div>
             </Modal>
+
+            {/* Zalo Link Modal */}
+            {zaloLinkStudent && (
+                <Modal isOpen={true} onClose={() => { setZaloLinkStudent(null); setZaloFollowers([]); }} title={`🔗 Liên kết Zalo cho ${zaloLinkStudent.name}`}>
+                    <div className="space-y-4">
+                        {zaloFollowersLoading ? (
+                            <div className="text-center py-8 text-gray-500">
+                                <div className="animate-spin inline-block w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full mb-2" />
+                                <p>Đang tải danh sách followers OA...</p>
+                            </div>
+                        ) : zaloFollowers.length === 0 ? (
+                            <div className="text-center py-4">
+                                <Button onClick={async () => {
+                                    setZaloFollowersLoading(true);
+                                    try {
+                                        const result = await zaloGetFollowersList();
+                                        if (result.success) {
+                                            setZaloFollowers(result.followers || []);
+                                            if ((result.followers || []).length === 0) {
+                                                toast.error('OA chưa có follower nào.');
+                                            }
+                                        } else {
+                                            toast.error(result.error || 'Lỗi tải followers');
+                                        }
+                                    } catch (e: any) {
+                                        toast.error(e.message || 'Lỗi tải followers');
+                                    } finally {
+                                        setZaloFollowersLoading(false);
+                                    }
+                                }}>
+                                    📥 Tải danh sách followers OA
+                                </Button>
+                                <p className="text-xs text-gray-500 mt-2">
+                                    Hệ thống sẽ lấy danh sách người follow OA của bạn.
+                                    <br/>Chọn đúng phụ huynh để liên kết với học viên.
+                                </p>
+                            </div>
+                        ) : (
+                            <div>
+                                <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                                    Chọn tài khoản Zalo của phụ huynh <strong>{zaloLinkStudent.parentName || zaloLinkStudent.name}</strong>:
+                                </p>
+                                <div className="max-h-60 overflow-y-auto space-y-2">
+                                    {zaloFollowers.map((f: any) => (
+                                        <button
+                                            key={f.userId}
+                                            onClick={async () => {
+                                                try {
+                                                    await updateStudent({ ...zaloLinkStudent, zaloUserId: f.userId } as any);
+                                                    toast.success(`Đã liên kết Zalo "${f.displayName}" cho ${zaloLinkStudent.name}`);
+                                                    setZaloLinkStudent(null);
+                                                    setZaloFollowers([]);
+                                                } catch (e: any) {
+                                                    toast.error(e.message || 'Lỗi liên kết');
+                                                }
+                                            }}
+                                            className="w-full flex items-center gap-3 p-3 border rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 dark:border-gray-600 transition-colors text-left"
+                                        >
+                                            {f.avatar ? (
+                                                <img src={f.avatar} alt="" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+                                            ) : (
+                                                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-800 flex items-center justify-center flex-shrink-0 text-lg">
+                                                    👤
+                                                </div>
+                                            )}
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-semibold text-sm truncate">{f.displayName}</p>
+                                                {f.phone && <p className="text-xs text-gray-500">{f.phone}</p>}
+                                                <p className="text-[10px] text-gray-400 font-mono truncate">{f.userId}</p>
+                                            </div>
+                                            <span className="text-blue-600 text-xs font-medium flex-shrink-0">Chọn →</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </Modal>
+            )}
         </div>
     );
 };

@@ -24,6 +24,7 @@ data class Student(
     val phone: String = "",
     val parentName: String = "",
     val parentPhone: String? = null, // SĐT Zalo phụ huynh
+    val zaloUserId: String? = null, // Zalo user_id liên kết trực tiếp
     val email: String = "",
     val address: String = "",
     val gender: String = "Khác",
