@@ -508,7 +508,7 @@ fun StudentCard(
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = currencyFormatter.format(student.balance),
+                        text = (if (student.balance < 0) "Nợ: " else "Dư: ") + currencyFormatter.format(Math.abs(student.balance)),
                         color = balanceColor,
                         fontWeight = FontWeight.ExtraBold,
                         style = MaterialTheme.typography.titleMedium
