@@ -354,18 +354,19 @@ export const ClassDetailScreen: React.FC = () => {
     }, [location.state]);
 
     const cls = classes.find(c => c.id === id);
-    
-    if (!cls) return <div>Lớp học không tồn tại.</div>;
-    if (!user || !user.id) return <div>Lỗi xác thực người dùng.</div>;
 
     const teacherNames = useMemo(() => {
+        if (!cls) return '';
         return (cls.teacherIds || [])
             .map(id => teachers.find(t => t.id === id)?.name)
             .filter(Boolean)
             .join(', ');
-    }, [cls.teacherIds, teachers]);
+    }, [cls?.teacherIds, teachers, cls]);
 
-    const classStudents = useMemo(() => students.filter(s => (cls.studentIds || []).includes(s.id) && s.status === PersonStatus.ACTIVE), [students, cls.studentIds]);
+    const classStudents = useMemo(() => {
+        if (!cls) return [];
+        return students.filter(s => (cls.studentIds || []).includes(s.id) && s.status === PersonStatus.ACTIVE);
+    }, [students, cls?.studentIds, cls]);
     const classProgressReports = useMemo(() => progressReports.filter(pr => pr.classId === id), [progressReports, id]);
     const classAttendance = useMemo(() => attendance.filter(a => a.classId === id), [attendance, id]);
 
@@ -440,6 +441,8 @@ export const ClassDetailScreen: React.FC = () => {
         }
         return sortableItems;
     }, [classProgressReports, reportSortConfig]);
+
+    const getStudentName = (studentId: string) => students.find(s => s.id === studentId)?.name || 'N/A';
         
     const exportReportData = useMemo(() => sortedClassProgressReports.map(r => ({
         date: formatVietnamDate(r.date),
@@ -457,7 +460,9 @@ export const ClassDetailScreen: React.FC = () => {
         comments: 'Nhận xét'
     };
 
-    const getStudentName = (studentId: string) => students.find(s => s.id === studentId)?.name || 'N/A';
+    // Early returns AFTER all hooks
+    if (!cls) return <div>Lớp học không tồn tại.</div>;
+    if (!user || !user.id) return <div>Lỗi xác thực người dùng.</div>;
 
     const studentColumns = [
         { header: 'Mã HV', accessor: 'id' as keyof Student, sortable: true },
