@@ -205,47 +205,6 @@ export const LandingPage: React.FC = () => {
                 </section>
             )}
 
-            {/* Pricing */}
-            <section className="py-20 px-5 bg-slate-50" id="pricing">
-                <div className="max-w-4xl mx-auto">
-                    <div className="text-center mb-14">
-                        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">{c.pricingTitle}</h2>
-                        <p className="mt-3 text-slate-500">{c.pricingSubtitle}</p>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                        {(c.plans || []).map((plan: any, i: number) => (
-                            <div key={i} className={`p-7 rounded-2xl flex flex-col relative ${plan.highlight 
-                                ? 'bg-indigo-600 text-white shadow-2xl shadow-indigo-200 ring-1 ring-indigo-600 scale-[1.02]'
-                                : 'bg-white border border-slate-200'}`}>
-                                {plan.badge && (
-                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 bg-amber-400 text-amber-950 rounded-full text-xs font-bold tracking-wide">{plan.badge}</div>
-                                )}
-                                <div className={`text-xs font-semibold uppercase tracking-wider mb-1 ${plan.highlight ? 'text-indigo-200' : 'text-slate-400'}`}>{plan.name}</div>
-                                <div className="flex items-baseline gap-1">
-                                    <span className="text-3xl font-extrabold">{plan.price}</span>
-                                    {plan.period.startsWith('/') && <span className={`text-sm font-medium ${plan.highlight ? 'text-indigo-200' : 'text-slate-400'}`}>{plan.period}</span>}
-                                </div>
-                                {!plan.period.startsWith('/') && <div className={`text-xs mt-0.5 ${plan.highlight ? 'text-indigo-200' : 'text-slate-400'}`}>{plan.period}</div>}
-                                {plan.subtitle && <div className={`text-xs mt-0.5 ${plan.highlight ? 'text-indigo-200' : 'text-slate-400'}`}>{plan.subtitle}</div>}
-                                <hr className={`my-5 ${plan.highlight ? 'border-indigo-500' : 'border-slate-100'}`} />
-                                <ul className={`space-y-2.5 text-sm flex-1 ${plan.highlight ? 'text-indigo-100' : 'text-slate-600'}`}>
-                                    {(plan.items || []).map((item: string, j: number) => (
-                                        <li key={j} className="flex items-start gap-2">
-                                            <span className={`mt-0.5 text-xs ${plan.highlight ? 'text-indigo-300' : 'text-indigo-500'}`}>✓</span>
-                                            <span className={item.includes('Không giới hạn') ? 'font-semibold' : ''}>{item}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                                <Link to={ROUTES.LOGIN} className={`mt-6 block w-full text-center py-2.5 rounded-lg text-sm font-semibold transition-all ${plan.highlight
-                                    ? 'bg-white text-indigo-600 hover:bg-indigo-50'
-                                    : 'border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'}`}>
-                                    {plan.cta}
-                                </Link>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
 
             {/* CTA */}
             <section className="py-20 px-5">
