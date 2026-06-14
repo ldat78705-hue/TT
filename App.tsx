@@ -39,6 +39,8 @@ const ParentDashboardScreen = React.lazy(() => import('./screens/parent/ParentDa
 const ParentReportsScreen = React.lazy(() => import('./screens/parent/ParentReportsScreen').then(m => ({ default: m.ParentReportsScreen })));
 const ParentFinanceScreen = React.lazy(() => import('./screens/parent/ParentFinanceScreen').then(m => ({ default: m.ParentFinanceScreen })));
 const SuperAdminScreen = React.lazy(() => import('./screens/SuperAdminScreen').then(m => ({ default: m.SuperAdminScreen })));
+const LandingPage = React.lazy(() => import('./screens/LandingPage').then(m => ({ default: m.LandingPage })));
+const GuidePage = React.lazy(() => import('./screens/GuidePage').then(m => ({ default: m.GuidePage })));
 
 
 import { UserRole } from './types';
@@ -255,6 +257,18 @@ const AppRoutes: React.FC = () => {
         <>
             <ThemeStyle themeColor={state.settings.themeColor} sidebarColor={state.settings.sidebarColor} />
             <Routes>
+                {/* Public pages */}
+                <Route path={ROUTES.LANDING} element={
+                    isAuthenticated ? <Navigate to={role === UserRole.PARENT ? ROUTES.PARENT_DASHBOARD : ROUTES.DASHBOARD} replace /> :
+                    <React.Suspense fallback={<div className="flex h-screen w-screen items-center justify-center bg-slate-900">{ICONS.loading}</div>}>
+                        <LandingPage />
+                    </React.Suspense>
+                } />
+                <Route path={ROUTES.GUIDE} element={
+                    <React.Suspense fallback={<div className="flex h-screen w-screen items-center justify-center bg-slate-900">{ICONS.loading}</div>}>
+                        <GuidePage />
+                    </React.Suspense>
+                } />
                 <Route path="/super-admin" element={
                     <React.Suspense fallback={<div className="flex h-screen w-screen items-center justify-center bg-slate-900">{ICONS.loading}</div>}>
                         <SuperAdminScreen />
@@ -303,7 +317,7 @@ const AppRoutes: React.FC = () => {
                     <Route path={ROUTES.PARENT_FINANCE} element={<ParentFinanceScreen />} />
                 </Route>
 
-                <Route path="*" element={<Navigate to={isAuthenticated ? (role === UserRole.PARENT ? ROUTES.PARENT_DASHBOARD : ROUTES.DASHBOARD) : ROUTES.LOGIN} replace />} />
+                <Route path="*" element={<Navigate to={isAuthenticated ? (role === UserRole.PARENT ? ROUTES.PARENT_DASHBOARD : ROUTES.DASHBOARD) : ROUTES.LANDING} replace />} />
             </Routes>
         </>
     );

@@ -95,6 +95,19 @@ export default async function handler(req: any, res: any) {
             }
         }
 
+        // === GET SITE CONTENT (public-readable, no auth required) ===
+        if (body.action === 'get_site_content') {
+            try {
+                const contentDoc = await getDoc(doc(db, SUPER_ADMIN_COLLECTION, 'site_content'));
+                if (!contentDoc.exists()) {
+                    return res.status(200).json({ success: true, content: null });
+                }
+                return res.status(200).json({ success: true, content: contentDoc.data() });
+            } catch (error: any) {
+                return res.status(500).json({ error: 'Lỗi tải nội dung: ' + error.message });
+            }
+        }
+
         // === ALL OTHER POST ACTIONS REQUIRE SUPER ADMIN AUTH ===
         const authPayload = await getAuthPayload(req);
         if (!authPayload || !isSuperAdmin(authPayload)) {
@@ -535,6 +548,21 @@ export default async function handler(req: any, res: any) {
             } catch (error: any) {
                 console.error('Restore All Error:', error);
                 return res.status(500).json({ error: 'Khôi phục thất bại: ' + (error.message || 'Unknown') });
+            }
+        }
+
+        // === UPDATE SITE CONTENT (super admin only — auth already checked above) ===
+        if (body.action === 'update_site_content') {
+            const { landing, guide } = body;
+            try {
+                await setDoc(doc(db, SUPER_ADMIN_COLLECTION, 'site_content'), {
+                    landing: landing || null,
+                    guide: guide || null,
+                    updatedAt: new Date().toISOString(),
+                });
+                return res.status(200).json({ success: true, message: 'Đã cập nhật nội dung trang chủ & hướng dẫn' });
+            } catch (error: any) {
+                return res.status(500).json({ error: 'Lỗi lưu nội dung: ' + error.message });
             }
         }
 

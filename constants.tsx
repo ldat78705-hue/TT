@@ -40,7 +40,9 @@ import {
 } from 'lucide-react';
 
 export const ROUTES = {
-  DASHBOARD: '/',
+  LANDING: '/',
+  GUIDE: '/huong-dan',
+  DASHBOARD: '/dashboard',
   STUDENTS: '/students',
   STUDENT_DETAIL: '/student/:id',
   TEACHERS: '/teachers',

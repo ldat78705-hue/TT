@@ -706,6 +706,9 @@ const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                         })}
                     </div>
                 </div>
+
+                {/* === CMS CONTENT EDITOR === */}
+                <SiteContentEditor />
             </div>
 
             {/* Extend Modal */}
@@ -1014,6 +1017,223 @@ const CenterAccountsManager: React.FC<{
                     </div>
                 ))}
             </div>
+        </div>
+    );
+};
+
+// ===== SITE CONTENT EDITOR (CMS) =====
+const SiteContentEditor: React.FC = () => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState<'landing' | 'guide'>('landing');
+    const [isSaving, setIsSaving] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [message, setMessage] = useState('');
+    
+    // Landing content state
+    const [landingContent, setLandingContent] = useState<string>('');
+    // Guide content state
+    const [guideContent, setGuideContent] = useState<string>('');
+
+    const loadContent = async () => {
+        setIsLoading(true);
+        try {
+            const resp = await fetch('/api/centers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'get_site_content' })
+            });
+            const data = await resp.json();
+            if (data.content) {
+                if (data.content.landing) setLandingContent(JSON.stringify(data.content.landing, null, 2));
+                if (data.content.guide) setGuideContent(JSON.stringify(data.content.guide, null, 2));
+            }
+        } catch (err: any) {
+            setMessage('❌ Lỗi tải nội dung: ' + err.message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleOpen = () => {
+        if (!isOpen) loadContent();
+        setIsOpen(!isOpen);
+    };
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        setMessage('');
+        try {
+            let landing = null;
+            let guide = null;
+            
+            if (landingContent.trim()) {
+                try { landing = JSON.parse(landingContent); } 
+                catch { setMessage('❌ Nội dung trang chủ JSON không hợp lệ'); setIsSaving(false); return; }
+            }
+            if (guideContent.trim()) {
+                try { guide = JSON.parse(guideContent); }
+                catch { setMessage('❌ Nội dung hướng dẫn JSON không hợp lệ'); setIsSaving(false); return; }
+            }
+
+            const resp = await fetch('/api/centers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+                body: JSON.stringify({ action: 'update_site_content', landing, guide })
+            });
+            const data = await resp.json();
+            if (resp.ok) {
+                setMessage('✅ Đã lưu nội dung thành công! Trang chủ & hướng dẫn đã cập nhật.');
+            } else {
+                setMessage('❌ ' + (data.error || 'Lỗi lưu'));
+            }
+        } catch (err: any) {
+            setMessage('❌ Lỗi: ' + err.message);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleLoadDefaults = async (tab: 'landing' | 'guide') => {
+        if (tab === 'landing') {
+            const { LANDING_DEFAULTS } = await import('./LandingPage');
+            setLandingContent(JSON.stringify(LANDING_DEFAULTS, null, 2));
+            setMessage('✅ Đã tải nội dung mặc định trang chủ. Nhớ bấm Lưu.');
+        } else {
+            const { GUIDE_DEFAULTS } = await import('./GuidePage');
+            setGuideContent(JSON.stringify(GUIDE_DEFAULTS, null, 2));
+            setMessage('✅ Đã tải nội dung mặc định hướng dẫn. Nhớ bấm Lưu.');
+        }
+    };
+
+    const handleReset = async () => {
+        setIsSaving(true);
+        try {
+            const resp = await fetch('/api/centers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+                body: JSON.stringify({ action: 'update_site_content', landing: null, guide: null })
+            });
+            if (resp.ok) {
+                setLandingContent('');
+                setGuideContent('');
+                setMessage('✅ Đã xóa nội dung tùy chỉnh. Trang sẽ hiển thị nội dung mặc định.');
+            }
+        } catch (err: any) {
+            setMessage('❌ ' + err.message);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    return (
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border dark:border-slate-700">
+            <button onClick={handleOpen} className="w-full flex items-center justify-between p-5 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors rounded-xl">
+                <div className="flex items-center gap-3">
+                    <span className="text-2xl">📝</span>
+                    <div className="text-left">
+                        <h2 className="text-lg font-bold text-gray-800 dark:text-white">Quản lý nội dung trang chủ & Hướng dẫn</h2>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Chỉnh sửa nội dung giới thiệu, bảng giá, hướng dẫn sử dụng hiển thị cho khách hàng</p>
+                    </div>
+                </div>
+                <svg className={`w-5 h-5 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+            </button>
+
+            {isOpen && (
+                <div className="border-t dark:border-slate-700 p-5 space-y-4">
+                    {isLoading ? (
+                        <div className="text-center py-8 text-gray-500">Đang tải nội dung...</div>
+                    ) : (
+                        <>
+                            {/* Tabs */}
+                            <div className="flex border-b dark:border-slate-600 mb-4">
+                                <button onClick={() => setActiveTab('landing')}
+                                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'landing' ? 'border-purple-500 text-purple-600 dark:text-purple-400' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+                                    🏠 Trang chủ
+                                </button>
+                                <button onClick={() => setActiveTab('guide')}
+                                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'guide' ? 'border-purple-500 text-purple-600 dark:text-purple-400' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+                                    📖 Hướng dẫn
+                                </button>
+                            </div>
+
+                            {/* Info */}
+                            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-3 rounded-lg text-sm text-blue-700 dark:text-blue-300">
+                                <p><strong>💡 Hướng dẫn:</strong> Chỉnh sửa nội dung dạng JSON bên dưới. Bấm <strong>"Tải mặc định"</strong> để lấy cấu trúc mẫu, chỉnh sửa rồi bấm <strong>"Lưu"</strong>.</p>
+                                <p className="mt-1">Để trống = hiển thị nội dung mặc định.</p>
+                                <div className="mt-2 flex gap-2">
+                                    <a href="/" target="_blank" rel="noopener" className="text-xs underline hover:text-blue-500">Xem trang chủ ↗</a>
+                                    <a href="/huong-dan" target="_blank" rel="noopener" className="text-xs underline hover:text-blue-500">Xem hướng dẫn ↗</a>
+                                </div>
+                            </div>
+
+                            {/* Editor */}
+                            {activeTab === 'landing' && (
+                                <div>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="block text-sm font-semibold">Nội dung trang chủ (JSON)</label>
+                                        <button onClick={() => handleLoadDefaults('landing')}
+                                            className="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                                            📋 Tải mặc định
+                                        </button>
+                                    </div>
+                                    <textarea
+                                        value={landingContent}
+                                        onChange={e => setLandingContent(e.target.value)}
+                                        className="w-full h-96 px-4 py-3 font-mono text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg resize-y focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                        placeholder='Để trống = dùng nội dung mặc định. Bấm "Tải mặc định" để lấy cấu trúc JSON mẫu.'
+                                        spellCheck={false}
+                                    />
+                                    <p className="text-xs text-gray-400 mt-1">
+                                        Các trường: heroTagline, heroTitle1, heroTitle2, heroDesc, features (icon/title/desc), plans (name/price/period/items/cta), ctaTitle, ctaButton...
+                                    </p>
+                                </div>
+                            )}
+
+                            {activeTab === 'guide' && (
+                                <div>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="block text-sm font-semibold">Nội dung hướng dẫn (JSON)</label>
+                                        <button onClick={() => handleLoadDefaults('guide')}
+                                            className="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                                            📋 Tải mặc định
+                                        </button>
+                                    </div>
+                                    <textarea
+                                        value={guideContent}
+                                        onChange={e => setGuideContent(e.target.value)}
+                                        className="w-full h-96 px-4 py-3 font-mono text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg resize-y focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                        placeholder='Để trống = dùng nội dung mặc định. Bấm "Tải mặc định" để lấy cấu trúc JSON mẫu.'
+                                        spellCheck={false}
+                                    />
+                                    <p className="text-xs text-gray-400 mt-1">
+                                        Các trường: title, subtitle, sections (id/icon/title/content:[q,a]), ctaTitle, ctaButton...
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Actions */}
+                            <div className="flex items-center gap-3 flex-wrap">
+                                <button onClick={handleSave} disabled={isSaving}
+                                    className="px-4 py-2 text-sm bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition-all disabled:opacity-50 shadow-sm">
+                                    {isSaving ? '⏳ Đang lưu...' : '💾 Lưu nội dung'}
+                                </button>
+                                <button onClick={handleReset} disabled={isSaving}
+                                    className="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50">
+                                    🔄 Xóa tùy chỉnh (dùng mặc định)
+                                </button>
+                            </div>
+
+                            {/* Message */}
+                            {message && (
+                                <div className={`p-3 rounded-lg text-sm ${message.startsWith('✅') ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'}`}>
+                                    {message}
+                                    <button onClick={() => setMessage('')} className="float-right font-bold">×</button>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+            )}
         </div>
     );
 };
