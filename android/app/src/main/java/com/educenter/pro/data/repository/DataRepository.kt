@@ -412,35 +412,6 @@ class DataRepository @Inject constructor(
         } catch (e: Exception) { e.printStackTrace(); throw e }
     }
 
-    // ============ ZALO OA ============
-
-    suspend fun sendZaloTuition(
-        studentName: String,
-        parentName: String,
-        parentPhone: String,
-        amount: Double,
-        centerName: String
-    ): String = withContext(Dispatchers.IO) {
-        try {
-            val body = mapOf<String, Any>(
-                "action" to "send_tuition",
-                "studentName" to studentName,
-                "parentName" to parentName,
-                "parentPhone" to parentPhone,
-                "amount" to amount,
-                "centerName" to centerName
-            )
-            val response = apiService.sendZaloMessage(body)
-            if (response.success == true) {
-                response.message ?: "Đã gửi thành công!"
-            } else {
-                throw Exception(response.error ?: "Gửi thất bại")
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            throw e
-        }
-    }
 
     // ============ OFFLINE SYNC ============
 

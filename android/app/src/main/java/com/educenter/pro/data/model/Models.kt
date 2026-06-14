@@ -11,7 +11,11 @@ data class Settings(
     val logoUrl: String = "",
     val taxId: String = "",
     val adminPassword: String = "",
-    val viewerAccountActive: Boolean = true
+    val viewerAccountActive: Boolean = true,
+    val bankName: String = "",
+    val bankAccountNumber: String = "",
+    val bankAccountHolder: String = "",
+    val zaloTuitionTemplate: String = ""
 )
 
 data class Student(

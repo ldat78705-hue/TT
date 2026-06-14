@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -171,4 +172,9 @@ class ClassesViewModel @Inject constructor(
         if (appData == null || cls == null) emptyList()
         else appData.students.filter { it.id !in cls.studentIds && it.status.name == "ACTIVE" }
     }.stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Lazily, emptyList())
+
+    // Settings for center name, address, bank info
+    val settings = dataRepository.appData
+        .map { it?.settings }
+        .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Lazily, null)
 }

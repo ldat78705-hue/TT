@@ -1,6 +1,10 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.educenter.pro.ui.screens.classes
 
+import android.content.Context
+import android.content.Intent
+import android.graphics.*
+import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,14 +21,22 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.educenter.pro.data.model.ClassModel
+import com.educenter.pro.data.model.Settings
 import com.educenter.pro.data.model.Student
 import com.educenter.pro.ui.components.PullRefreshWrapper
+import java.io.File
+import java.io.FileOutputStream
+import java.text.NumberFormat
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,12 +50,15 @@ fun ClassesScreen(
     val teacherNames by viewModel.selectedClassTeacherNames.collectAsState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
     val currentUserRole by viewModel.currentUserRole.collectAsState()
+    val settings by viewModel.settings.collectAsState()
     val canManage = currentUserRole == com.educenter.pro.data.model.UserRole.ADMIN || currentUserRole == com.educenter.pro.data.model.UserRole.MANAGER
 
     var showAddClassDialog by remember { mutableStateOf(false) }
     var showEditClassDialog by remember { mutableStateOf(false) }
     var showAddStudentDialog by remember { mutableStateOf(false) }
     var studentToRemove by remember { mutableStateOf<Student?>(null) }
+
+    val context = LocalContext.current
 
     if (selectedClass != null) {
         BackHandler { viewModel.clearSelection() }
@@ -66,6 +81,12 @@ fun ClassesScreen(
                         }
                     },
                     actions = {
+                        // Send class debt report button
+                        IconButton(onClick = {
+                            shareClassDebtReport(context, selectedClass!!, students, settings)
+                        }) {
+                            Icon(Icons.Default.Share, contentDescription = "Gửi công nợ", tint = Color(0xFF0068FF))
+                        }
                         if (canManage) {
                             IconButton(onClick = { showEditClassDialog = true }) {
                                 Icon(Icons.Default.Edit, contentDescription = "Sửa lớp", tint = Color(0xFF667EEA))
@@ -131,6 +152,7 @@ fun ClassesScreen(
                     }
                 } else {
                     items(students) { student ->
+                        val currencyFormatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(16.dp),
@@ -144,11 +166,33 @@ fun ClassesScreen(
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(student.name, fontWeight = FontWeight.Bold, color = Color(0xFF3B82F6))
                                     Spacer(modifier = Modifier.height(2.dp))
-                                    Text(student.phone, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(student.phone, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        if (student.balance < 0) {
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                "Nợ: ${currencyFormatter.format(Math.abs(student.balance))}",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = Color(0xFFEF4444),
+                                                fontWeight = FontWeight.SemiBold,
+                                                fontSize = 12.sp
+                                            )
+                                        }
+                                    }
                                 }
-                                if (canManage) {
-                                    IconButton(onClick = { studentToRemove = student }) {
-                                        Icon(Icons.Default.RemoveCircle, contentDescription = "Xóa khỏi lớp", tint = Color(0xFFEF4444))
+                                Row {
+                                    // Send individual debt via Zalo
+                                    if (student.phone.isNotBlank() && student.balance < 0) {
+                                        IconButton(onClick = {
+                                            shareStudentDebt(context, student, selectedClass!!.name, settings)
+                                        }) {
+                                            Icon(Icons.Default.Send, contentDescription = "Gửi công nợ", tint = Color(0xFF0068FF), modifier = Modifier.size(20.dp))
+                                        }
+                                    }
+                                    if (canManage) {
+                                        IconButton(onClick = { studentToRemove = student }) {
+                                            Icon(Icons.Default.RemoveCircle, contentDescription = "Xóa khỏi lớp", tint = Color(0xFFEF4444))
+                                        }
                                     }
                                 }
                             }
@@ -263,6 +307,201 @@ fun ClassesScreen(
                 }
             )
         }
+    }
+}
+
+// ====== Generate and share class debt report as image ======
+
+private fun shareClassDebtReport(context: Context, cls: ClassModel, students: List<Student>, settings: Settings?) {
+    val indebtedStudents = students.filter { it.balance < 0 }.sortedBy { it.name }
+    if (indebtedStudents.isEmpty()) {
+        android.widget.Toast.makeText(context, "Lớp không có học viên nợ học phí!", android.widget.Toast.LENGTH_SHORT).show()
+        return
+    }
+
+    val centerName = settings?.name ?: "TRUNG TÂM"
+    val centerAddress = settings?.address ?: ""
+    val bankInfo = buildString {
+        if (!settings?.bankAccountNumber.isNullOrBlank()) {
+            append("STK: ${settings?.bankAccountNumber} - ${settings?.bankName ?: ""}")
+            if (!settings?.bankAccountHolder.isNullOrBlank()) append(" (${settings?.bankAccountHolder})")
+        }
+    }
+
+    val currencyFormatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
+    val dateStr = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
+
+    // Canvas dimensions
+    val width = 1200
+    val rowHeight = 72
+    val headerHeight = 300
+    val footerHeight = 120
+    val totalHeight = headerHeight + (indebtedStudents.size + 1) * rowHeight + footerHeight + 50
+
+    val bitmap = Bitmap.createBitmap(width, totalHeight, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    canvas.drawColor(android.graphics.Color.WHITE)
+
+    // Paints
+    val paintTitle = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.BLACK; textSize = 36f; typeface = Typeface.DEFAULT_BOLD; textAlign = Paint.Align.CENTER }
+    val paintSubtitle = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.DKGRAY; textSize = 24f; textAlign = Paint.Align.CENTER }
+    val paintHeader = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.BLACK; textSize = 40f; typeface = Typeface.DEFAULT_BOLD; textAlign = Paint.Align.CENTER }
+    val paintCell = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.BLACK; textSize = 28f }
+    val paintCellBold = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.BLACK; textSize = 28f; typeface = Typeface.DEFAULT_BOLD }
+    val paintRed = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.RED; textSize = 28f; typeface = Typeface.DEFAULT_BOLD; textAlign = Paint.Align.RIGHT }
+    val paintLine = Paint().apply { color = android.graphics.Color.BLACK; strokeWidth = 2f; style = Paint.Style.STROKE }
+    val paintFooter = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.DKGRAY; textSize = 22f; textAlign = Paint.Align.RIGHT }
+
+    // Draw header
+    var y = 50f
+    canvas.drawText(centerName.uppercase(), width / 2f, y, paintTitle)
+    y += 36f
+    if (centerAddress.isNotBlank()) {
+        canvas.drawText(centerAddress, width / 2f, y, paintSubtitle)
+        y += 30f
+    }
+    if (bankInfo.isNotBlank()) {
+        canvas.drawText(bankInfo, width / 2f, y, paintSubtitle)
+        y += 30f
+    }
+
+    // Divider line
+    y += 10f
+    canvas.drawLine(40f, y, width - 40f, y, paintLine)
+    y += 40f
+
+    canvas.drawText("BÁO CÁO CÔNG NỢ - ${cls.name.uppercase()}", width / 2f, y, paintHeader)
+    y += 36f
+    canvas.drawText("Ngày lập: $dateStr", width / 2f, y, paintSubtitle)
+    y += 50f
+
+    // Table columns: STT | Mã HV | Họ tên | Số dư nợ
+    val colX = floatArrayOf(40f, 120f, 360f, width - 40f)
+    val tableTop = y
+
+    // Draw table header
+    val headerBg = Paint().apply { color = android.graphics.Color.parseColor("#F3F4F6"); style = Paint.Style.FILL }
+    canvas.drawRect(colX[0], y, colX[3], y + rowHeight, headerBg)
+
+    val headerY = y + rowHeight * 0.65f
+    canvas.drawText("STT", colX[0] + 20f, headerY, paintCellBold)
+    canvas.drawText("Mã HV", colX[1] + 10f, headerY, paintCellBold)
+    canvas.drawText("Họ tên", colX[2] + 10f, headerY, paintCellBold)
+    val rightPaint = Paint(paintCellBold).apply { textAlign = Paint.Align.RIGHT }
+    canvas.drawText("Số dư nợ", colX[3] - 20f, headerY, rightPaint)
+    y += rowHeight
+
+    // Draw header line
+    canvas.drawLine(colX[0], tableTop, colX[3], tableTop, paintLine)
+    canvas.drawLine(colX[0], y, colX[3], y, paintLine)
+
+    // Data rows
+    var totalDebt = 0.0
+    for ((index, student) in indebtedStudents.withIndex()) {
+        val cellY = y + rowHeight * 0.65f
+
+        // Alternate row background
+        if (index % 2 == 1) {
+            val altBg = Paint().apply { color = android.graphics.Color.parseColor("#FAFAFA"); style = Paint.Style.FILL }
+            canvas.drawRect(colX[0], y, colX[3], y + rowHeight, altBg)
+        }
+
+        canvas.drawText("${index + 1}", colX[0] + 20f, cellY, paintCell)
+        canvas.drawText(student.id, colX[1] + 10f, cellY, paintCell)
+        canvas.drawText(student.name, colX[2] + 10f, cellY, paintCellBold)
+        canvas.drawText(currencyFormatter.format(Math.abs(student.balance)), colX[3] - 20f, cellY, paintRed)
+
+        totalDebt += student.balance
+        y += rowHeight
+
+        // Bottom line
+        canvas.drawLine(colX[0], y, colX[3], y, paintLine)
+    }
+
+    // Totals row
+    val totalBg = Paint().apply { color = android.graphics.Color.parseColor("#FEF2F2"); style = Paint.Style.FILL }
+    canvas.drawRect(colX[0], y, colX[3], y + rowHeight, totalBg)
+    val totalY = y + rowHeight * 0.65f
+    val totalLabel = Paint(paintCellBold).apply { textAlign = Paint.Align.RIGHT }
+    canvas.drawText("TỔNG CÔNG NỢ", colX[2] + 460f, totalY, totalLabel)
+    canvas.drawText(currencyFormatter.format(Math.abs(totalDebt)), colX[3] - 20f, totalY, paintRed)
+    y += rowHeight
+    canvas.drawLine(colX[0], y, colX[3], y, paintLine)
+
+    // Vertical lines
+    canvas.drawLine(colX[0], tableTop, colX[0], y, paintLine)
+    canvas.drawLine(colX[1], tableTop, colX[1], y, paintLine)
+    canvas.drawLine(colX[2], tableTop, colX[2], y, paintLine)
+    canvas.drawLine(colX[3], tableTop, colX[3], y, paintLine)
+
+    // Footer
+    y += 30f
+    canvas.drawText("EduCenter Pro", width - 50f, y, paintFooter)
+
+    // Save and share
+    try {
+        val file = File(context.cacheDir, "CongNo_${cls.name.replace(" ", "_")}.png")
+        FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "image/png"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(Intent.EXTRA_TEXT, "Báo cáo Công nợ - ${cls.name}")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        
+        // Try Zalo first
+        try {
+            val zaloIntent = Intent(shareIntent).apply { setPackage("com.zing.zalo") }
+            context.startActivity(zaloIntent)
+        } catch (_: Exception) {
+            context.startActivity(Intent.createChooser(shareIntent, "Gửi báo cáo công nợ"))
+        }
+    } catch (e: Exception) {
+        android.widget.Toast.makeText(context, "Lỗi: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+    }
+}
+
+// ====== Share individual student debt via Zalo text ======
+
+private fun shareStudentDebt(context: Context, student: Student, className: String, settings: Settings?) {
+    val currencyFormatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
+    val debtAmount = currencyFormatter.format(Math.abs(student.balance))
+    val parentName = student.parentName.ifBlank { "Phụ huynh" }
+    val centerName = settings?.name ?: ""
+
+    val message = buildString {
+        appendLine("THÔNG BÁO HỌC PHÍ")
+        appendLine(centerName)
+        appendLine("---")
+        appendLine("Kính gửi: $parentName")
+        appendLine("Học viên: ${student.name}")
+        appendLine("Lớp: $className")
+        appendLine("Công nợ: $debtAmount")
+        if (!settings?.bankAccountNumber.isNullOrBlank()) {
+            appendLine("---")
+            appendLine("Thanh toán: ${settings?.bankName} - ${settings?.bankAccountNumber}")
+            if (!settings?.bankAccountHolder.isNullOrBlank()) appendLine("Chủ TK: ${settings?.bankAccountHolder}")
+            appendLine("Nội dung CK: HOC PHI ${student.id}")
+        }
+        appendLine("---")
+        appendLine("Vui lòng thanh toán. Xin cảm ơn!")
+    }
+
+    try {
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, message)
+            setPackage("com.zing.zalo")
+        }
+        context.startActivity(intent)
+    } catch (_: Exception) {
+        val fallback = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, message)
+        }
+        context.startActivity(Intent.createChooser(fallback, "Gửi công nợ qua"))
     }
 }
 

@@ -298,16 +298,15 @@ fun StudentsScreen(
         if (selectedStudentForDetails != null) {
             val studentTx = transactions.filter { it.studentId == selectedStudentForDetails!!.id }
             val studentAtt = attendanceRecords.filter { it.studentId == selectedStudentForDetails!!.id }
-            val zaloState by viewModel.zaloSendState.collectAsState()
+            val settings by viewModel.settings.collectAsState()
             
             StudentDetailDialog(
                 student = selectedStudentForDetails!!,
                 transactions = studentTx,
                 attendanceRecords = studentAtt,
                 classes = classes,
-                onDismiss = { selectedStudentForDetails = null; viewModel.resetZaloState() },
-                onSendZalo = { viewModel.sendZaloTuition(it) },
-                zaloSendState = zaloState
+                onDismiss = { selectedStudentForDetails = null },
+                settings = settings
             )
         }
     }
@@ -550,12 +549,12 @@ fun StudentDetailDialog(
     attendanceRecords: List<com.educenter.pro.data.model.AttendanceRecord>,
     classes: List<ClassModel>,
     onDismiss: () -> Unit,
-    onSendZalo: (Student) -> Unit = {},
-    zaloSendState: ZaloSendState = ZaloSendState.Idle
+    settings: com.educenter.pro.data.model.Settings? = null
 ) {
     val currencyFormatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
     var selectedTab by remember { mutableStateOf(0) }
     val context = androidx.compose.ui.platform.LocalContext.current
+    val centerName = settings?.name ?: ""
     val studentClasses = classes.filter { it.studentIds.contains(student.id) }
 
     AlertDialog(
@@ -601,8 +600,8 @@ fun StudentDetailDialog(
                     colors = CardDefaults.cardColors(containerColor = if (student.balance < 0) Color(0xFFEF4444).copy(alpha = 0.1f) else Color(0xFF10B981).copy(alpha = 0.1f))
                 ) {
                     Row(modifier = Modifier.padding(12.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text("Số dư tài khoản", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(currencyFormatter.format(student.balance), fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = if (student.balance < 0) Color(0xFFEF4444) else Color(0xFF10B981))
+                        Text(if (student.balance < 0) "Công nợ" else "Số dư", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(currencyFormatter.format(Math.abs(student.balance)), fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = if (student.balance < 0) Color(0xFFEF4444) else Color(0xFF10B981))
                     }
                 }
 
@@ -611,33 +610,64 @@ fun StudentDetailDialog(
                     Text("Lớp: ${studentClasses.joinToString { it.name }}", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
 
-                // Zalo send tuition button
+                // Zalo send tuition button - uses Android Intent to open Zalo app
                 if (student.phone.isNotBlank() && student.balance < 0) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    val isSending = zaloSendState is ZaloSendState.Sending
                     Button(
-                        onClick = { onSendZalo(student) },
-                        enabled = !isSending && zaloSendState !is ZaloSendState.Success,
+                        onClick = {
+                            val debtAmount = currencyFormatter.format(Math.abs(student.balance))
+                            val parentName = student.parentName.ifBlank { "Phụ huynh" }
+                            val classNames = studentClasses.joinToString(", ") { it.name }
+                            
+                            // Use custom template from settings if available
+                            val template = settings?.zaloTuitionTemplate
+                            val message = if (!template.isNullOrBlank()) {
+                                template
+                                    .replace("{parentName}", parentName)
+                                    .replace("{centerName}", centerName)
+                                    .replace("{studentName}", student.name)
+                                    .replace("{amount}", debtAmount)
+                                    .replace("\\n", "\n")
+                            } else {
+                                buildString {
+                                    appendLine("THÔNG BÁO HỌC PHÍ")
+                                    appendLine(centerName)
+                                    appendLine("---")
+                                    appendLine("Kính gửi: $parentName")
+                                    appendLine("Học viên: ${student.name}")
+                                    if (classNames.isNotBlank()) appendLine("Lớp: $classNames")
+                                    appendLine("Công nợ: $debtAmount")
+                                    if (!settings?.bankAccountNumber.isNullOrBlank()) {
+                                        appendLine("---")
+                                        appendLine("TT: ${settings?.bankName} - ${settings?.bankAccountNumber}")
+                                        if (!settings?.bankAccountHolder.isNullOrBlank()) appendLine("Chủ TK: ${settings?.bankAccountHolder}")
+                                        appendLine("ND: HOC PHI ${student.id}")
+                                    }
+                                    appendLine("---")
+                                    appendLine("Vui lòng thanh toán. Xin cảm ơn!")
+                                }
+                            }
+                            try {
+                                val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(android.content.Intent.EXTRA_TEXT, message)
+                                    setPackage("com.zing.zalo")
+                                }
+                                context.startActivity(intent)
+                            } catch (_: Exception) {
+                                // Fallback: open general share if Zalo not installed
+                                val fallback = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(android.content.Intent.EXTRA_TEXT, message)
+                                }
+                                context.startActivity(android.content.Intent.createChooser(fallback, "Gửi công nợ qua"))
+                            }
+                        },
                         modifier = Modifier.fillMaxWidth().height(40.dp),
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0068FF))
                     ) {
-                        if (isSending) {
-                            CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Đang gửi...", fontSize = 13.sp)
-                        } else {
-                            Text("📱 Gửi công nợ qua Zalo (${student.phone})", fontSize = 13.sp)
-                        }
-                    }
-                    when (zaloSendState) {
-                        is ZaloSendState.Success -> {
-                            Text("✅ ${zaloSendState.message}", fontSize = 12.sp, color = Color(0xFF10B981), modifier = Modifier.padding(top = 4.dp))
-                        }
-                        is ZaloSendState.Error -> {
-                            Text("❌ ${zaloSendState.error}", fontSize = 12.sp, color = Color(0xFFEF4444), modifier = Modifier.padding(top = 4.dp))
-                        }
-                        else -> {}
+                        Text("📱 Gửi công nợ qua Zalo", fontSize = 13.sp)
                     }
                 }
 

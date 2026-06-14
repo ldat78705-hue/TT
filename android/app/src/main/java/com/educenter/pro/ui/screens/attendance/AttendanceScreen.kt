@@ -863,32 +863,29 @@ private fun SaveButtonBar(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Status indicator
-            Column(modifier = Modifier.weight(1f)) {
-                if (saveSuccess != null) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (saveSuccess == true) {
-                            Icon(Icons.Default.Check, contentDescription = null, tint = GreenPresent, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(3.dp))
-                            Text("Đã lưu!", color = GreenPresent, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                        } else {
-                            Icon(Icons.Default.Close, contentDescription = null, tint = RedAbsent, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(3.dp))
-                            Text("Lỗi!", color = RedAbsent, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                        }
+            // Status indicator - use wrapContentWidth to prevent text wrapping
+            if (saveSuccess != null) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end = 4.dp)) {
+                    if (saveSuccess == true) {
+                        Icon(Icons.Default.Check, contentDescription = null, tint = GreenPresent, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Text("Đã lưu!", color = GreenPresent, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, maxLines = 1, softWrap = false)
+                    } else {
+                        Icon(Icons.Default.Close, contentDescription = null, tint = RedAbsent, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Text("Lỗi!", color = RedAbsent, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, maxLines = 1, softWrap = false)
                     }
                 }
-                if (pendingCount > 0) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(7.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFF59E0B))
-                        )
-                        Spacer(modifier = Modifier.width(3.dp))
-                        Text("$pendingCount chờ đồng bộ", fontSize = 13.sp, color = Color(0xFFF59E0B), fontWeight = FontWeight.SemiBold)
-                    }
+            } else if (pendingCount > 0) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end = 4.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .size(7.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFF59E0B))
+                    )
+                    Spacer(modifier = Modifier.width(3.dp))
+                    Text("$pendingCount chờ", fontSize = 11.sp, color = Color(0xFFF59E0B), fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false)
                 }
             }
 
