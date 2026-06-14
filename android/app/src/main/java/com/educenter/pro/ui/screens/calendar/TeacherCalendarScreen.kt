@@ -415,7 +415,7 @@ fun TeacherCalendarScreen(
                             shape = RoundedCornerShape(14.dp),
                             elevation = CardDefaults.cardElevation(2.dp)
                         ) {
-                            Row(modifier = Modifier.fillMaxWidth()) {
+                            Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
                                 // Color bar
                                 Box(
                                     modifier = Modifier
