@@ -48,3 +48,9 @@ fetch_logs.cjs
 build_logs/
 build_logs_new/
 logs_*.zip
+
+# Android build artifacts
+android/.gradle/
+android/app/build/
+android/build/
+*.apk
