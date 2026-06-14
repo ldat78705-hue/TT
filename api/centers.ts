@@ -99,6 +99,7 @@ export default async function handler(req: any, res: any) {
         if (body.action === 'get_site_content') {
             try {
                 const contentDoc = await getDoc(doc(db, SUPER_ADMIN_COLLECTION, 'site_content'));
+                res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
                 if (!contentDoc.exists()) {
                     return res.status(200).json({ success: true, content: null });
                 }

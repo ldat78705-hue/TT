@@ -51,8 +51,8 @@ export const LandingPage: React.FC = () => {
     useEffect(() => {
         fetch('/api/centers', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'get_site_content' })
+            headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' },
+            body: JSON.stringify({ action: 'get_site_content', _t: Date.now() })
         })
         .then(r => r.json())
         .then(data => {
