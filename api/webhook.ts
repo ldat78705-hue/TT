@@ -90,7 +90,7 @@ export default async function webhookHandler(req: any, res: any) {
             payload: {
                 studentId: studentId,
                 amount: amount,
-                date: getVietnamTime().substring(0, 10),
+                date: getVietnamTime(),
                 description: `${bankKeyword}: ${autoDescription} - ${content.substring(0, 50)}`,
                 type: 'CREDIT',
                 paymentMethod: 'transfer'
