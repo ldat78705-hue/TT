@@ -919,6 +919,14 @@ export default async function handler(req: any, res: any) {
                     res.setHeader('ETag', cacheAfterWrite.localSyncId);
                 }
 
+                // Apply role-based filters to response data
+                const postRole = (authPayload as any).role as UserRole;
+                if (postRole === UserRole.PARENT) {
+                    responseData = applyParentFilter(responseData, (authPayload as any).userId as string);
+                } else if (postRole === UserRole.TEACHER) {
+                    responseData = applyTeacherFilter(responseData, (authPayload as any).userId as string);
+                }
+
                 return res.status(200).json(responseData);
             } catch (error) {
                 console.error('Operation Error:', error);
