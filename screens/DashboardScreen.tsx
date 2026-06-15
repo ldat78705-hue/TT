@@ -377,6 +377,12 @@ const AdminDashboard: React.FC = () => {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 {role === UserRole.ADMIN && <OnboardingWizard />}
+                {role === UserRole.VIEWER && (
+                    <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl text-blue-700 dark:text-blue-300 text-sm font-medium">
+                        <span>👁️</span>
+                        <span>Chế độ Giám sát — Chỉ xem, không thể chỉnh sửa dữ liệu</span>
+                    </div>
+                )}
                 <div className="relative ml-auto flex-shrink-0">
                     <button 
                         onClick={() => setShowWidgetSettings(p => !p)}
