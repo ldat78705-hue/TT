@@ -99,9 +99,39 @@ export default async function webhookHandler(req: any, res: any) {
 
         try {
             await executeOperationInternal(operation, centerId);
+
+            // Ghi audit log cho giao dịch tự động
+            try {
+                const auditEntry = {
+                    userId: 'WEBHOOK',
+                    userName: 'Thanh toán tự động',
+                    action: 'addAdjustment',
+                    targetType: 'finance',
+                    targetName: studentId,
+                    details: `[Webhook] Ghi nhận ${amount.toLocaleString('vi-VN')}đ cho HS ${studentId} — ${content.substring(0, 80)}`,
+                    timestamp: new Date().toISOString()
+                };
+                await executeOperationInternal({ op: 'addAuditLog', payload: auditEntry }, centerId);
+            } catch { /* silent — don't fail payment if audit log fails */ }
+
             return res.status(200).json({ success: true, message: `Ghi nhận thanh toán ${amount} cho ${studentId} thành công.` });
         } catch (opError) {
             console.error('Data Operation error:', opError);
+
+            // Ghi audit log cho lỗi webhook
+            try {
+                const errorAudit = {
+                    userId: 'WEBHOOK',
+                    userName: 'Thanh toán tự động',
+                    action: 'addAdjustment',
+                    targetType: 'finance',
+                    targetName: studentId,
+                    details: `[Webhook LỖI] Thất bại ghi nhận ${amount.toLocaleString('vi-VN')}đ cho HS ${studentId}: ${String(opError)}`,
+                    timestamp: new Date().toISOString()
+                };
+                await executeOperationInternal({ op: 'addAuditLog', payload: errorAudit }, centerId).catch(() => {});
+            } catch { /* silent */ }
+
             return res.status(200).json({ success: false, message: `Lỗi xử lý logic cho ${studentId}`, error: String(opError) });
         }
 
