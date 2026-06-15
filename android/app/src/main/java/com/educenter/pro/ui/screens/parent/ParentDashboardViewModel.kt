@@ -50,6 +50,10 @@ class ParentDashboardViewModel @Inject constructor(
 
     init {
         loadData()
+        // Sync fresh data from server
+        viewModelScope.launch {
+            try { dataRepository.syncData() } catch (_: Exception) {}
+        }
     }
 
     fun refresh() {
