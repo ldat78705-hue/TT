@@ -104,7 +104,16 @@ class DataRepository @Inject constructor(
         }
     }
 
-    suspend fun syncData() = withContext(Dispatchers.IO) {
+    // Debounce sync: avoid redundant API calls when multiple ViewModels init simultaneously
+    @Volatile private var lastSyncTimestamp: Long = 0L
+    private val SYNC_DEBOUNCE_MS = 5000L // 5 seconds
+
+    suspend fun syncData(force: Boolean = false) = withContext(Dispatchers.IO) {
+        val now = System.currentTimeMillis()
+        if (!force && (now - lastSyncTimestamp) < SYNC_DEBOUNCE_MS) {
+            // Skip sync if last successful sync was very recent
+            return@withContext
+        }
         try {
             // First, try to sync any pending offline operations
             syncPendingOperations()
@@ -114,6 +123,7 @@ class DataRepository @Inject constructor(
             val json = gson.toJson(data)
             shardDao.clearAll()
             shardDao.insertShards(listOf(ShardEntity(id = "app_data", data = json)))
+            lastSyncTimestamp = System.currentTimeMillis()
         } catch (e: Exception) {
             e.printStackTrace()
             try {

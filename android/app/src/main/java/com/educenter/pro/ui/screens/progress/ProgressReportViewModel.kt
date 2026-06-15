@@ -18,6 +18,24 @@ class ProgressReportViewModel @Inject constructor(
 
     val currentUserRole = dataRepository.currentUserRole
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing = _isRefreshing.asStateFlow()
+
+    init {
+        // Sync fresh data from server
+        viewModelScope.launch {
+            try { dataRepository.syncData() } catch (_: Exception) { }
+        }
+    }
+
+    fun refresh() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            try { dataRepository.syncData(force = true) } catch (_: Exception) { }
+            _isRefreshing.value = false
+        }
+    }
+
     val classes = dataRepository.appData
         .map { it?.classes ?: emptyList() }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())

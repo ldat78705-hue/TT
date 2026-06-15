@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,7 +27,8 @@ fun AnnouncementsScreen(
 ) {
     val announcements by viewModel.announcements.collectAsState()
     val currentUserRole by viewModel.currentUserRole.collectAsState()
-    val canManage = currentUserRole == com.educenter.pro.data.model.UserRole.ADMIN || currentUserRole == com.educenter.pro.data.model.UserRole.MANAGER
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
+    val canManage = currentUserRole == com.educenter.pro.data.model.UserRole.ADMIN || currentUserRole == com.educenter.pro.data.model.UserRole.MANAGER || currentUserRole == com.educenter.pro.data.model.UserRole.TEACHER
 
     var showAddDialog by remember { mutableStateOf(false) }
     var announcementToDelete by remember { mutableStateOf<com.educenter.pro.data.model.Announcement?>(null) }
@@ -44,8 +46,9 @@ fun AnnouncementsScreen(
             }
         }
     ) { padding ->
+      PullToRefreshBox(isRefreshing = isRefreshing, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxSize().padding(padding)) {
         if (announcements.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(Icons.Default.Campaign, contentDescription = null, modifier = Modifier.size(64.dp), tint = Color(0xFFCBD5E1))
                     Spacer(modifier = Modifier.height(12.dp))
@@ -58,7 +61,7 @@ fun AnnouncementsScreen(
             }
         } else {
             LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(padding),
+                modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -100,6 +103,7 @@ fun AnnouncementsScreen(
                 }
             }
         }
+      } // PullToRefreshBox
 
         // Delete confirmation
         if (announcementToDelete != null) {

@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,6 +35,7 @@ fun TeachersScreen(
 ) {
     val teachers by viewModel.teachers.collectAsState()
     val currentUserRole by viewModel.currentUserRole.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
     val canManage = currentUserRole == com.educenter.pro.data.model.UserRole.ADMIN || currentUserRole == com.educenter.pro.data.model.UserRole.MANAGER
     var showAddDialog by remember { mutableStateOf(false) }
     var selectedForEdit by remember { mutableStateOf<Teacher?>(null) }
@@ -53,8 +55,9 @@ fun TeachersScreen(
             }
         }
     ) { padding ->
+      PullToRefreshBox(isRefreshing = isRefreshing, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxSize().padding(padding)) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
@@ -119,6 +122,7 @@ fun TeachersScreen(
                 }
             }
         }
+      } // PullToRefreshBox
 
         // Delete confirmation
         if (teacherToDelete != null) {

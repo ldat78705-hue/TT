@@ -67,12 +67,16 @@ class StudentsViewModel @Inject constructor(
                 }
             }
         }
+        // Sync fresh data from server
+        viewModelScope.launch {
+            try { dataRepository.syncData() } catch (_: Exception) { }
+        }
     }
 
     fun refresh() {
         viewModelScope.launch {
             _isRefreshing.value = true
-            try { dataRepository.syncData() } catch (_: Exception) { }
+            try { dataRepository.syncData(force = true) } catch (_: Exception) { }
             _isRefreshing.value = false
         }
     }

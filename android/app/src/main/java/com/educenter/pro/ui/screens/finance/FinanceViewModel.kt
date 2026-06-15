@@ -91,6 +91,10 @@ class FinanceViewModel @Inject constructor(
                 )
             }
         }
+        // Sync fresh data from server
+        viewModelScope.launch {
+            try { dataRepository.syncData() } catch (_: Exception) { }
+        }
     }
 
     private val _paymentResult = MutableStateFlow<PaymentResult?>(null)
@@ -132,7 +136,7 @@ class FinanceViewModel @Inject constructor(
     fun refresh() {
         viewModelScope.launch {
             _isRefreshing.value = true
-            try { dataRepository.syncData() } catch (_: Exception) { }
+            try { dataRepository.syncData(force = true) } catch (_: Exception) { }
             _isRefreshing.value = false
         }
     }

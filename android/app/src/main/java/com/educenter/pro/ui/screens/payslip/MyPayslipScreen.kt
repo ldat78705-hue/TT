@@ -29,10 +29,31 @@ import java.text.NumberFormat
 import java.util.Locale
 import javax.inject.Inject
 
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
+
 @HiltViewModel
 class MyPayslipViewModel @Inject constructor(
     private val dataRepository: DataRepository
 ) : ViewModel() {
+
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing = _isRefreshing.asStateFlow()
+
+    init {
+        // Sync fresh data from server
+        viewModelScope.launch {
+            try { dataRepository.syncData() } catch (_: Exception) { }
+        }
+    }
+
+    fun refresh() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            try { dataRepository.syncData(force = true) } catch (_: Exception) { }
+            _isRefreshing.value = false
+        }
+    }
 
     val myPayrolls: StateFlow<List<Payroll>> = dataRepository.appData
         .map { data ->
@@ -51,7 +72,7 @@ class MyPayslipViewModel @Inject constructor(
                 emptyList()
             }
         }
-        .stateIn(kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main), SharingStarted.Lazily, emptyList())
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     val teacherName: StateFlow<String> = dataRepository.appData
         .map { data ->
@@ -63,7 +84,7 @@ class MyPayslipViewModel @Inject constructor(
                 t.phone == email || t.phone == userId
             }?.name ?: ""
         }
-        .stateIn(kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main), SharingStarted.Lazily, "")
+        .stateIn(viewModelScope, SharingStarted.Lazily, "")
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

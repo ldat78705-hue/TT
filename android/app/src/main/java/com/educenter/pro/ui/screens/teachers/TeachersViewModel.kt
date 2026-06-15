@@ -28,6 +28,21 @@ class TeachersViewModel @Inject constructor(
                 }
             }
         }
+        // Sync fresh data from server
+        viewModelScope.launch {
+            try { dataRepository.syncData() } catch (_: Exception) { }
+        }
+    }
+
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing = _isRefreshing.asStateFlow()
+
+    fun refresh() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            try { dataRepository.syncData(force = true) } catch (_: Exception) { }
+            _isRefreshing.value = false
+        }
     }
 
     fun addTeacher(name: String, phone: String, subject: String) {

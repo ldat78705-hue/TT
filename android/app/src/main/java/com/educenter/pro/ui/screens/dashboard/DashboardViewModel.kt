@@ -30,13 +30,17 @@ class DashboardViewModel @Inject constructor(
 
     init {
         loadDashboardData()
+        // Sync fresh data from server
+        viewModelScope.launch {
+            try { dataRepository.syncData() } catch (_: Exception) { }
+        }
     }
 
     fun refresh() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isRefreshing = true)
             try {
-                dataRepository.syncData()
+                dataRepository.syncData(force = true)
             } catch (_: Exception) { }
             _uiState.value = _uiState.value.copy(isRefreshing = false)
         }

@@ -78,6 +78,18 @@ class ParentAttendanceViewModel @Inject constructor(
 
     init {
         loadData()
+        // Sync fresh data from server
+        viewModelScope.launch {
+            try { repository.syncData() } catch (_: Exception) { }
+        }
+    }
+
+    fun refresh() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            try { repository.syncData(force = true) } catch (_: Exception) { }
+            _uiState.value = _uiState.value.copy(isLoading = false)
+        }
     }
 
     private fun loadData() {

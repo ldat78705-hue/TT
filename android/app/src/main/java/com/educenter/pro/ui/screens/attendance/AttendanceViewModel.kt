@@ -60,10 +60,17 @@ class AttendanceViewModel @Inject constructor(
         .map { it == UserRole.VIEWER }
         .stateIn(viewModelScope, SharingStarted.Lazily, false)
 
+    init {
+        // Sync fresh data from server to pick up schedule/attendance changes made on Web
+        viewModelScope.launch {
+            try { dataRepository.syncData() } catch (_: Exception) { }
+        }
+    }
+
     fun refresh() {
         viewModelScope.launch {
             _isRefreshing.value = true
-            try { dataRepository.syncData() } catch (_: Exception) { }
+            try { dataRepository.syncData(force = true) } catch (_: Exception) { }
             _isRefreshing.value = false
         }
     }

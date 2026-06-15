@@ -18,6 +18,9 @@ class TransactionsViewModel @Inject constructor(
     private val _transactions = MutableStateFlow<List<Transaction>>(emptyList())
     val transactions = _transactions.asStateFlow()
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing = _isRefreshing.asStateFlow()
+
     init {
         viewModelScope.launch {
             dataRepository.appData.collect { appData ->
@@ -25,6 +28,18 @@ class TransactionsViewModel @Inject constructor(
                     _transactions.value = appData.transactions
                 }
             }
+        }
+        // Sync fresh data from server
+        viewModelScope.launch {
+            try { dataRepository.syncData() } catch (_: Exception) { }
+        }
+    }
+
+    fun refresh() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            try { dataRepository.syncData(force = true) } catch (_: Exception) { }
+            _isRefreshing.value = false
         }
     }
 }

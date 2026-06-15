@@ -47,7 +47,7 @@ class StaffViewModel @Inject constructor(
     fun refresh() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isRefreshing = true)
-            repository.syncData()
+            repository.syncData(force = true)
             updateFromRepo()
             _uiState.value = _uiState.value.copy(isRefreshing = false)
         }

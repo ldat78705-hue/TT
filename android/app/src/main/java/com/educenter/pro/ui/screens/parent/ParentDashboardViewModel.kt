@@ -55,7 +55,7 @@ class ParentDashboardViewModel @Inject constructor(
     fun refresh() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isRefreshing = true)
-            try { dataRepository.syncData() } catch (_: Exception) {}
+            try { dataRepository.syncData(force = true) } catch (_: Exception) {}
             _uiState.value = _uiState.value.copy(isRefreshing = false)
         }
     }
