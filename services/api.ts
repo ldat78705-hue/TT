@@ -80,6 +80,20 @@ export async function loadInitialData(retries = 2): Promise<Omit<AppData, 'loadi
                 window.dispatchEvent(new Event('unauthorized'));
                 throw new Error('Unauthorized');
             }
+            if (response.status === 403) {
+                try {
+                    const errData = await response.json();
+                    if (errData.forceLogout) {
+                        localStorage.removeItem(LOCAL_STORAGE_KEY);
+                        sessionStorage.clear();
+                        alert(errData.error || 'Trung tâm đã bị xóa hoặc khóa. Bạn sẽ bị đăng xuất.');
+                        window.location.href = '/login';
+                        throw new Error(errData.error);
+                    }
+                } catch (e) {
+                    if (e instanceof Error && e.message !== 'Unauthorized') throw e;
+                }
+            }
             const errorText = await response.text();
             throw new Error(errorText || 'Không thể kết nối đến máy chủ dữ liệu.');
         }
@@ -115,6 +129,20 @@ async function patchData(operation: { op: string, payload?: any }): Promise<Omit
             localStorage.removeItem(LOCAL_STORAGE_KEY);
             window.dispatchEvent(new Event('unauthorized'));
             throw new Error('Unauthorized');
+        }
+        if (response.status === 403) {
+            try {
+                const errData = await response.json();
+                if (errData.forceLogout) {
+                    localStorage.removeItem(LOCAL_STORAGE_KEY);
+                    sessionStorage.clear();
+                    alert(errData.error || 'Trung tâm đã bị xóa hoặc khóa. Bạn sẽ bị đăng xuất.');
+                    window.location.href = '/login';
+                    throw new Error(errData.error);
+                }
+            } catch (e) {
+                if (e instanceof Error && e.message !== 'Unauthorized') throw e;
+            }
         }
         const errorText = await response.text();
         throw new Error(errorText || 'Yêu cầu API thất bại');

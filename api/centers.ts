@@ -193,8 +193,33 @@ export default async function handler(req: any, res: any) {
             const { slug } = body;
             if (!slug) return res.status(400).json({ error: 'Thiếu mã trung tâm' });
 
+            // 1. Delete all documents in center data collection
+            const colName = `center_${slug}`;
+            try {
+                const docsSnapshot = await getDocs(collection(db, colName));
+                if (docsSnapshot.size > 0) {
+                    const deleteBatches: any[] = [];
+                    let batch = writeBatch(db);
+                    let count = 0;
+                    docsSnapshot.forEach((docSnap) => {
+                        batch.delete(doc(db, colName, docSnap.id));
+                        count++;
+                        if (count >= 450) {
+                            deleteBatches.push(batch);
+                            batch = writeBatch(db);
+                            count = 0;
+                        }
+                    });
+                    if (count > 0) deleteBatches.push(batch);
+                    for (const b of deleteBatches) await b.commit();
+                }
+            } catch (e) {
+                console.error(`Error deleting center data for ${slug}:`, e);
+            }
+
+            // 2. Delete registry entry
             await deleteDoc(doc(db, REGISTRY_COLLECTION, slug));
-            return res.status(200).json({ success: true, message: `Đã xóa trung tâm "${slug}"` });
+            return res.status(200).json({ success: true, message: `Đã xóa trung tâm "${slug}" và toàn bộ dữ liệu` });
         }
 
         // Change super admin password

@@ -4,7 +4,7 @@ import { applyOperation } from './_lib/operations.js';
 import { verifyToken } from './_lib/jwt.js';
 import { UserRole } from '../types.js';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, doc, getDocs, collection, writeBatch, onSnapshot, runTransaction } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, getDocs, collection, writeBatch, onSnapshot, runTransaction } from 'firebase/firestore';
 import { hashPassword } from './_lib/crypto.js';
 import { authenticateServer } from './_lib/serverAuth.js';
 import fs from 'fs';
@@ -612,6 +612,29 @@ export default async function handler(req: any, res: any) {
     // Extract centerId from JWT - backward compatible with old tokens
     const centerId = (authPayload as any).centerId || '_legacy';
 
+    // === CRITICAL: Validate center still exists and is active ===
+    if (centerId && centerId !== '_legacy') {
+        try {
+            const centerDoc = await getDoc(doc(db, 'centers_registry', centerId));
+            if (!centerDoc.exists()) {
+                return res.status(403).json({ 
+                    success: false, 
+                    error: 'Trung tâm đã bị xóa khỏi hệ thống. Vui lòng đăng xuất.',
+                    forceLogout: true 
+                });
+            }
+            const centerData = centerDoc.data();
+            if (centerData.status === 'LOCKED') {
+                return res.status(403).json({ 
+                    success: false, 
+                    error: 'Trung tâm đã bị khóa. Vui lòng liên hệ quản trị viên hệ thống.',
+                    forceLogout: true 
+                });
+            }
+        } catch (e) {
+            console.error('Center validation error:', e);
+        }
+    }
     if (req.method === 'GET') {
         try {
             // ETag-based caching: check if client already has latest data
@@ -669,7 +692,7 @@ export default async function handler(req: any, res: any) {
             const allowedOps = [
                 'addIncome', 'updateIncome', 'deleteIncome', 
                 'addExpense', 'updateExpense', 'deleteExpense', 
-                'updateTransaction', 'addAdjustment', 'cancelInvoice', 
+                'updateTransaction', 'addAdjustment', 'addAdvancePayment', 'cancelInvoice', 
                 'updateInvoiceStatus', 'updateUserPassword'
             ];
             if (!allowedOps.includes(operation.op)) {
