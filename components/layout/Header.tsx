@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useData } from '../../hooks/useDataContext';
 import { ICONS } from '../../constants';
-import { CenterSettings, UserRole } from '../../types';
+import { UserRole } from '../../types';
 import { GlobalSearch } from '../common/GlobalSearch';
 import { NotificationBell } from './NotificationBell';
 import { ChangePasswordModal } from '../auth/ChangePasswordModal';
@@ -41,7 +41,7 @@ const Clock: React.FC = () => {
 
 export const Header: React.FC<HeaderProps> = ({ pageTitle, onMenuClick }) => {
   const { user, role, logout } = useAuth();
-  const { state, updateSettings } = useData();
+  const { state } = useData();
   const [isChangePasswordModalOpen, setChangePasswordModalOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -59,10 +59,19 @@ export const Header: React.FC<HeaderProps> = ({ pageTitle, onMenuClick }) => {
   }, []);
 
 
+  const [localTheme, setLocalTheme] = useState<'light' | 'dark'>(() => {
+    const stored = localStorage.getItem('educenter_theme');
+    if (stored === 'dark' || stored === 'light') return stored;
+    return (state.settings.theme as 'light' | 'dark') || 'light';
+  });
+
   const toggleTheme = () => {
-    const newTheme = state.settings.theme === 'light' ? 'dark' : 'light';
-    const newSettings: CenterSettings = { ...state.settings, theme: newTheme };
-    updateSettings(newSettings);
+    const newTheme = localTheme === 'light' ? 'dark' : 'light';
+    setLocalTheme(newTheme);
+    localStorage.setItem('educenter_theme', newTheme);
+    const root = window.document.documentElement;
+    root.classList.remove(localTheme);
+    root.classList.add(newTheme);
   };
 
   const menuButtonClass = "w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700";
@@ -112,9 +121,9 @@ export const Header: React.FC<HeaderProps> = ({ pageTitle, onMenuClick }) => {
                         <p className="text-sm text-slate-500 dark:text-slate-400">{role}</p>
                     </div>
                     <div className="px-2 space-y-1">
-                        <button onClick={() => { toggleTheme(); setIsUserMenuOpen(false); }} className={`${menuButtonClass} rounded-xl`} title={state.settings.theme === 'light' ? 'Chuyển sang chế độ tối' : 'Chuyển sang chế độ sáng'}>
-                            {state.settings.theme === 'light' ? ICONS.moon : ICONS.sun}
-                            <span className="font-medium">Giao diện: {state.settings.theme === 'light' ? 'Sáng' : 'Tối'}</span>
+                        <button onClick={() => { toggleTheme(); setIsUserMenuOpen(false); }} className={`${menuButtonClass} rounded-xl`} title={localTheme === 'light' ? 'Chuyển sang chế độ tối' : 'Chuyển sang chế độ sáng'}>
+                            {localTheme === 'light' ? ICONS.moon : ICONS.sun}
+                            <span className="font-medium">Giao diện: {localTheme === 'light' ? 'Sáng' : 'Tối'}</span>
                         </button>
                         {role !== UserRole.ADMIN && role !== UserRole.VIEWER && (
                             <button onClick={() => { setChangePasswordModalOpen(true); setIsUserMenuOpen(false); }} className={`${menuButtonClass} rounded-xl`}>

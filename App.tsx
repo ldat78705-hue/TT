@@ -224,8 +224,11 @@ const AppRoutes: React.FC = () => {
 
     useEffect(() => {
         const root = window.document.documentElement;
-        root.classList.remove(state.settings.theme === 'dark' ? 'light' : 'dark');
-        root.classList.add(state.settings.theme);
+        // Prefer localStorage theme (per-user) over server settings (center-wide)
+        const localTheme = localStorage.getItem('educenter_theme');
+        const effectiveTheme = (localTheme === 'dark' || localTheme === 'light') ? localTheme : state.settings.theme;
+        root.classList.remove('light', 'dark');
+        root.classList.add(effectiveTheme);
     }, [state.settings.theme]);
 
     useEffect(() => {
