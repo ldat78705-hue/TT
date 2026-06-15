@@ -11,6 +11,8 @@ import { ListItemCard } from '../common/ListItemCard';
 import { ConfirmationModal } from '../common/ConfirmationModal';
 import { TuitionFeeNoticeModal } from './TuitionFeeNoticeModal';
 import { BulkInvoiceExportModal } from './BulkInvoiceExportModal';
+import { AdvancePaymentModal } from './AdvancePaymentModal';
+import { BalanceStatementModal } from './BalanceStatementModal';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -92,6 +94,8 @@ export const InvoicesTab: React.FC = () => {
     const [sortConfig, setSortConfig] = useState<SortConfig<Invoice> | null>({ key: 'generatedDate', direction: 'descending' });
     const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<string[]>([]);
     const [isBulkExportModalOpen, setIsBulkExportModalOpen] = useState(false);
+    const [isAdvancePaymentOpen, setIsAdvancePaymentOpen] = useState(false);
+    const [isBalanceStatementOpen, setIsBalanceStatementOpen] = useState(false);
 
 
     const canManage = role === UserRole.ADMIN || role === UserRole.ACCOUNTANT;
@@ -270,6 +274,12 @@ export const InvoicesTab: React.FC = () => {
                          <Button onClick={() => setIsBulkExportModalOpen(true)} disabled={selectedInvoiceIds.length === 0} variant="secondary">
                             {ICONS.download} Xuất ảnh hàng loạt ({selectedInvoiceIds.length})
                         </Button>
+                        <Button onClick={() => setIsBalanceStatementOpen(true)} variant="secondary">
+                            📋 Phiếu số dư
+                        </Button>
+                        <Button onClick={() => setIsAdvancePaymentOpen(true)} variant="secondary">
+                            💰 Thu trước
+                        </Button>
                         <Button onClick={() => setGenerateModalOpen(true)}>
                             {ICONS.calendar} Chốt & Cập nhật Học phí
                         </Button>
@@ -442,6 +452,14 @@ export const InvoicesTab: React.FC = () => {
                 isOpen={isBulkExportModalOpen}
                 onClose={() => setIsBulkExportModalOpen(false)}
                 invoices={selectedInvoicesForExport}
+            />
+            <AdvancePaymentModal
+                isOpen={isAdvancePaymentOpen}
+                onClose={() => setIsAdvancePaymentOpen(false)}
+            />
+            <BalanceStatementModal
+                isOpen={isBalanceStatementOpen}
+                onClose={() => setIsBalanceStatementOpen(false)}
             />
         </div>
     );
