@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import java.text.NumberFormat
 import java.util.Locale
+import com.educenter.pro.ui.components.PullRefreshWrapper
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,6 +30,7 @@ fun ReportsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val classes by viewModel.classes.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
     val fmt = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
     var expanded by remember { mutableStateOf(false) }
 
@@ -66,8 +68,13 @@ fun ReportsScreen(
             )
         }
     ) { padding ->
+        PullRefreshWrapper(
+            isRefreshing = isRefreshing,
+            onRefresh = { viewModel.refresh() },
+            modifier = Modifier.fillMaxSize().padding(padding)
+        ) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -210,6 +217,7 @@ fun ReportsScreen(
                 }
             }
         }
+        } // PullRefreshWrapper
     }
 }
 

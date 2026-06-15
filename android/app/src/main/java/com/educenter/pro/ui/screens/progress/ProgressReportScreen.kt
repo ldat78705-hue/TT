@@ -20,6 +20,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.educenter.pro.ui.components.PullRefreshWrapper
 import com.educenter.pro.data.model.ClassModel
 import com.educenter.pro.data.model.Student
 import com.educenter.pro.data.model.UserRole
@@ -35,6 +36,7 @@ fun ProgressReportScreen(
     val students by viewModel.students.collectAsState()
     val reports by viewModel.filteredReports.collectAsState()
     val selectedClassId by viewModel.selectedClassId.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
 
     val canAdd = currentUserRole == UserRole.ADMIN || currentUserRole == UserRole.MANAGER || currentUserRole == UserRole.TEACHER
 
@@ -63,10 +65,14 @@ fun ProgressReportScreen(
             }
         }
     ) { padding ->
+        PullRefreshWrapper(
+            isRefreshing = isRefreshing,
+            onRefresh = { viewModel.refresh() },
+            modifier = Modifier.fillMaxSize().padding(padding)
+        ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
                 .padding(horizontal = 16.dp)
         ) {
             // Class filter
@@ -183,6 +189,7 @@ fun ProgressReportScreen(
                 }
             }
         }
+        } // PullRefreshWrapper
 
         // Delete confirmation
         if (reportToDelete != null) {
