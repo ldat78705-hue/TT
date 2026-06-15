@@ -375,15 +375,50 @@ export const AnnouncementsScreen: React.FC = () => {
                 </button>
             </div>
             
-            {activeTab === 'announcements' && (
-                state.announcements.length === 0 ? (
+            {activeTab === 'announcements' && (() => {
+                // Filter announcements based on role
+                const now = new Date(getVietnamTime());
+                let filteredAnnouncements = state.announcements.filter(a => {
+                    // Filter out future scheduled
+                    if (a.scheduledFor && new Date(a.scheduledFor) > now) {
+                        // Only admin/manager can see scheduled future announcements
+                        if (role !== UserRole.ADMIN && role !== UserRole.MANAGER) return false;
+                    }
+                    return true;
+                });
+
+                if (role === UserRole.TEACHER) {
+                    const teacherId = user?.id || '';
+                    const teacherClassIds = new Set(
+                        state.classes.filter(cls => (cls.teacherIds || []).includes(teacherId)).map(c => c.id)
+                    );
+                    filteredAnnouncements = filteredAnnouncements.filter(ann => {
+                        if (!ann.targetAudience || ann.targetAudience === 'ALL' || ann.targetAudience === 'TEACHERS') return true;
+                        if ((ann.targetAudience === 'CLASS' || ann.targetAudience === 'SPECIFIC_STUDENTS') && ann.classId) {
+                            return teacherClassIds.has(ann.classId);
+                        }
+                        // STUDENTS-only announcements: teachers should not see
+                        return false;
+                    });
+                } else if (role === UserRole.ACCOUNTANT) {
+                    filteredAnnouncements = filteredAnnouncements.filter(ann => {
+                        if (!ann.targetAudience || ann.targetAudience === 'ALL') return true;
+                        // Accountant can see student-targeted (may contain financial info)
+                        if (ann.targetAudience === 'STUDENTS' || ann.targetAudience === 'CLASS' || ann.targetAudience === 'SPECIFIC_STUDENTS') return true;
+                        // TEACHERS-only: accountant doesn't need
+                        return false;
+                    });
+                }
+                // ADMIN, MANAGER, VIEWER see all
+
+                return filteredAnnouncements.length === 0 ? (
                     <div className="card-base text-center text-gray-500 dark:text-gray-400">
                         <h3 className="text-lg font-semibold">Chưa có thông báo nào</h3>
                         <p className="mt-1">Hãy tạo thông báo đầu tiên để gửi đến nhân viên và phụ huynh.</p>
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        {state.announcements.map(ann => {
+                        {filteredAnnouncements.map(ann => {
                             let targetLabel = 'Tất cả';
                             if (ann.targetAudience === 'TEACHERS') targetLabel = 'Giáo viên';
                             else if (ann.targetAudience === 'STUDENTS') targetLabel = 'Học viên';
@@ -430,8 +465,8 @@ export const AnnouncementsScreen: React.FC = () => {
                             );
                         })}
                     </div>
-                )
-            )}
+                );
+            })()}
 
             {activeTab === 'progress' && (
                 state.progressReports.length === 0 ? (

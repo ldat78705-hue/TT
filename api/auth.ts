@@ -57,7 +57,8 @@ function tryAuthInData(data: any, identifier: string, password: string, hashedPa
         const adminPassword = data.settings?.adminPassword || '123456';
         if (password === adminPassword || hashedPassword === adminPassword) {
             const mustChange = password === '123456';
-            return { user: { id: 'ADMIN_USER', name: 'Admin', role: UserRole.ADMIN }, role: UserRole.ADMIN, mustChangePassword: mustChange };
+            const adminName = data.settings?.adminDisplayName || 'Admin';
+            return { user: { id: 'ADMIN_USER', name: adminName, role: UserRole.ADMIN }, role: UserRole.ADMIN, mustChangePassword: mustChange };
         }
         return null;
     }

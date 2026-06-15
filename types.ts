@@ -193,6 +193,7 @@ export interface CenterSettings {
   bankBin?: string;
   qrCodeUrl?: string;
   adminPassword?: string;
+  adminDisplayName?: string;
   viewerAccountActive?: boolean;
   loginHeaderContent?: string;
   taxId?: string;
@@ -221,6 +222,7 @@ export interface CenterSettings {
   webhookStudentIdPattern?: string; // Custom regex pattern
   webhookBankKeyword?: string; // Keyword nhận diện nguồn (default: 'MBBank')
   webhookAutoDescription?: string; // Template mô tả GD (default: 'Thanh toán HP tự động')
+  webhookSecretKey?: string; // Secret key for webhook authentication
 }
 
 export interface PayrollClassDetail {

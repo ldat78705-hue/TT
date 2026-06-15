@@ -316,7 +316,7 @@ function applySmartWindowFilter(data: any) {
         });
     }
     if (filtered.settings) {
-        const { adminPassword, zaloAccessToken, zaloTokenExpiresAt, ...safeSettings } = filtered.settings;
+        const { adminPassword, zaloAccessToken, zaloTokenExpiresAt, webhookSecretKey, ...safeSettings } = filtered.settings;
         filtered.settings = safeSettings;
     }
 
@@ -874,29 +874,71 @@ export default async function handler(req: any, res: any) {
 
 // === AUDIT LOG BUILDER ===
 function buildAuditEntry(op: string, payload: any, userId: string, userName: string) {
+    const fmt = (n: number) => n?.toLocaleString('vi-VN') || '0';
     const OP_MAP: Record<string, { targetType: string; getDetails: (p: any) => { targetName: string; details: string } | null }> = {
+        // === Classes ===
         addClass: { targetType: 'class', getDetails: (p) => ({ targetName: p.name || '', details: `Thêm lớp "${p.name}"` }) },
         updateClass: { targetType: 'class', getDetails: (p) => ({ targetName: p.updatedClass?.name || p.originalId || '', details: `Cập nhật lớp "${p.updatedClass?.name || p.originalId}"` }) },
         deleteClass: { targetType: 'class', getDetails: (p) => ({ targetName: p.classId || '', details: `Xóa lớp ${p.classId}` }) },
+        // === Students ===
         addStudent: { targetType: 'student', getDetails: (p) => ({ targetName: p.student?.name || p.name || '', details: `Thêm học viên "${p.student?.name || p.name}"` }) },
         updateStudent: { targetType: 'student', getDetails: (p) => ({ targetName: p.updatedStudent?.name || '', details: `Cập nhật học viên "${p.updatedStudent?.name}"` }) },
         deleteStudent: { targetType: 'student', getDetails: (p) => ({ targetName: p.studentId || '', details: `Xóa học viên ${p.studentId}` }) },
+        // === Teachers ===
         addTeacher: { targetType: 'teacher', getDetails: (p) => ({ targetName: p.teacher?.name || '', details: `Thêm giáo viên "${p.teacher?.name}"` }) },
         updateTeacher: { targetType: 'teacher', getDetails: (p) => ({ targetName: p.updatedTeacher?.name || '', details: `Cập nhật giáo viên "${p.updatedTeacher?.name}"` }) },
+        deleteTeacher: { targetType: 'teacher', getDetails: (p) => ({ targetName: p.teacherId || '', details: `Xóa giáo viên ${p.teacherId}` }) },
+        // === Staff ===
+        addStaff: { targetType: 'staff', getDetails: (p) => ({ targetName: p.name || '', details: `Thêm nhân viên "${p.name}"` }) },
+        updateStaff: { targetType: 'staff', getDetails: (p) => ({ targetName: p.updatedStaff?.name || '', details: `Cập nhật nhân viên "${p.updatedStaff?.name}"` }) },
+        deleteStaff: { targetType: 'staff', getDetails: (p) => ({ targetName: p.staffId || '', details: `Xóa nhân viên ${p.staffId}` }) },
+        // === Attendance ===
         updateAttendance: { targetType: 'attendance', getDetails: (p) => {
             const records = Array.isArray(p) ? p : [];
             const classId = records[0]?.classId || '';
             const date = records[0]?.date || '';
             return { targetName: `${classId}`, details: `Điểm danh lớp ${classId} ngày ${date} (${records.length} HS)` };
         }},
-        addAdjustment: { targetType: 'finance', getDetails: (p) => ({ targetName: p.studentId || '', details: `Thanh toán ${p.amount}đ cho HS ${p.studentId}` }) },
+        deleteAttendanceForDate: { targetType: 'attendance', getDetails: (p) => ({ targetName: p.classId || '', details: `Xóa điểm danh lớp ${p.classId} ngày ${p.date}` }) },
+        deleteAttendanceByMonth: { targetType: 'attendance', getDetails: (p) => ({ targetName: '', details: `Xóa điểm danh tháng ${p.month}/${p.year}` }) },
+        // === Finance — Payments & Adjustments ===
+        addAdjustment: { targetType: 'finance', getDetails: (p) => ({ targetName: p.studentId || '', details: `Thanh toán ${fmt(p.amount)}đ cho HS ${p.studentId}` }) },
+        addAdvancePayment: { targetType: 'finance', getDetails: (p) => ({ targetName: p.studentId || '', details: `Thu trước ${p.months || ''}T HP ${fmt(p.amount)}đ cho HS ${p.studentId}` }) },
+        // === Finance — Invoices ===
+        generateInvoices: { targetType: 'finance', getDetails: (p) => ({ targetName: '', details: `Tạo hóa đơn tháng ${p.month}/${p.year}` }) },
+        cancelInvoice: { targetType: 'finance', getDetails: (p) => ({ targetName: p.invoiceId || '', details: `Hủy hóa đơn ${p.invoiceId}` }) },
+        updateInvoiceStatus: { targetType: 'finance', getDetails: (p) => ({ targetName: p.invoiceId || '', details: `Cập nhật HĐ ${p.invoiceId} → ${p.status}` }) },
+        // === Finance — Transactions ===
+        updateTransaction: { targetType: 'finance', getDetails: (p) => ({ targetName: p.id || '', details: `Sửa giao dịch ${p.id}` }) },
+        deleteTransaction: { targetType: 'finance', getDetails: (p) => ({ targetName: p.transactionId || '', details: `Xóa giao dịch ${p.transactionId}` }) },
+        clearAllTransactions: { targetType: 'finance', getDetails: () => ({ targetName: '', details: 'Xóa toàn bộ giao dịch và hóa đơn' }) },
+        // === Finance — Income & Expense ===
+        addIncome: { targetType: 'finance', getDetails: (p) => ({ targetName: p.description || '', details: `Thêm thu khác: ${p.description} (${fmt(p.amount)}đ)` }) },
+        updateIncome: { targetType: 'finance', getDetails: (p) => ({ targetName: p.description || p.id || '', details: `Sửa thu khác: ${p.description || p.id}` }) },
+        deleteIncome: { targetType: 'finance', getDetails: (p) => ({ targetName: p.itemId || '', details: `Xóa thu khác ${p.itemId}` }) },
+        addExpense: { targetType: 'finance', getDetails: (p) => ({ targetName: p.description || '', details: `Thêm chi phí: ${p.description} (${fmt(p.amount)}đ)` }) },
+        updateExpense: { targetType: 'finance', getDetails: (p) => ({ targetName: p.description || p.id || '', details: `Sửa chi phí: ${p.description || p.id}` }) },
+        deleteExpense: { targetType: 'finance', getDetails: (p) => ({ targetName: p.itemId || '', details: `Xóa chi phí ${p.itemId}` }) },
+        // === Payroll ===
+        generatePayrolls: { targetType: 'finance', getDetails: (p) => ({ targetName: '', details: `Tạo bảng lương tháng ${p.month}/${p.year}` }) },
+        updatePayroll: { targetType: 'finance', getDetails: (p) => ({ targetName: p.payrollId || '', details: `Cập nhật bảng lương ${p.payrollId} → ${p.status}` }) },
+        // === Announcements ===
         addAnnouncement: { targetType: 'announcement', getDetails: (p) => ({ targetName: p.title || '', details: `Thêm thông báo "${p.title}"` }) },
+        updateAnnouncement: { targetType: 'announcement', getDetails: (p) => ({ targetName: p.title || p.id || '', details: `Sửa thông báo "${p.title || p.id}"` }) },
         deleteAnnouncement: { targetType: 'announcement', getDetails: (p) => ({ targetName: p.id || '', details: `Xóa thông báo ${p.id}` }) },
+        // === Progress Reports ===
+        addProgressReport: { targetType: 'student', getDetails: (p) => ({ targetName: p.studentId || '', details: `Thêm báo cáo tiến độ HS ${p.studentId}` }) },
+        addBulkProgressReports: { targetType: 'student', getDetails: (p) => ({ targetName: '', details: `Thêm ${Array.isArray(p) ? p.length : '?'} báo cáo tiến độ hàng loạt` }) },
+        updateProgressReport: { targetType: 'student', getDetails: (p) => ({ targetName: p.studentId || p.id || '', details: `Sửa báo cáo tiến độ ${p.id || ''}` }) },
+        deleteProgressReport: { targetType: 'student', getDetails: (p) => ({ targetName: p.reportId || '', details: `Xóa báo cáo tiến độ ${p.reportId}` }) },
+        // === Rooms ===
         addRoom: { targetType: 'room', getDetails: (p) => ({ targetName: p.name || '', details: `Thêm phòng "${p.name}"` }) },
         updateRoom: { targetType: 'room', getDetails: (p) => ({ targetName: p.name || p.id || '', details: `Cập nhật phòng "${p.name || p.id}"` }) },
         deleteRoom: { targetType: 'room', getDetails: (p) => ({ targetName: p.roomId || p.id || '', details: `Xóa phòng ${p.roomId || p.id}` }) },
+        // === Settings & System ===
         updateSettings: { targetType: 'settings', getDetails: () => ({ targetName: 'Cài đặt', details: 'Cập nhật cài đặt hệ thống' }) },
         restoreData: { targetType: 'system', getDetails: () => ({ targetName: 'Hệ thống', details: 'Khôi phục dữ liệu từ bản sao lưu' }) },
+        clearCollections: { targetType: 'system', getDetails: (p) => ({ targetName: '', details: `Xóa dữ liệu: ${Array.isArray(p) ? p.join(', ') : p}` }) },
     };
     const mapper = OP_MAP[op];
     if (!mapper) return null;

@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useData } from '../../hooks/useDataContext';
-import { PersonStatus, AttendanceStatus } from '../../types';
+import { useAuth } from '../../hooks/useAuth';
+import { PersonStatus, AttendanceStatus, UserRole } from '../../types';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '../../constants';
 import { getVietnamTime } from '../../utils/date';
@@ -19,6 +20,8 @@ interface Notification {
 
 export const NotificationBell: React.FC = () => {
     const { state } = useData();
+    const { role, user } = useAuth();
+    const canViewFinancials = role === UserRole.ADMIN || role === UserRole.MANAGER || role === UserRole.ACCOUNTANT;
     const [isOpen, setIsOpen] = useState(false);
     const [dismissed, setDismissed] = useState<Set<string>>(() => {
         try {
@@ -44,25 +47,32 @@ export const NotificationBell: React.FC = () => {
         const todayStr = `${vnDate.getFullYear()}-${String(vnDate.getMonth()+1).padStart(2,'0')}-${String(vnDate.getDate()).padStart(2,'0')}`;
         const dayOfWeekEn = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][vnDate.getDay()];
 
-        // 1. Students with high debt (> 500k)
-        const highDebtStudents = state.students.filter(s => s.status === PersonStatus.ACTIVE && s.balance < -500000);
-        if (highDebtStudents.length > 0) {
-            items.push({
-                id: 'high-debt',
-                type: 'debt',
-                title: `${highDebtStudents.length} học viên nợ > 500k`,
-                message: highDebtStudents.slice(0, 3).map(s => `${s.name}: ${Math.abs(s.balance).toLocaleString('vi-VN')}₫`).join(', ') + (highDebtStudents.length > 3 ? '...' : ''),
-                link: ROUTES.FINANCE,
-                linkState: { defaultTab: 'debt_report' },
-                icon: '💰',
-                color: 'text-red-500'
-            });
+        // 1. Students with high debt (> 500k) — only for financial roles
+        if (canViewFinancials) {
+            const highDebtStudents = state.students.filter(s => s.status === PersonStatus.ACTIVE && s.balance < -500000);
+            if (highDebtStudents.length > 0) {
+                items.push({
+                    id: 'high-debt',
+                    type: 'debt',
+                    title: `${highDebtStudents.length} học viên nợ > 500k`,
+                    message: highDebtStudents.slice(0, 3).map(s => `${s.name}: ${Math.abs(s.balance).toLocaleString('vi-VN')}₫`).join(', ') + (highDebtStudents.length > 3 ? '...' : ''),
+                    link: ROUTES.FINANCE,
+                    linkState: { defaultTab: 'debt_report' },
+                    icon: '💰',
+                    color: 'text-red-500'
+                });
+            }
         }
 
         // 2. Classes today that haven't been marked
-        const classesToday = state.classes.filter(cls => 
+        let classesToday = state.classes.filter(cls => 
             (cls.schedule || []).some(s => s.dayOfWeek === dayOfWeekEn)
         );
+        // Teachers only see their own classes
+        if (role === UserRole.TEACHER && user?.id) {
+            const teacherId = user.id;
+            classesToday = classesToday.filter(cls => (cls.teacherIds || []).includes(teacherId));
+        }
         const unmarkedClasses = classesToday.filter(cls => {
             const hasAttendance = state.attendance.some(a => a.classId === cls.id && a.date === todayStr && a.status !== AttendanceStatus.UNMARKED);
             return !hasAttendance;
@@ -84,10 +94,25 @@ export const NotificationBell: React.FC = () => {
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
         const thirtyDaysAgoStr = `${thirtyDaysAgo.getFullYear()}-${String(thirtyDaysAgo.getMonth()+1).padStart(2,'0')}-${String(thirtyDaysAgo.getDate()).padStart(2,'0')}`;
         
+        // For teachers, only track attendance of their own classes' students
+        let relevantAttendance = state.attendance;
+        let relevantStudentIds: Set<string> | null = null;
+        if (role === UserRole.TEACHER && user?.id) {
+            const teacherClassIds = new Set(
+                state.classes.filter(cls => (cls.teacherIds || []).includes(user.id)).map(c => c.id)
+            );
+            relevantAttendance = state.attendance.filter(a => teacherClassIds.has(a.classId));
+            relevantStudentIds = new Set(
+                state.classes.filter(cls => teacherClassIds.has(cls.id)).flatMap(cls => cls.studentIds)
+            );
+        }
+
         const absenceCounts = new Map<string, number>();
-        state.attendance.forEach(a => {
+        relevantAttendance.forEach(a => {
             if ((a.status === AttendanceStatus.ABSENT || a.status === AttendanceStatus.UNEXCUSED_ABSENT) && a.date >= thirtyDaysAgoStr) {
-                absenceCounts.set(a.studentId, (absenceCounts.get(a.studentId) || 0) + 1);
+                if (!relevantStudentIds || relevantStudentIds.has(a.studentId)) {
+                    absenceCounts.set(a.studentId, (absenceCounts.get(a.studentId) || 0) + 1);
+                }
             }
         });
         
@@ -102,8 +127,8 @@ export const NotificationBell: React.FC = () => {
                 type: 'absence',
                 title: `${frequentAbsentees.length} học viên nghỉ nhiều (30 ngày)`,
                 message: frequentAbsentees.slice(0, 3).map(s => `${s.name}: ${s.count} buổi`).join(', '),
-                link: ROUTES.REPORTS,
-                linkState: { defaultReport: 'attendance' },
+                link: role === UserRole.TEACHER ? ROUTES.ATTENDANCE_HUB : ROUTES.REPORTS,
+                linkState: role === UserRole.TEACHER ? undefined : { defaultReport: 'attendance' },
                 icon: '⚠️',
                 color: 'text-amber-500'
             });

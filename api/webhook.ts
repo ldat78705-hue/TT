@@ -22,6 +22,14 @@ export default async function webhookHandler(req: any, res: any) {
             return res.status(200).json({ success: false, message: 'Webhook is disabled in settings.' });
         }
 
+        // Validate webhook secret key if configured
+        if (settings.webhookSecretKey) {
+            const providedSecret = url.searchParams.get('secret') || req.headers['x-webhook-secret'];
+            if (providedSecret !== settings.webhookSecretKey) {
+                return res.status(403).json({ success: false, message: 'Invalid webhook secret key.' });
+            }
+        }
+
         const studentIdPrefix = (settings.webhookStudentIdPrefix || 'HS').toUpperCase();
         const bankKeyword = settings.webhookBankKeyword || 'MBBank';
         const autoDescription = settings.webhookAutoDescription || 'Thanh toán HP tự động';

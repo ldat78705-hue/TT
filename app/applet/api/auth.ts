@@ -60,7 +60,8 @@ export default async function handler(request: Request) {
         if (upperIdentifier === 'ADMIN' || upperIdentifier === 'ADMIN_USER') {
             const adminPassword = data.settings?.adminPassword || '123456';
             if (password === adminPassword) {
-                user = { id: 'ADMIN_USER', name: 'Admin', role: UserRole.ADMIN };
+                const adminName = data.settings?.adminDisplayName || 'Admin';
+                user = { id: 'ADMIN_USER', name: adminName, role: UserRole.ADMIN };
                 role = UserRole.ADMIN;
             }
         }

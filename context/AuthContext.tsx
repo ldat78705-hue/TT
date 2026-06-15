@@ -92,7 +92,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const upperIdentifier = identifier.toUpperCase();
 
     if (upperIdentifier === 'ADMIN' || upperIdentifier === ADMIN_ID) {
-        const adminUser: AdminUser = { id: ADMIN_ID, name: 'Admin', role: UserRole.ADMIN };
+        const adminName = state.settings?.adminDisplayName || 'Admin';
+        const adminUser: AdminUser = { id: ADMIN_ID, name: adminName, role: UserRole.ADMIN };
         return { user: adminUser, role: UserRole.ADMIN };
     }
     

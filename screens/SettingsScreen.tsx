@@ -350,6 +350,11 @@ export const SettingsScreen: React.FC = () => {
                                     <label className="block text-sm font-medium">Số điện thoại</label>
                                     <input type="text" name="phone" value={settings.phone || ''} onChange={handleChange} className="form-input mt-1" />
                                 </div>
+                                <div>
+                                    <label className="block text-sm font-medium">Tên hiển thị Admin</label>
+                                    <input type="text" name="adminDisplayName" value={settings.adminDisplayName || ''} onChange={handleChange} className="form-input mt-1" placeholder="VD: HỘ KINH DOANH THÀNH ĐẠT" />
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Tên hiển thị trong lịch sử thao tác, header và các phiếu thu. Mặc định: "Admin"</p>
+                                </div>
                             </div>
                             <div className="mt-4">
                                 <label className="block text-sm font-medium">Địa chỉ</label>
@@ -500,6 +505,17 @@ export const SettingsScreen: React.FC = () => {
                                                 placeholder="Thanh toán HP tự động" 
                                             />
                                             <p className="text-xs text-gray-500 mt-1">Mô tả sẽ ghi trong lịch sử giao dịch khi webhook ghi nhận tự động</p>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium">🔐 Secret Key (bảo mật)</label>
+                                            <input type="password" 
+                                                value={settings.webhookSecretKey ?? ''} 
+                                                onChange={e => setSettings(prev => ({...prev, webhookSecretKey: e.target.value}))}
+                                                className="form-input mt-1" 
+                                                placeholder="Để trống = không yêu cầu xác thực" 
+                                            />
+                                            <p className="text-xs text-gray-500 mt-1">Nếu đặt Secret Key, URL webhook phải thêm <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">?secret=YOUR_KEY</code> hoặc header <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">X-Webhook-Secret</code></p>
                                         </div>
 
                                         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-sm">
