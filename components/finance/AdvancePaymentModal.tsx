@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { CurrencyInput } from '../common/CurrencyInput';
@@ -8,6 +8,7 @@ import { useToast } from '../../hooks/useToast';
 import { useAuth } from '../../hooks/useAuth';
 import { ICONS } from '../../constants';
 import { getVietnamTime } from '../../utils/date';
+import { AdvancePaymentNotice } from './AdvancePaymentNotice';
 
 interface AdvancePaymentModalProps {
     isOpen: boolean;
@@ -36,6 +37,8 @@ export const AdvancePaymentModal: React.FC<AdvancePaymentModalProps> = ({ isOpen
     const [isLoading, setIsLoading] = useState(false);
     const [showQR, setShowQR] = useState(false);
     const [date, setDate] = useState(getVietnamTime().substring(0, 16));
+    const [isDownloading, setIsDownloading] = useState(false);
+    const noticeRef = useRef<HTMLDivElement>(null);
 
     const activeStudents = useMemo(() =>
         state.students.filter(s => s.status === 'ACTIVE').sort((a, b) => a.name.localeCompare(b.name)),
@@ -95,11 +98,18 @@ export const AdvancePaymentModal: React.FC<AdvancePaymentModalProps> = ({ isOpen
         return { total: Math.round(total), details };
     }, [student, state.classes]);
 
+    // Outstanding debt: negative balance means student owes money
+    const outstandingDebt = useMemo(() => {
+        if (!student || student.balance >= 0) return 0;
+        return Math.abs(student.balance);
+    }, [student]);
+
     const estimatedTotal = useMemo(() => {
         const base = monthlyEstimate.total * months;
         const discount = Math.round(base * (discountPercent / 100));
-        return Math.max(0, base - discount);
-    }, [monthlyEstimate.total, months, discountPercent]);
+        const tuitionAfterDiscount = Math.max(0, base - discount);
+        return tuitionAfterDiscount + outstandingDebt;
+    }, [monthlyEstimate.total, months, discountPercent, outstandingDebt]);
 
     const finalAmount = useMemo(() => {
         return useCustomAmount ? customAmount : estimatedTotal;
@@ -135,6 +145,29 @@ export const AdvancePaymentModal: React.FC<AdvancePaymentModalProps> = ({ isOpen
             toast.error('Lỗi khi ghi nhận thanh toán.');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleDownloadNotice = async () => {
+        if (!noticeRef.current || !student || !window.html2canvas) {
+            toast.error('Không thể tải ảnh phiếu thu.');
+            return;
+        }
+        setIsDownloading(true);
+        try {
+            // Wait for QR image to load
+            await new Promise(resolve => setTimeout(resolve, 300));
+            const canvas = await window.html2canvas(noticeRef.current, { scale: 3, useCORS: true });
+            const link = document.createElement('a');
+            link.download = `PhieuThuTruoc_${student.id}_${months}thang.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            toast.success('Đã tải ảnh phiếu thu!');
+        } catch (error) {
+            console.error('Lỗi xuất phiếu thu:', error);
+            toast.error('Lỗi khi xuất ảnh phiếu thu.');
+        } finally {
+            setIsDownloading(false);
         }
     };
 
@@ -209,8 +242,14 @@ export const AdvancePaymentModal: React.FC<AdvancePaymentModalProps> = ({ isOpen
 
                         {/* Calculated Amount */}
                         <div className="p-4 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                            {outstandingDebt > 0 && (
+                                <div className="flex justify-between items-center text-sm text-red-600 dark:text-red-400 pb-1">
+                                    <span>⚠️ Nợ cũ chưa đóng</span>
+                                    <span className="font-semibold">{formatCurrency(outstandingDebt)}</span>
+                                </div>
+                            )}
                             <div className="flex justify-between items-center text-sm">
-                                <span>{formatCurrency(monthlyEstimate.total)} × {months} tháng</span>
+                                <span>HP {months} tháng ({formatCurrency(monthlyEstimate.total)}/tháng)</span>
                                 <span>{formatCurrency(monthlyEstimate.total * months)}</span>
                             </div>
                             {discountPercent > 0 && (
@@ -220,7 +259,7 @@ export const AdvancePaymentModal: React.FC<AdvancePaymentModalProps> = ({ isOpen
                                 </div>
                             )}
                             <div className="flex justify-between items-center font-bold text-lg mt-2 pt-2 border-t border-emerald-200 dark:border-emerald-700">
-                                <span>Thành tiền</span>
+                                <span>Tổng cần thu</span>
                                 <span className="text-emerald-700 dark:text-emerald-300">{formatCurrency(estimatedTotal)}</span>
                             </div>
                         </div>
@@ -287,12 +326,30 @@ export const AdvancePaymentModal: React.FC<AdvancePaymentModalProps> = ({ isOpen
                 )}
 
                 {/* Actions */}
-                <div className="flex justify-end gap-3 pt-4 border-t dark:border-gray-700">
+                <div className="flex flex-wrap justify-end gap-3 pt-4 border-t dark:border-gray-700">
                     <Button variant="secondary" onClick={onClose}>Hủy</Button>
+                    {student && finalAmount > 0 && (
+                        <Button variant="secondary" onClick={handleDownloadNotice} isLoading={isDownloading} disabled={isDownloading}>
+                            {ICONS.download} Tải phiếu thu
+                        </Button>
+                    )}
                     <Button onClick={handleSubmit} isLoading={isLoading} disabled={!student || finalAmount <= 0}>
                         Xác nhận Ghi sổ ({student ? formatCurrency(finalAmount) : '0 ₫'})
                     </Button>
                 </div>
+            </div>
+
+            {/* Hidden render target for image export */}
+            <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+                {student && (
+                    <AdvancePaymentNotice
+                        ref={noticeRef}
+                        studentId={student.id}
+                        months={months}
+                        discountPercent={discountPercent}
+                        finalAmount={finalAmount}
+                    />
+                )}
             </div>
         </Modal>
     );
