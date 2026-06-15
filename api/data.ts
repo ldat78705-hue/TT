@@ -397,6 +397,66 @@ function applyParentFilter(data: any, studentId: string): any {
     return filtered;
 }
 
+/**
+ * Filter data for TEACHER role: hide financial data, audit logs, etc.
+ * Teachers should only see: classes (their own), students (in their classes),
+ * teachers (themselves), attendance, progress reports, announcements, settings.
+ */
+function applyTeacherFilter(data: any, teacherId: string): any {
+    const filtered = { ...data };
+
+    // Find classes this teacher is assigned to
+    const teacherClassIds = new Set<string>();
+    const teacherStudentIds = new Set<string>();
+    if (filtered.classes) {
+        filtered.classes.forEach((cls: any) => {
+            if ((cls.teacherIds || []).includes(teacherId)) {
+                teacherClassIds.add(cls.id);
+                (cls.studentIds || []).forEach((sid: string) => teacherStudentIds.add(sid));
+            }
+        });
+    }
+
+    // Only students in teacher's classes (strip balance info)
+    if (filtered.students) {
+        filtered.students = filtered.students
+            .filter((s: any) => teacherStudentIds.has(s.id))
+            .map((s: any) => ({ ...s, balance: 0 })); // Hide financial balance
+    }
+
+    // Only attendance for teacher's classes
+    if (filtered.attendance) {
+        filtered.attendance = filtered.attendance.filter((a: any) => teacherClassIds.has(a.classId));
+    }
+
+    // Only progress reports for teacher's classes
+    if (filtered.progressReports) {
+        filtered.progressReports = filtered.progressReports.filter((p: any) => teacherClassIds.has(p.classId));
+    }
+
+    // Filter announcements: ALL, TEACHERS, or teacher's classes
+    if (filtered.announcements) {
+        filtered.announcements = filtered.announcements.filter((ann: any) => {
+            if (!ann.targetAudience || ann.targetAudience === 'ALL' || ann.targetAudience === 'TEACHERS') return true;
+            if ((ann.targetAudience === 'CLASS' || ann.targetAudience === 'SPECIFIC_STUDENTS') && ann.classId) {
+                return teacherClassIds.has(ann.classId);
+            }
+            return false; // Hide STUDENTS-only announcements from teachers
+        });
+    }
+
+    // Hide ALL financial & sensitive data
+    filtered.transactions = [];
+    filtered.income = [];
+    filtered.expenses = [];
+    filtered.payrolls = [];
+    filtered.invoices = [];
+    filtered.auditLogs = [];
+    filtered.staff = [];
+
+    return filtered;
+}
+
 export async function executeOperationInternal(operation: { op: string, payload: any }, centerId: string = '_legacy') {
     await acquireLock();
     try {
@@ -652,10 +712,12 @@ export default async function handler(req: any, res: any) {
             const data = await getSplitData(centerId);
             let responseData = applySmartWindowFilter(data);
 
-            // Apply PARENT-specific data filter: only return data for their student
+            // Apply role-specific data filters
             const role = authPayload.role as UserRole;
             if (role === UserRole.PARENT) {
                 responseData = applyParentFilter(responseData, (authPayload as any).userId as string);
+            } else if (role === UserRole.TEACHER) {
+                responseData = applyTeacherFilter(responseData, (authPayload as any).userId as string);
             }
 
             // Set ETag from syncId for client-side caching
@@ -703,7 +765,7 @@ export default async function handler(req: any, res: any) {
         if (role === UserRole.TEACHER) {
             const allowedTeacherOps = [
                 'updateAttendance',
-                'addProgressReport', 'updateProgressReport', 'deleteProgressReport',
+                'addProgressReport', 'updateProgressReport', 'deleteProgressReport', 'addBulkProgressReports',
                 'addAnnouncement', 'updateAnnouncement', 'deleteAnnouncement',
                 'updateUserPassword', 'addAuditLog'
             ];
