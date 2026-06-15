@@ -120,6 +120,11 @@ function getCenterCache(centerId: string): CenterCache {
     return centerCaches.get(centerId)!;
 }
 
+/** Remove a center from the in-memory cache (called when center is deleted) */
+export function invalidateCenterCache(centerId: string) {
+    centerCaches.delete(centerId);
+}
+
 let isLocked = false;
 
 // Listen to _sync document changes in the background to invalidate cache across instances
@@ -213,38 +218,55 @@ export async function getSplitData(centerId: string = '_legacy', forceRefresh = 
             });
 
             if (!hasData) {
-                console.log(`Firestore collection ${colName} is empty. Seeding with initial mock data.`);
-                
-                // Hash passwords in defaultState
-                if (defaultState.settings?.adminPassword) {
-                    defaultState.settings.adminPassword = hashPassword(defaultState.settings.adminPassword);
-                }
-                if (defaultState.teachers) {
-                    defaultState.teachers.forEach(t => {
-                        if (t.password) t.password = hashPassword(t.password);
-                    });
-                }
-                if (defaultState.staff) {
-                    defaultState.staff.forEach(s => {
-                        if (s.password) s.password = hashPassword(s.password);
-                    });
-                }
-                if (defaultState.students) {
-                    defaultState.students.forEach(s => {
-                        if (s.password) s.password = hashPassword(s.password);
-                    });
+                // CRITICAL: Only auto-seed for legacy collection or centers that exist in registry
+                // This prevents deleted centers from being re-created
+                let shouldSeed = (centerId === '_legacy');
+                if (!shouldSeed) {
+                    try {
+                        const registryDoc = await getDoc(doc(db, 'centers_registry', centerId));
+                        shouldSeed = registryDoc.exists();
+                    } catch (e) {
+                        console.error(`Failed to check registry for center ${centerId}:`, e);
+                        shouldSeed = false;
+                    }
                 }
 
-                const batch = writeBatch(db);
-                BASE_COLLECTIONS.forEach(col => {
-                    batch.set(doc(db, colName, col), { data: defaultState[col] });
-                    data[col] = defaultState[col];
-                    newRawStrings[col] = JSON.stringify(defaultState[col]);
-                });
-                const newSyncId = Date.now().toString() + '_' + Math.random().toString(36).substring(2);
-                batch.set(doc(db, colName, '_sync'), { syncId: newSyncId, lastUpdatedAt: Date.now() });
-                await batch.commit();
-                cache.localSyncId = newSyncId;
+                if (shouldSeed) {
+                    console.log(`Firestore collection ${colName} is empty. Seeding with initial mock data.`);
+                    
+                    // Hash passwords in defaultState
+                    if (defaultState.settings?.adminPassword) {
+                        defaultState.settings.adminPassword = hashPassword(defaultState.settings.adminPassword);
+                    }
+                    if (defaultState.teachers) {
+                        defaultState.teachers.forEach(t => {
+                            if (t.password) t.password = hashPassword(t.password);
+                        });
+                    }
+                    if (defaultState.staff) {
+                        defaultState.staff.forEach(s => {
+                            if (s.password) s.password = hashPassword(s.password);
+                        });
+                    }
+                    if (defaultState.students) {
+                        defaultState.students.forEach(s => {
+                            if (s.password) s.password = hashPassword(s.password);
+                        });
+                    }
+
+                    const batch = writeBatch(db);
+                    BASE_COLLECTIONS.forEach(col => {
+                        batch.set(doc(db, colName, col), { data: defaultState[col] });
+                        data[col] = defaultState[col];
+                        newRawStrings[col] = JSON.stringify(defaultState[col]);
+                    });
+                    const newSyncId = Date.now().toString() + '_' + Math.random().toString(36).substring(2);
+                    batch.set(doc(db, colName, '_sync'), { syncId: newSyncId, lastUpdatedAt: Date.now() });
+                    await batch.commit();
+                    cache.localSyncId = newSyncId;
+                } else {
+                    console.log(`Center ${centerId} not found in registry. Skipping auto-seed to prevent re-creation of deleted center.`);
+                }
             }
 
             cache.rawShardStrings = newRawStrings;

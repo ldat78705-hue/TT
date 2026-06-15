@@ -2,6 +2,7 @@ import { verifyToken } from './_lib/jwt.js';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, doc, getDoc, setDoc, getDocs, collection, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { authenticateServer } from './_lib/serverAuth.js';
+import { invalidateCenterCache } from './data.js';
 import { hashPassword, verifyPassword } from './_lib/crypto.js';
 import { signToken } from './_lib/jwt.js';
 import fs from 'fs';
@@ -219,6 +220,10 @@ export default async function handler(req: any, res: any) {
 
             // 2. Delete registry entry
             await deleteDoc(doc(db, REGISTRY_COLLECTION, slug));
+            
+            // 3. Invalidate server-side cache so deleted center doesn't "come back"
+            invalidateCenterCache(slug);
+            
             return res.status(200).json({ success: true, message: `Đã xóa trung tâm "${slug}" và toàn bộ dữ liệu` });
         }
 
