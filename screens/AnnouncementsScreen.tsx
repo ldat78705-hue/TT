@@ -269,7 +269,7 @@ export const AnnouncementsScreen: React.FC = () => {
     const [editingProg, setEditingProg] = useState<ProgressReport | undefined>(undefined);
     const [confirmProgModal, setConfirmProgModal] = useState<{ open: boolean; item?: ProgressReport }>({ open: false });
 
-    const canManageAnnouncements = role === UserRole.ADMIN || role === UserRole.MANAGER;
+    const canManageAnnouncements = role === UserRole.ADMIN || role === UserRole.MANAGER || role === UserRole.TEACHER;
     const canManageProgress = role === UserRole.ADMIN || role === UserRole.MANAGER || role === UserRole.TEACHER;
 
     // --- Announcements Handlers ---
