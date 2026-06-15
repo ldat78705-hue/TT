@@ -285,9 +285,9 @@ export const BalanceStatement = forwardRef<HTMLDivElement, BalanceStatementProps
                                 <p className="font-bold text-2xl tracking-wider font-mono my-0.5">{settings.bankAccountNumber}</p>
                                 <p className="font-semibold uppercase text-sm">{settings.bankAccountHolder}</p>
                             </div>
-                            <div>
+                            <div className="text-center">
                                 <p className="text-xs uppercase tracking-wider font-bold mb-1">NỘI DUNG CHUYỂN KHOẢN (BẮT BUỘC)</p>
-                                <div className="inline-block font-mono font-bold text-base px-3 py-1 bg-yellow-100 border border-yellow-300">
+                                <div className="inline-block font-mono font-bold text-lg px-4 py-1.5 bg-yellow-100 border-2 border-yellow-400 rounded">
                                     {`HOC PHI ${student.id}`}
                                 </div>
                             </div>

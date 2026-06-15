@@ -56,7 +56,6 @@ export const AdvancePaymentNotice = forwardRef<HTMLDivElement, AdvancePaymentNot
     const monthlyTotal = classDetails.reduce((s, c) => s + c.monthlyFee, 0);
     const tuitionBase = monthlyTotal * months;
     const discountAmount = Math.round(tuitionBase * (discountPercent / 100));
-    const tuitionAfterDiscount = Math.max(0, tuitionBase - discountAmount);
     const outstandingDebt = student && student.balance < 0 ? Math.abs(student.balance) : 0;
 
     // Calculate month range string: e.g. "Tháng 6, 7, 8/2026"
@@ -65,11 +64,9 @@ export const AdvancePaymentNotice = forwardRef<HTMLDivElement, AdvancePaymentNot
         const startMonth = now.getMonth() + 1; // current month (1-12)
         const startYear = now.getFullYear();
         const monthNames: string[] = [];
-        let lastYear = startYear;
         for (let i = 0; i < months; i++) {
             const m = ((startMonth - 1 + i) % 12) + 1;
             const y = startYear + Math.floor((startMonth - 1 + i) / 12);
-            lastYear = y;
             if (i === months - 1) {
                 monthNames.push(`${m}/${y}`);
             } else {
@@ -208,9 +205,9 @@ export const AdvancePaymentNotice = forwardRef<HTMLDivElement, AdvancePaymentNot
                             <p className="font-bold text-2xl tracking-wider font-mono my-0.5">{settings.bankAccountNumber}</p>
                             <p className="font-semibold uppercase text-sm">{settings.bankAccountHolder}</p>
                         </div>
-                        <div>
+                        <div className="text-center">
                             <p className="text-xs uppercase tracking-wider font-bold mb-1">NỘI DUNG CHUYỂN KHOẢN (BẮT BUỘC)</p>
-                            <div className="inline-block font-mono font-bold text-base px-3 py-1 bg-yellow-100 border border-yellow-300">
+                            <div className="inline-block font-mono font-bold text-lg px-4 py-1.5 bg-yellow-100 border-2 border-yellow-400 rounded">
                                 {`HOC PHI ${student.id}`}
                             </div>
                         </div>
