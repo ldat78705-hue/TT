@@ -211,14 +211,15 @@ export default async function handler(req: any, res: any) {
         // Has explicit centerId → authenticate within that center only
         if (effectiveCenterId && effectiveCenterId !== '_legacy') {
             const centerDoc = await getDoc(doc(db, 'centers_registry', effectiveCenterId));
-            if (centerDoc.exists()) {
-                const centerData = centerDoc.data();
-                if (centerData.status === 'LOCKED') {
-                    return res.status(403).json({ error: 'Trung tâm này đã bị khóa.' });
-                }
-                if (centerData.expiresAt && new Date(centerData.expiresAt) < new Date()) {
-                    return res.status(403).json({ error: 'Trung tâm này đã hết hạn sử dụng.' });
-                }
+            if (!centerDoc.exists()) {
+                return res.status(403).json({ error: 'Trung tâm không tồn tại hoặc đã bị xóa.' });
+            }
+            const centerData = centerDoc.data();
+            if (centerData.status === 'LOCKED') {
+                return res.status(403).json({ error: 'Trung tâm này đã bị khóa.' });
+            }
+            if (centerData.expiresAt && new Date(centerData.expiresAt) < new Date()) {
+                return res.status(403).json({ error: 'Trung tâm này đã hết hạn sử dụng.' });
             }
         }
 
