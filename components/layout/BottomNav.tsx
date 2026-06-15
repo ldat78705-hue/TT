@@ -18,7 +18,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({ onMenuClick }) => {
     return isActive ? `${baseClasses} ${activeClasses}` : `${baseClasses} ${inactiveClasses}`;
   };
 
-  const isFinanceVisible = role === UserRole.ADMIN || role === UserRole.MANAGER || role === UserRole.ACCOUNTANT || role === UserRole.VIEWER;
+  const isFinanceVisible = role === UserRole.ADMIN || role === UserRole.MANAGER || role === UserRole.ACCOUNTANT;
+  const isStudentsVisible = role !== UserRole.TEACHER;
 
   return (
     <div className="fixed bottom-0 left-0 z-50 w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-t border-slate-200/60 dark:border-slate-800/60 md:hidden shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.1)] print:hidden pb-safe">
@@ -35,10 +36,12 @@ export const BottomNav: React.FC<BottomNavProps> = ({ onMenuClick }) => {
           </NavLink>
         )}
 
-        <NavLink to={ROUTES.STUDENTS} className={getLinkClass}>
-          {React.cloneElement(ICONS.students, { className: "w-6 h-6 mb-0.5" })}
-          <span className="text-[10px]">Học viên</span>
-        </NavLink>
+        {isStudentsVisible && (
+          <NavLink to={ROUTES.STUDENTS} className={getLinkClass}>
+            {React.cloneElement(ICONS.students, { className: "w-6 h-6 mb-0.5" })}
+            <span className="text-[10px]">Học viên</span>
+          </NavLink>
+        )}
 
         {isFinanceVisible && (
              <NavLink to={ROUTES.FINANCE} className={getLinkClass}>
