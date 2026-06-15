@@ -79,6 +79,10 @@ class TeacherCalendarViewModel @Inject constructor(
 
     init {
         loadData()
+        // Sync fresh data from server to pick up schedule changes made on Web
+        viewModelScope.launch {
+            try { repository.syncData() } catch (_: Exception) { }
+        }
     }
 
     private fun loadData() {
