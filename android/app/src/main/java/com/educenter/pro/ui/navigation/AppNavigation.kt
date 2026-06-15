@@ -75,6 +75,8 @@ sealed class Screen(val route: String, val title: String? = null, val icon: Imag
     // Parent screens
     object ParentHome : Screen("parent_home", "Trang chủ", Icons.Filled.Home)
     object ParentAttendance : Screen("parent_attendance", "Điểm danh", Icons.Filled.EventAvailable)
+    object ParentFinance : Screen("parent_finance", "Học phí")
+    object ParentReports : Screen("parent_reports", "Báo cáo")
 }
 
 // Bottom nav: 4 tabs for clean UX
@@ -342,6 +344,12 @@ fun AppNavigation() {
             composable(Screen.ParentAttendance.route) {
                 com.educenter.pro.ui.screens.parent.ParentAttendanceScreen()
             }
+            composable(Screen.ParentFinance.route) {
+                com.educenter.pro.ui.screens.parent.ParentFinanceScreen()
+            }
+            composable(Screen.ParentReports.route) {
+                com.educenter.pro.ui.screens.parent.ParentReportsScreen()
+            }
         }
     }
 }
@@ -437,6 +445,12 @@ fun MoreScreen(
 
             if (currentUserRole != UserRole.PARENT) {
                 MoreMenuItem(Icons.Default.Assessment, "Báo cáo", Color(0xFF0EA5E9)) { onNavigateTo(Screen.Reports.route) }
+            }
+
+            // Parent-specific: Finance + Reports
+            if (currentUserRole == UserRole.PARENT) {
+                MoreMenuItem(Icons.Default.Payments, "Học phí & Thanh toán", Color(0xFFF59E0B)) { onNavigateTo(Screen.ParentFinance.route) }
+                MoreMenuItem(Icons.Default.Assessment, "Báo cáo Học tập", Color(0xFF0EA5E9)) { onNavigateTo(Screen.ParentReports.route) }
             }
 
             if (currentUserRole == UserRole.ADMIN || currentUserRole == UserRole.MANAGER || currentUserRole == UserRole.TEACHER) {
