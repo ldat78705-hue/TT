@@ -72,6 +72,7 @@ interface DataContextType {
     cancelInvoice: (invoiceId: string) => Promise<void>;
     updateInvoiceStatus: (payload: { invoiceId: string, status: 'PAID' | 'UNPAID' }) => Promise<void>;
     addAdjustment: (payload: { studentId: string; amount: number; date: string; description: string; type: 'CREDIT' | 'DEBIT'; paymentMethod?: 'transfer' | 'cash' }) => Promise<void>;
+    addAdvancePayment: (payload: { studentId: string; amount: number; date: string; description: string; paymentMethod?: 'transfer' | 'cash'; months?: number; details?: string }) => Promise<void>;
     updateTransaction: (transaction: Transaction) => Promise<void>;
     deleteTransaction: (transactionId: string) => Promise<void>;
     generatePayrolls: (payload: { month: number, year: number }) => Promise<void>;
@@ -213,6 +214,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     updateInvoiceStatus: handleStateUpdateOperation(api.updateInvoiceStatus, 'updateInvoiceStatus'),
     
     addAdjustment: handleStateUpdateOperation(api.addAdjustment, 'addAdjustment'),
+    addAdvancePayment: handleStateUpdateOperation(api.addAdvancePayment, 'addAdvancePayment'),
     updateTransaction: handleStateUpdateOperation(api.updateTransaction, 'updateTransaction'),
     deleteTransaction: handleStateUpdateOperation(api.deleteTransaction, 'deleteTransaction'),
     clearAllTransactions: async () => {

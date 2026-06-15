@@ -23,7 +23,7 @@ const normalizeAccountName = (name: string) => {
 };
 
 export const AdvancePaymentModal: React.FC<AdvancePaymentModalProps> = ({ isOpen, onClose, preselectedStudent }) => {
-    const { state, addAdjustment } = useData();
+    const { state, addAdvancePayment } = useData();
     const { toast } = useToast();
     const { user } = useAuth();
     const recorderName = user?.name || 'Admin';
@@ -131,13 +131,26 @@ export const AdvancePaymentModal: React.FC<AdvancePaymentModalProps> = ({ isOpen
         try {
             const finalDate = date.length === 16 ? `${date}:00` : date;
             const desc = `Thu trước ${months} tháng HP${discountPercent > 0 ? ` (giảm ${discountPercent}%)` : ''} - ${recorderName}`;
-            await addAdjustment({
+            
+            // Build invoice details string
+            const detailParts: string[] = [];
+            if (outstandingDebt > 0) {
+                detailParts.push(`HP kỳ trước: ${formatCurrency(outstandingDebt)}`);
+            }
+            detailParts.push(`HP ${months} tháng: ${formatCurrency(monthlyEstimate.total * months)}`);
+            if (discountPercent > 0) {
+                detailParts.push(`Giảm ${discountPercent}%`);
+            }
+            const invoiceDetails = detailParts.join(' | ');
+            
+            await addAdvancePayment({
                 studentId: student.id,
                 amount: finalAmount,
                 date: finalDate,
                 description: desc,
-                type: 'CREDIT',
                 paymentMethod,
+                months,
+                details: invoiceDetails,
             });
             toast.success(`Đã ghi nhận thu trước ${formatCurrency(finalAmount)} cho ${student.name}.`);
             onClose();

@@ -287,7 +287,7 @@ export const BalanceStatement = forwardRef<HTMLDivElement, BalanceStatementProps
                             </div>
                             <div className="text-center">
                                 <p className="text-xs uppercase tracking-wider font-bold mb-1">NỘI DUNG CHUYỂN KHOẢN (BẮT BUỘC)</p>
-                                <div className="inline-block font-mono font-bold text-lg px-4 py-1.5 bg-yellow-100 border-2 border-yellow-400 rounded">
+                                <div className="inline-flex items-center justify-center font-mono font-bold text-lg px-5 py-2 bg-yellow-100 border-2 border-yellow-400 rounded leading-none" style={{ lineHeight: '1' }}>
                                     {`HOC PHI ${student.id}`}
                                 </div>
                             </div>

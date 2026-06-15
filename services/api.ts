@@ -159,6 +159,7 @@ export const cancelInvoice = (invoiceId: string) => patchData({ op: 'cancelInvoi
 export const updateInvoiceStatus = (payload: { invoiceId: string, status: 'PAID' | 'UNPAID' }) => patchData({ op: 'updateInvoiceStatus', payload });
 
 export const addAdjustment = (payload: { studentId: string; amount: number; date: string; description: string; type: 'CREDIT' | 'DEBIT'; paymentMethod?: 'transfer' | 'cash' }) => patchData({ op: 'addAdjustment', payload });
+export const addAdvancePayment = (payload: { studentId: string; amount: number; date: string; description: string; paymentMethod?: 'transfer' | 'cash'; months?: number; details?: string }) => patchData({ op: 'addAdvancePayment', payload });
 export const updateTransaction = (payload: Transaction) => patchData({ op: 'updateTransaction', payload });
 export const deleteTransaction = (transactionId: string) => patchData({ op: 'deleteTransaction', payload: { transactionId } });
 export const clearAllTransactions = () => patchData({ op: 'clearAllTransactions' });

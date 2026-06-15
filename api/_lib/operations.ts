@@ -614,6 +614,46 @@ export function applyOperation(
             data.transactions.push({ id: generateUniqueId('TRX'), studentId, date, type: type === 'CREDIT' ? TransactionType.PAYMENT : TransactionType.ADJUSTMENT_DEBIT, description, amount: finalAmount, paymentMethod: paymentMethod || 'transfer' });
             break;
         }
+        case 'addAdvancePayment': {
+            const { studentId, amount, date, description, paymentMethod, months: advMonths, details: advDetails } = payload;
+            const student = data.students.find(s => s.id === studentId);
+            if (!student) throw new Error("Học viên không tồn tại.");
+            
+            // 1. Create PAID invoice for record keeping
+            const invoiceId = generateUniqueId('INV');
+            const monthStr = date.substring(0, 7); // "YYYY-MM"
+            data.invoices.push({
+                id: invoiceId,
+                studentId: student.id,
+                studentName: student.name,
+                month: monthStr,
+                amount: amount,
+                details: advDetails || `Thu trước ${advMonths || ''} tháng HP`,
+                status: 'PAID',
+                generatedDate: date,
+                paidDate: date,
+            });
+            
+            // 2. Create PAYMENT transaction (credit to student wallet)
+            const trxId = generateUniqueId('TRX');
+            data.transactions.push({
+                id: trxId,
+                studentId: student.id,
+                date,
+                type: TransactionType.PAYMENT,
+                description: description || `Thu trước HP`,
+                amount: amount, // positive = credit
+                relatedInvoiceId: invoiceId,
+                paymentMethod: paymentMethod || 'transfer',
+            });
+            
+            // 3. Update student balance
+            student.balance += amount;
+            
+            // 4. Recalculate invoice statuses
+            recalculateStudentInvoices(student.id, date);
+            break;
+        }
         case 'updateTransaction': {
             const transaction: Transaction = payload;
             const oldTransaction = data.transactions.find(t => t.id === transaction.id);
