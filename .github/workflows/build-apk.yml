@@ -80,12 +80,14 @@ jobs:
             
             > ⚠️ Lần đầu cần cho phép "Cài từ nguồn không xác định" trong Cài đặt điện thoại
             
-            ### ✨ Tính năng mới v2.5:
-            - 💰 Học phí & Thanh toán: Phụ huynh xem VietQR, thông tin ngân hàng, lịch sử hóa đơn (App)
-            - 📊 Báo cáo Học tập: Phụ huynh xem chuyên cần, nhận xét giáo viên (App)
-            - 👁️ Chế độ Giám sát: VIEWER chỉ xem, không sửa dữ liệu (Web + App)
+            ### ✨ Tính năng mới v${{ steps.version.outputs.version_name }}:
+            - 🔄 Đồng bộ tự động: App tự cập nhật dữ liệu mới từ Web khi mở mỗi màn hình
+            - 📱 Pull-to-refresh: Kéo xuống để cập nhật dữ liệu trên mọi màn hình
+            - ⚡ Debounce sync: Tránh gọi API trùng lặp khi chuyển màn hình nhanh
+            - 💰 Học phí & Thanh toán: Phụ huynh xem VietQR, ngân hàng, hóa đơn
+            - 📊 Báo cáo Học tập: Phụ huynh xem chuyên cần, nhận xét giáo viên
+            - 👁️ Chế độ Giám sát: VIEWER chỉ xem, không sửa dữ liệu
             - 🔒 Phân quyền: Rà soát toàn bộ 6 vai trò trên Web + App
-            - 📋 Kế toán: Thêm Lớp học + Lịch điểm danh vào sidebar Web
           generate_release_notes: true
           draft: false
           prerelease: false
