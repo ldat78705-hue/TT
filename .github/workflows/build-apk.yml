@@ -80,11 +80,12 @@ jobs:
             
             > ⚠️ Lần đầu cần cho phép "Cài từ nguồn không xác định" trong Cài đặt điện thoại
             
-            ### ✨ Tính năng mới v2.4:
-            - 📅 Lịch dạy GV: Nhấn vào lớp → Điểm danh ngay (Web + App)
-            - 🗓️ Lịch dạy Web: Giao diện Calendar mới, đẹp hơn
-            - 📝 Tin nhắn mẫu: Cấu hình trên Web, App tự lấy
-            - 🔧 Sửa lỗi TypeScript & cải thiện UX
+            ### ✨ Tính năng mới v2.5:
+            - 💰 Học phí & Thanh toán: Phụ huynh xem VietQR, thông tin ngân hàng, lịch sử hóa đơn (App)
+            - 📊 Báo cáo Học tập: Phụ huynh xem chuyên cần, nhận xét giáo viên (App)
+            - 👁️ Chế độ Giám sát: VIEWER chỉ xem, không sửa dữ liệu (Web + App)
+            - 🔒 Phân quyền: Rà soát toàn bộ 6 vai trò trên Web + App
+            - 📋 Kế toán: Thêm Lớp học + Lịch điểm danh vào sidebar Web
           generate_release_notes: true
           draft: false
           prerelease: false
