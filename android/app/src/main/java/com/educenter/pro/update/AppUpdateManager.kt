@@ -41,7 +41,7 @@ class AppUpdateManager @Inject constructor(
         private const val GITHUB_REPO = "TT"
         private const val PREF_SKIP_VERSION = "skip_update_version"
         private const val PREF_LAST_CHECK = "last_update_check"
-        private const val CHECK_INTERVAL_MS = 4 * 60 * 60 * 1000L // 4 hours
+        private const val CHECK_INTERVAL_MS = 60 * 60 * 1000L // 1 hour
     }
 
     private val _updateInfo = MutableStateFlow(UpdateInfo())
