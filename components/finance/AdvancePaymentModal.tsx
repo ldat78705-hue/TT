@@ -243,8 +243,8 @@ export const AdvancePaymentModal: React.FC<AdvancePaymentModalProps> = ({ isOpen
                         {/* Calculated Amount */}
                         <div className="p-4 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
                             {outstandingDebt > 0 && (
-                                <div className="flex justify-between items-center text-sm text-red-600 dark:text-red-400 pb-1">
-                                    <span>⚠️ Nợ cũ chưa đóng</span>
+                                <div className="flex justify-between items-center text-sm text-amber-700 dark:text-amber-400 pb-1">
+                                    <span>📖 HP kỳ trước chưa hoàn thành</span>
                                     <span className="font-semibold">{formatCurrency(outstandingDebt)}</span>
                                 </div>
                             )}

@@ -59,6 +59,26 @@ export const AdvancePaymentNotice = forwardRef<HTMLDivElement, AdvancePaymentNot
     const tuitionAfterDiscount = Math.max(0, tuitionBase - discountAmount);
     const outstandingDebt = student && student.balance < 0 ? Math.abs(student.balance) : 0;
 
+    // Calculate month range string: e.g. "Tháng 6, 7, 8/2026"
+    const monthRangeText = useMemo(() => {
+        const now = new Date();
+        const startMonth = now.getMonth() + 1; // current month (1-12)
+        const startYear = now.getFullYear();
+        const monthNames: string[] = [];
+        let lastYear = startYear;
+        for (let i = 0; i < months; i++) {
+            const m = ((startMonth - 1 + i) % 12) + 1;
+            const y = startYear + Math.floor((startMonth - 1 + i) / 12);
+            lastYear = y;
+            if (i === months - 1) {
+                monthNames.push(`${m}/${y}`);
+            } else {
+                monthNames.push(`${m}`);
+            }
+        }
+        return `Tháng ${monthNames.join(', ')}`;
+    }, [months]);
+
     // QR code
     const qrCodeUrl = useMemo(() => {
         const bin = settings.bankBin?.replace(/\s+/g, '');
@@ -125,18 +145,18 @@ export const AdvancePaymentNotice = forwardRef<HTMLDivElement, AdvancePaymentNot
                     <tbody>
                         {/* Outstanding Debt */}
                         {outstandingDebt > 0 && (
-                            <tr className="border-b border-gray-200 bg-red-50">
+                            <tr className="border-b border-gray-200 bg-amber-50">
                                 <td className="py-2 px-3">
-                                    <div className="font-semibold text-red-700">⚠️ Công nợ kỳ trước chưa đóng</div>
+                                    <div className="font-semibold text-amber-800">📖 Học phí kỳ trước chưa hoàn thành</div>
                                 </td>
-                                <td className="py-2 px-3 text-right font-bold text-red-700">{formatCurrency(outstandingDebt)}</td>
+                                <td className="py-2 px-3 text-right font-bold text-amber-800">{formatCurrency(outstandingDebt)}</td>
                             </tr>
                         )}
 
                         {/* Per-class monthly fees */}
                         <tr className="border-b border-gray-200">
                             <td className="py-2 px-3" colSpan={2}>
-                                <div className="font-bold text-base mb-1">Học phí {months} tháng tới</div>
+                                <div className="font-bold text-base mb-1">Học phí dự kiến {months} tháng tới <span className="font-normal text-sm text-gray-600">({monthRangeText})</span></div>
                                 <div className="pl-2 space-y-1">
                                     {classDetails.map((cd, idx) => (
                                         <div key={idx} className="flex justify-between text-sm py-0.5">
