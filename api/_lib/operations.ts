@@ -948,6 +948,15 @@ export function applyOperation(
             data.announcements = data.announcements.filter(a => a.id !== payload.id);
             break;
         }
+        case 'markAnnouncementRead': {
+            const { announcementId, userId } = payload;
+            const announcement = data.announcements.find(a => a.id === announcementId);
+            if (announcement) {
+                if (!announcement.readBy) announcement.readBy = {};
+                announcement.readBy[userId] = getVietnamTime();
+            }
+            break;
+        }
         
         // SETTINGS & DATA MANAGEMENT
         case 'updateSettings': {

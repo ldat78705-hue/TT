@@ -254,7 +254,7 @@ const ProgressReportForm: React.FC<{
 };
 
 export const AnnouncementsScreen: React.FC = () => {
-    const { state, addAnnouncement, deleteAnnouncement, addProgressReport, updateProgressReport, deleteProgressReport, addBulkProgressReports } = useData();
+    const { state, addAnnouncement, deleteAnnouncement, markAnnouncementRead, addProgressReport, updateProgressReport, deleteProgressReport, addBulkProgressReports } = useData();
     const { user, role } = useAuth();
     const { toast } = useToast();
     const [activeTab, setActiveTab] = useState<'progress' | 'announcements'>('progress');
@@ -271,6 +271,17 @@ export const AnnouncementsScreen: React.FC = () => {
 
     const canManageAnnouncements = role === UserRole.ADMIN || role === UserRole.MANAGER || role === UserRole.TEACHER;
     const canManageProgress = role === UserRole.ADMIN || role === UserRole.MANAGER || role === UserRole.TEACHER;
+
+    // Auto-mark announcements as read when viewing
+    useEffect(() => {
+        if (activeTab !== 'announcements' || !user?.id) return;
+        const userId = user.id;
+        state.announcements.forEach(ann => {
+            if (!ann.readBy?.[userId]) {
+                markAnnouncementRead({ announcementId: ann.id, userId }).catch(() => {});
+            }
+        });
+    }, [activeTab, state.announcements.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // --- Announcements Handlers ---
     const handleAddAnnouncement = async (data: { title: string; content: string; targetAudience: AnnouncementTarget; classId?: string; targetStudentIds?: string[]; scheduledFor?: string }) => {
@@ -448,6 +459,11 @@ export const AnnouncementsScreen: React.FC = () => {
                                             </div>
                                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                                                 Tạo ngày {formatVietnamDate(ann.createdAt)} bởi {ann.createdBy}
+                                                {ann.readBy && Object.keys(ann.readBy).length > 0 && (
+                                                    <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
+                                                        ✓ {Object.keys(ann.readBy).length} đã đọc
+                                                    </span>
+                                                )}
                                             </p>
                                         </div>
                                         {canManageAnnouncements && (

@@ -116,6 +116,66 @@ export const TuitionFeeNoticeModal: React.FC<TuitionFeeNoticeModalProps> = ({ is
 
     const { outstandingDebt, openingCredit, totalDue } = financialData;
 
+    const handleExportPdf = () => {
+        const { outstandingDebt: od, openingCredit: oc, totalDue: td } = financialData;
+        const centerName = settings.name || 'Trung tâm';
+        const centerPhone = settings.phone || '';
+        const centerAddress = settings.address || '';
+        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>HoaDon_${invoice.id}</title>
+<style>*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
+body{padding:40px;color:#1e293b}
+.header{text-align:center;margin-bottom:24px;border-bottom:2px solid #6366f1;padding-bottom:16px}
+.header h1{font-size:22px;color:#6366f1;margin-bottom:4px}
+.header p{font-size:12px;color:#64748b}
+.section{margin-bottom:20px}
+.section h2{font-size:14px;color:#6366f1;border-bottom:1px solid #e2e8f0;padding-bottom:4px;margin-bottom:10px}
+.row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px}
+.row.border{border-bottom:1px solid #f1f5f9}
+.label{color:#64748b}
+.value{font-weight:600}
+.total-row{display:flex;justify-content:space-between;padding:12px 0;font-size:16px;font-weight:700;color:#6366f1;border-top:2px solid #6366f1;margin-top:8px}
+.details{font-size:12px;color:#64748b;padding:8px 12px;background:#f8fafc;border-radius:6px;white-space:pre-wrap;line-height:1.6}
+.payment-box{margin-top:20px;padding:16px;border:1px solid #fbbf24;background:#fffbeb;border-radius:8px;text-align:center}
+.payment-box h3{color:#92400e;font-size:14px;margin-bottom:8px}
+.payment-box p{font-size:12px;color:#78350f}
+.transfer-content{font-size:16px;font-weight:700;color:#dc2626;font-family:monospace;margin:8px 0}
+.footer{margin-top:32px;text-align:center;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:12px}
+@media print{body{padding:20px}}</style></head>
+<body>
+<div class="header"><h1>${centerName}</h1>
+${centerAddress ? `<p>${centerAddress}</p>` : ''}
+${centerPhone ? `<p>ĐT: ${centerPhone}</p>` : ''}
+<p style="margin-top:8px;font-size:16px;font-weight:700;color:#1e293b">PHIẾU THÔNG BÁO HỌC PHÍ</p></div>
+<div class="section"><h2>Thông tin học viên</h2>
+<div class="row border"><span class="label">Họ tên:</span><span class="value">${student.name}</span></div>
+<div class="row border"><span class="label">Mã HV:</span><span class="value">${student.id}</span></div>
+<div class="row border"><span class="label">Kỳ thanh toán:</span><span class="value">${invoice.month}</span></div>
+<div class="row"><span class="label">Ngày lập:</span><span class="value">${new Date(invoice.generatedDate).toLocaleDateString('vi-VN')}</span></div></div>
+<div class="section"><h2>Chi tiết học phí</h2>
+${od > 0 ? `<div class="row border"><span class="label">Dư nợ kỳ trước</span><span class="value">${formatCurrency(od)}</span></div>` : ''}
+${oc > 0 ? `<div class="row border"><span class="label">Số dư trả trước</span><span class="value" style="color:#16a34a">-${formatCurrency(oc)}</span></div>` : ''}
+<div class="row border"><span class="label">Học phí phát sinh</span><span class="value">${formatCurrency(invoice.amount)}</span></div>
+<div class="details">${invoice.details}</div>
+<div class="total-row"><span>TỔNG THANH TOÁN</span><span>${formatCurrency(td)}</span></div></div>
+${td > 0 && settings.bankAccountNumber ? `<div class="payment-box">
+<h3>Thông tin chuyển khoản</h3>
+<p>Ngân hàng: <strong>${settings.bankName || ''}</strong></p>
+<p>Số TK: <strong>${settings.bankAccountNumber}</strong></p>
+<p>Chủ TK: <strong>${settings.bankAccountHolder || ''}</strong></p>
+<p style="margin-top:8px">Nội dung chuyển khoản:</p>
+<p class="transfer-content">${transferContent}</p></div>` : ''}
+<div class="footer"><p>Phiếu được tạo tự động bởi hệ thống ${centerName}</p></div>
+</body></html>`;
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+            printWindow.document.write(html);
+            printWindow.document.close();
+            printWindow.onload = () => {
+                setTimeout(() => { printWindow.print(); }, 300);
+            };
+        }
+    };
+
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={`Chi tiết Hóa đơn #${invoice.id.slice(-6)}`}>
             {/* Hidden component for image download */}
@@ -209,6 +269,9 @@ export const TuitionFeeNoticeModal: React.FC<TuitionFeeNoticeModalProps> = ({ is
             <div className="flex justify-end gap-4 mt-6 pt-4 border-t dark:border-gray-700">
                 <Button variant="secondary" onClick={onClose}>
                     Đóng
+                </Button>
+                <Button variant="secondary" onClick={handleExportPdf}>
+                    📄 Xuất PDF
                 </Button>
                 <Button onClick={handleDownloadImage} isLoading={isDownloading} disabled={isDownloading}>
                     {ICONS.download} Tải ảnh phiếu

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useData } from '../../hooks/useDataContext';
 import { Student, Class, AttendanceStatus, Announcement, ClassSchedule } from '../../types';
@@ -88,7 +88,7 @@ const ScheduleWidget: React.FC<{ enrolledClasses: Class[] }> = ({ enrolledClasse
 
 export const ParentDashboardScreen: React.FC = () => {
     const { user } = useAuth();
-    const { state } = useData();
+    const { state, markAnnouncementRead } = useData();
     const student = user as Student;
 
     const studentData = useMemo(() => {
@@ -144,6 +144,16 @@ export const ParentDashboardScreen: React.FC = () => {
             })
             .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }, [student, state.classes, state.announcements]);
+
+    // Auto-mark announcements as read
+    useEffect(() => {
+        if (!student?.id || relevantAnnouncements.length === 0) return;
+        relevantAnnouncements.forEach(ann => {
+            if (!ann.readBy?.[student.id]) {
+                markAnnouncementRead({ announcementId: ann.id, userId: student.id }).catch(() => {});
+            }
+        });
+    }, [relevantAnnouncements.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
     if (!student || !studentData) {
         return <div>Đang tải dữ liệu học viên...</div>;

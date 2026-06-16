@@ -271,6 +271,7 @@ export interface Announcement {
     classId?: string; // Used if targetAudience is 'CLASS' or 'SPECIFIC_STUDENTS'
     targetStudentIds?: string[]; // Used if targetAudience is 'SPECIFIC_STUDENTS'
     scheduledFor?: string; // "YYYY-MM-DDTHH:mm"
+    readBy?: Record<string, string>; // { [userId]: readAtTimestamp }
 }
 
 export interface SearchResult {

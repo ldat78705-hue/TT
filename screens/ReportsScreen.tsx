@@ -13,6 +13,7 @@ import { TransactionHistoryReportTab } from '../components/reports/TransactionHi
 import { TaxReportTab } from '../components/reports/TaxReportTab';
 import { PeriodComparisonTab } from '../components/reports/PeriodComparisonTab';
 import { EnrollmentReportContent } from '../components/reports/EnrollmentReportContent';
+import { TeacherPerformanceTab } from '../components/reports/TeacherPerformanceTab';
 
 const toLocalDateString = (date: Date): string => {
     const year = date.getFullYear();
@@ -21,7 +22,7 @@ const toLocalDateString = (date: Date): string => {
     return `${year}-${month}-${day}`;
 };
 
-type ReportTab = 'overview' | 'comparison' | 'attendance' | 'absent' | 'transactions' | 'tax' | 'webhook' | 'enrollment';
+type ReportTab = 'overview' | 'comparison' | 'attendance' | 'absent' | 'transactions' | 'tax' | 'webhook' | 'enrollment' | 'teacher_perf';
 
 import { formatVietnamDate, getVietnamTime } from '../utils/date';
 import { exportFullData } from '../services/api';
@@ -30,7 +31,7 @@ import { useToast } from '../context/ToastContext';
 export const ReportsScreen: React.FC = () => {
     const { state } = useData();
     const { showToast } = useToast();
-    const { students, classes, invoices, income, expenses, attendance, transactions } = state;
+    const { students, teachers, classes, invoices, income, expenses, attendance, transactions } = state;
     
     // State cho khoảng thời gian tùy chỉnh
     const [startDate, setStartDate] = useState(() => {
@@ -503,6 +504,7 @@ export const ReportsScreen: React.FC = () => {
                     <TabButton tabId="transactions">Lịch sử Giao dịch</TabButton>
                     <TabButton tabId="webhook">Thanh toán tự động</TabButton>
                     <TabButton tabId="enrollment">📈 Tuyển sinh</TabButton>
+                    <TabButton tabId="teacher_perf">👨‍🏫 Hiệu suất GV</TabButton>
                     <TabButton tabId="tax">Báo cáo Thuế</TabButton>
                 </nav>
             </div>
@@ -593,6 +595,15 @@ export const ReportsScreen: React.FC = () => {
                 )}
                 {activeTab === 'enrollment' && (
                     <EnrollmentReportContent students={students} />
+                )}
+                {activeTab === 'teacher_perf' && (
+                    <TeacherPerformanceTab
+                        teachers={teachers}
+                        classes={classes}
+                        attendance={attendance}
+                        startDate={startDate}
+                        endDate={endDate}
+                    />
                 )}
             </div>
             

@@ -777,7 +777,8 @@ export default async function handler(req: any, res: any) {
                 'addIncome', 'updateIncome', 'deleteIncome', 
                 'addExpense', 'updateExpense', 'deleteExpense', 
                 'updateTransaction', 'deleteTransaction', 'addAdjustment', 'addAdvancePayment', 'cancelInvoice', 
-                'updateInvoiceStatus', 'generatePayrolls', 'updatePayroll', 'updateUserPassword'
+                'updateInvoiceStatus', 'generatePayrolls', 'updatePayroll', 'updateUserPassword',
+                'markAnnouncementRead'
             ];
             if (!allowedOps.includes(operation.op)) {
                  return res.status(403).send('Từ chối: Kế toán chỉ được thay đổi dữ liệu tài chính');
@@ -789,14 +790,14 @@ export default async function handler(req: any, res: any) {
                 'updateAttendance',
                 'addProgressReport', 'updateProgressReport', 'deleteProgressReport', 'addBulkProgressReports',
                 'addAnnouncement', 'updateAnnouncement', 'deleteAnnouncement',
-                'updateUserPassword', 'addAuditLog'
+                'updateUserPassword', 'addAuditLog', 'markAnnouncementRead'
             ];
             if (!allowedTeacherOps.includes(operation.op)) {
                 return res.status(403).send('Từ chối: Giáo viên không có quyền thực hiện thao tác này');
             }
         }
         if (role === UserRole.PARENT) {
-            const allowedParentOps = ['updateUserPassword', 'updateSingleAttendance'];
+            const allowedParentOps = ['updateUserPassword', 'updateSingleAttendance', 'markAnnouncementRead'];
             if (!allowedParentOps.includes(operation.op)) {
                 return res.status(403).send('Từ chối: Bạn không có quyền sửa đổi dữ liệu');
             }
