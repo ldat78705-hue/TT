@@ -164,6 +164,8 @@ async function patchData(operation: { op: string, payload?: any }): Promise<Omit
 export const addStudent = (payload: { student: Student, classIds: string[] }) => patchData({ op: 'addStudent', payload });
 export const updateStudent = (payload: { originalId: string, updatedStudent: Student, classIds: string[] }) => patchData({ op: 'updateStudent', payload });
 export const deleteStudent = (studentId: string) => patchData({ op: 'deleteStudent', payload: { studentId } });
+export const addStudentNote = (payload: { studentId: string; note: { text: string; createdBy: string } }) => patchData({ op: 'addStudentNote', payload });
+export const deleteStudentNote = (payload: { studentId: string; noteId: string }) => patchData({ op: 'deleteStudentNote', payload });
 
 export const addTeacher = (payload: Teacher) => patchData({ op: 'addTeacher', payload });
 export const updateTeacher = (payload: { originalId: string, updatedTeacher: Teacher }) => patchData({ op: 'updateTeacher', payload });

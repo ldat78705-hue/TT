@@ -12,6 +12,7 @@ import { AbsentStudentsReportTab } from '../components/reports/AbsentStudentsRep
 import { TransactionHistoryReportTab } from '../components/reports/TransactionHistoryReportTab';
 import { TaxReportTab } from '../components/reports/TaxReportTab';
 import { PeriodComparisonTab } from '../components/reports/PeriodComparisonTab';
+import { EnrollmentReportContent } from '../components/reports/EnrollmentReportContent';
 
 const toLocalDateString = (date: Date): string => {
     const year = date.getFullYear();
@@ -20,7 +21,7 @@ const toLocalDateString = (date: Date): string => {
     return `${year}-${month}-${day}`;
 };
 
-type ReportTab = 'overview' | 'comparison' | 'attendance' | 'absent' | 'transactions' | 'tax' | 'webhook';
+type ReportTab = 'overview' | 'comparison' | 'attendance' | 'absent' | 'transactions' | 'tax' | 'webhook' | 'enrollment';
 
 import { formatVietnamDate, getVietnamTime } from '../utils/date';
 import { exportFullData } from '../services/api';
@@ -501,6 +502,7 @@ export const ReportsScreen: React.FC = () => {
                     <TabButton tabId="absent">Học sinh nghỉ học</TabButton>
                     <TabButton tabId="transactions">Lịch sử Giao dịch</TabButton>
                     <TabButton tabId="webhook">Thanh toán tự động</TabButton>
+                    <TabButton tabId="enrollment">📈 Tuyển sinh</TabButton>
                     <TabButton tabId="tax">Báo cáo Thuế</TabButton>
                 </nav>
             </div>
@@ -588,6 +590,9 @@ export const ReportsScreen: React.FC = () => {
                 )}
                 {activeTab === 'tax' && (
                     <TaxReportTab />
+                )}
+                {activeTab === 'enrollment' && (
+                    <EnrollmentReportContent students={students} />
                 )}
             </div>
             

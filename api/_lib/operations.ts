@@ -164,6 +164,27 @@ export function applyOperation(
             data.progressReports = data.progressReports.filter(p => p.studentId !== studentId);
             break;
         }
+        case 'addStudentNote': {
+            const { studentId, note } = payload;
+            const student = data.students.find(s => s.id === studentId);
+            if (!student) throw new Error('Không tìm thấy học viên');
+            if (!student.internalNotes) student.internalNotes = [];
+            student.internalNotes.unshift({
+                id: generateUniqueId('NOTE'),
+                text: note.text,
+                createdAt: getVietnamTime(),
+                createdBy: note.createdBy || 'Admin',
+            });
+            break;
+        }
+        case 'deleteStudentNote': {
+            const { studentId, noteId } = payload;
+            const student = data.students.find(s => s.id === studentId);
+            if (student && student.internalNotes) {
+                student.internalNotes = student.internalNotes.filter(n => n.id !== noteId);
+            }
+            break;
+        }
         
         // TEACHER OPERATIONS
         case 'addTeacher': {

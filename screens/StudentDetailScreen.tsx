@@ -206,7 +206,7 @@ const AttendanceSummaryWidget: React.FC<{
 
 export const StudentDetailScreen: React.FC = () => {
     const { id } = useParams<{ id: string }>();
-    const { state, addAdjustment, updateTransaction, deleteTransaction, updateAttendance, deleteStudent } = useData();
+    const { state, addAdjustment, updateTransaction, deleteTransaction, updateAttendance, deleteStudent, addStudentNote, deleteStudentNote } = useData();
     const { toast } = useToast();
     const { role } = useAuth();
     const navigate = useNavigate();
@@ -219,6 +219,8 @@ export const StudentDetailScreen: React.FC = () => {
     const [attendanceLogModal, setAttendanceLogModal] = useState<{ isOpen: boolean; classId: string | null; className: string | null }>({ isOpen: false, classId: null, className: null });
     const [deleteStudentConfirmOpen, setDeleteStudentConfirmOpen] = useState(false);
     const [statusHistoryModalOpen, setStatusHistoryModalOpen] = useState(false);
+    const [noteText, setNoteText] = useState('');
+    const [isAddingNote, setIsAddingNote] = useState(false);
 
     // Filter State
     const [filterMonth, setFilterMonth] = useState(new Date().getMonth() + 1);
@@ -521,6 +523,7 @@ export const StudentDetailScreen: React.FC = () => {
                         <TabButton tabId="overview">Tổng quan</TabButton>
                         <TabButton tabId="transactions">Lịch sử Giao dịch ({studentTransactions.length})</TabButton>
                         <TabButton tabId="reports">Báo cáo Học tập ({studentProgressReports.length})</TabButton>
+                        {role !== UserRole.PARENT && <TabButton tabId="notes">📝 Ghi chú ({student.internalNotes?.length || 0})</TabButton>}
                     </nav>
                 </div>
 
@@ -715,6 +718,81 @@ export const StudentDetailScreen: React.FC = () => {
                                 />
                             ))}
                          </div>
+                    </div>
+                )}
+
+                {activeTab === 'notes' && role !== UserRole.PARENT && (
+                    <div className="card-base">
+                        <h2 className="text-xl font-semibold mb-4">📝 Ghi chú nội bộ</h2>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Ghi chú chỉ nhân viên trung tâm xem được, phụ huynh không thấy.</p>
+                        
+                        {canManage && (
+                            <form onSubmit={async (e) => {
+                                e.preventDefault();
+                                if (!noteText.trim()) return;
+                                setIsAddingNote(true);
+                                try {
+                                    const session = JSON.parse(localStorage.getItem('educenter_user_session') || '{}');
+                                    await addStudentNote({
+                                        studentId: student.id,
+                                        note: { text: noteText.trim(), createdBy: session.displayName || session.role || 'Staff' }
+                                    });
+                                    setNoteText('');
+                                    toast.success('Đã thêm ghi chú.');
+                                } catch (err) {
+                                    toast.error('Lỗi khi thêm ghi chú.');
+                                } finally {
+                                    setIsAddingNote(false);
+                                }
+                            }} className="mb-6">
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={noteText}
+                                        onChange={e => setNoteText(e.target.value)}
+                                        placeholder="Nhập ghi chú nội bộ..."
+                                        className="form-input flex-1"
+                                        required
+                                    />
+                                    <Button type="submit" disabled={isAddingNote || !noteText.trim()}>
+                                        {isAddingNote ? '...' : '➕ Thêm'}
+                                    </Button>
+                                </div>
+                            </form>
+                        )}
+
+                        {student.internalNotes && student.internalNotes.length > 0 ? (
+                            <div className="space-y-3">
+                                {student.internalNotes.map(note => (
+                                    <div key={note.id} className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/50 rounded-lg">
+                                        <div className="flex-1">
+                                            <p className="text-sm">{note.text}</p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                {note.createdBy} • {formatVietnamDate(note.createdAt)}
+                                            </p>
+                                        </div>
+                                        {canManage && (
+                                            <button
+                                                onClick={async () => {
+                                                    try {
+                                                        await deleteStudentNote({ studentId: student.id, noteId: note.id });
+                                                        toast.success('Đã xóa ghi chú.');
+                                                    } catch (err) {
+                                                        toast.error('Lỗi khi xóa ghi chú.');
+                                                    }
+                                                }}
+                                                className="text-red-500 hover:text-red-700 text-sm flex-shrink-0"
+                                                title="Xóa ghi chú"
+                                            >
+                                                {ICONS.delete}
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-gray-500 text-center py-8">Chưa có ghi chú nội bộ nào.</p>
+                        )}
                     </div>
                 )}
 

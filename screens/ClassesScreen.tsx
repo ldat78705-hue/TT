@@ -258,6 +258,10 @@ const ClassForm: React.FC<{
                         <input type="date" name="endDate" value={formData.endDate || ''} onChange={handleChange} className="form-input mt-1" />
                     </div>
                     <div>
+                        <label className="block text-sm font-medium">Sĩ số tối đa</label>
+                        <input type="number" name="capacity" min="0" value={formData.capacity || ''} onChange={e => setFormData(prev => ({ ...prev, capacity: e.target.value ? Number(e.target.value) : undefined }))} className="form-input mt-1" placeholder="Không giới hạn" />
+                    </div>
+                    <div>
                         <label className="block text-sm font-medium">Giáo viên <span className="text-red-500">*</span></label>
                         <TeacherSelector
                             teachers={teachers}
@@ -381,6 +385,18 @@ export const ClassesScreen: React.FC = () => {
             const student = students.find(s => s.id === id);
             return student && student.status === PersonStatus.ACTIVE;
         }).length;
+    };
+
+    const getCapacityDisplay = (cls: Class) => {
+        const count = getActiveStudentCount(cls.studentIds);
+        if (!cls.capacity) return <span>{count}</span>;
+        const isFull = count >= cls.capacity;
+        const isNearFull = count >= cls.capacity * 0.8;
+        return (
+            <span className={isFull ? 'text-red-600 dark:text-red-400 font-bold' : isNearFull ? 'text-amber-600 dark:text-amber-400 font-semibold' : ''}>
+                {count}/{cls.capacity}{isFull ? ' ⚠️ Đầy' : ''}
+            </span>
+        );
     };
 
     const userClasses = useMemo(() => role === UserRole.TEACHER
@@ -525,7 +541,7 @@ export const ClassesScreen: React.FC = () => {
                                     </div>
                                     <p className="font-semibold">{cls.subject}</p>
                                     <p className="text-gray-500 dark:text-gray-400 mt-2">GV: {getTeacherNames(cls.teacherIds)}</p>
-                                    <p className="text-gray-500 dark:text-gray-400">Sĩ số: {getActiveStudentCount(cls.studentIds)}</p>
+                                    <p className="text-gray-500 dark:text-gray-400">Sĩ số: {getCapacityDisplay(cls)}</p>
                                     <div className="mt-2 text-sm text-gray-600 dark:text-gray-300">
                                         {(cls.schedule || []).map((s, i) => (
                                             <div key={i}>{`${dayMap[s.dayOfWeek]}: ${s.startTime} - ${s.endTime}`}</div>
@@ -566,7 +582,7 @@ export const ClassesScreen: React.FC = () => {
                                     { label: "Mã Lớp", value: cls.id },
                                     { label: "Môn", value: cls.subject },
                                     { label: "Trạng thái", value: getStatusBadge(cls) },
-                                    { label: "Sĩ số", value: getActiveStudentCount(cls.studentIds) },
+                                    { label: "Sĩ số", value: getCapacityDisplay(cls) },
                                     { label: "GV", value: getTeacherNames(cls.teacherIds) },
                                 ]}
                                 actions={

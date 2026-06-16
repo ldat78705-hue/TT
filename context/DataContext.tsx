@@ -53,6 +53,8 @@ interface DataContextType {
     addStudent: (payload: { student: Student, classIds: string[] }) => Promise<void>;
     updateStudent: (payload: { originalId: string, updatedStudent: Student, classIds: string[] }) => Promise<void>;
     deleteStudent: (studentId: string) => Promise<void>;
+    addStudentNote: (payload: { studentId: string; note: { text: string; createdBy: string } }) => Promise<void>;
+    deleteStudentNote: (payload: { studentId: string; noteId: string }) => Promise<void>;
     addTeacher: (data: Teacher) => Promise<void>;
     updateTeacher: (payload: { originalId: string, updatedTeacher: Teacher }) => Promise<void>;
     deleteTeacher: (teacherId: string) => Promise<void>;
@@ -186,6 +188,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     addStudent: handleStateUpdateOperation(api.addStudent, 'addStudent'),
     updateStudent: handleStateUpdateOperation(api.updateStudent, 'updateStudent'),
     deleteStudent: handleStateUpdateOperation(api.deleteStudent, 'deleteStudent'),
+    addStudentNote: handleStateUpdateOperation(api.addStudentNote, 'addStudentNote'),
+    deleteStudentNote: handleStateUpdateOperation(api.deleteStudentNote, 'deleteStudentNote'),
     
     addTeacher: handleStateUpdateOperation(api.addTeacher, 'addTeacher'),
     updateTeacher: handleStateUpdateOperation(api.updateTeacher, 'updateTeacher'),
