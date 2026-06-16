@@ -1,7 +1,8 @@
 # EduCenter Pro — Tài liệu Kỹ thuật Toàn diện
 
-> **Phiên bản**: 1.0.0 | **Cập nhật**: 17/06/2026  
-> **Tech Stack**: React 18 + TypeScript + Express + Firestore + Vite + TailwindCSS  
+> **Phiên bản**: 2.7 | **Cập nhật**: 17/06/2026  
+> **Web Stack**: React 18 + TypeScript + Express + Firestore + Vite + TailwindCSS  
+> **Android Stack**: Kotlin + Jetpack Compose + Hilt + Room + Retrofit  
 > **Repo**: `https://github.com/ldat78705-hue/TT.git` | Branch: `main`
 
 ---
@@ -21,6 +22,7 @@
 12. [Lệnh phát triển](#12-lệnh-phát-triển)
 13. [Biến môi trường](#13-biến-môi-trường)
 14. [Lưu ý khi nâng cấp](#14-lưu-ý-quan-trọng-khi-nâng-cấp)
+15. [Android App](#15-android-app)
 
 ---
 
@@ -490,4 +492,191 @@ npm start                   # Run production (node dist/server.cjs)
 
 ---
 
-> **Tạo bởi**: Antigravity AI Assistant | **Dự án**: EduCenter Pro v1.0.0
+## 15. Android App
+
+### Tổng quan
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Android App (Kotlin)                       │
+│  Jetpack Compose + Material3 + Hilt DI + Room + Retrofit     │
+│  17 screens, 6 roles, offline-first, auto-update             │
+└──────────────────────┬──────────────────────────────────────┘
+                       │ HTTPS (Retrofit + OkHttp)
+                       │ Bearer Token (JWT)
+┌──────────────────────▼──────────────────────────────────────┐
+│              Express Server (server.ts)                      │
+│  Base URL: https://tt.thaydat.edu.vn/                        │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### Cấu trúc thư mục Android
+
+```
+android/app/src/main/java/com/educenter/pro/
+├── di/                          # Hilt Dependency Injection
+│   └── AppModule.kt             # Room, EncryptedPrefs, OkHttp, Retrofit
+│
+├── data/
+│   ├── model/
+│   │   └── Models.kt            # Data classes (Student, Teacher, Class, etc.)
+│   ├── remote/
+│   │   ├── ApiService.kt        # Retrofit interface (login, getData, executeOp)
+│   │   └── GitHubApiService.kt  # GitHub Releases API (auto-update)
+│   ├── local/
+│   │   ├── AppDatabase.kt       # Room database (version 2)
+│   │   ├── ShardDao.kt          # Cache dao (app_data JSON)
+│   │   ├── ShardEntity.kt       # Cache entity
+│   │   ├── PendingOperationDao.kt   # Offline queue dao
+│   │   └── PendingOperationEntity.kt # Offline queue entity
+│   └── repository/
+│       └── DataRepository.kt    # ⭐ Central data layer (~571 dòng)
+│
+├── ui/
+│   ├── theme/                   # Material3 theming
+│   │   ├── Color.kt             # Color palette definitions
+│   │   ├── Theme.kt             # Light/Dark themes
+│   │   ├── Type.kt              # Typography
+│   │   ├── ThemeManager.kt      # Dark mode toggle persistence
+│   │   └── AppColors.kt         # App-wide color tokens
+│   ├── components/              # Shared composables
+│   │   ├── PullRefreshWrapper.kt    # Pull-to-refresh wrapper
+│   │   ├── ShimmerEffect.kt         # Loading skeletons
+│   │   └── AppSearchBar.kt          # Search bar component
+│   ├── navigation/
+│   │   └── AppNavigation.kt    # ⭐ Nav graph + Bottom nav + MoreScreen
+│   └── screens/
+│       ├── splash/              # SplashScreen + SplashViewModel
+│       ├── login/               # LoginScreen + LoginViewModel (biometric)
+│       ├── dashboard/           # DashboardScreen + DashboardViewModel
+│       ├── attendance/          # AttendanceScreen + AttendanceViewModel (1155 dòng)
+│       ├── qrscanner/           # QRScannerScreen + QRScannerViewModel (CameraX + ML Kit)
+│       ├── finance/             # FinanceScreen + FinanceViewModel
+│       ├── staff/               # StaffScreen + StaffViewModel
+│       ├── profile/             # ProfileScreen + ProfileViewModel
+│       ├── parent/              # 5 files: Dashboard, Attendance, Finance, Reports, ViewModel
+│       ├── announcements/       # AnnouncementsScreen + ViewModel
+│       └── students/            # StudentsScreen + ViewModel
+│
+├── sync/
+│   └── SyncWorker.kt            # WorkManager background sync (mỗi 30 phút)
+│
+├── update/
+│   ├── AppUpdateManager.kt      # GitHub Releases checker + APK installer
+│   └── UpdateDialog.kt          # Update notification dialog
+│
+└── EduCenterProApplication.kt   # Application class (Hilt entry point)
+```
+
+### Dependencies chính (build.gradle.kts)
+
+| Library | Version | Mục đích |
+|---------|---------|----------|
+| Compose BOM | 2024.02.02 | UI framework |
+| Material3 | BOM | Design system |
+| Hilt | 2.48 | Dependency Injection |
+| Room | 2.6.1 | Local database (offline cache) |
+| Retrofit | 2.9.0 | HTTP client |
+| OkHttp | 4.12.0 | HTTP + interceptors |
+| CameraX | 1.3.1 | Camera preview |
+| ML Kit | 17.2.0 | QR code scanning |
+| Firebase | BOM 32.7.2 | Push notifications |
+| WorkManager | 2.9.0 | Background sync |
+| Biometric | 1.1.0 | Fingerprint login |
+| Security-Crypto | 1.1.0 | Encrypted SharedPreferences |
+
+### Luồng dữ liệu Android
+
+```
+┌──────────┐    ┌──────────────┐    ┌─────────────┐    ┌──────────┐
+│  Screen  │───▶│  ViewModel   │───▶│ DataRepository│───▶│ Retrofit │
+│ Compose  │    │  StateFlow   │    │   (central)   │    │  API     │
+└──────────┘    └──────────────┘    └───────┬───────┘    └──────────┘
+                                           │
+                              ┌────────────┼────────────┐
+                              │            │            │
+                        ┌─────▼─────┐ ┌────▼────┐ ┌────▼─────────┐
+                        │ Room DB   │ │ OkHttp  │ │ PendingOpDao │
+                        │ (cache)   │ │ (ETag)  │ │ (offline Q)  │
+                        └───────────┘ └─────────┘ └──────────────┘
+```
+
+1. **Online**: Screen → ViewModel → DataRepository → Retrofit → Server → Update Room cache
+2. **Offline fallback**: DataRepository → Queue vào PendingOperationDao → SyncWorker sync khi có mạng
+3. **Cache**: OkHttp interceptor tự gửi `If-None-Match` ETag → 304 = dùng cache
+
+### Bảo mật Android
+
+| Hạng mục | Triển khai | File |
+|----------|-----------|------|
+| Token storage | EncryptedSharedPreferences (AES256-GCM) | `AppModule.kt` |
+| Biometric creds | EncryptedSharedPreferences | `LoginScreen.kt` |
+| Network | Bearer token auto-attach via OkHttp interceptor | `AppModule.kt` |
+| API base URL | Hard-coded production URL | `AppModule.kt` |
+| APK signing | educenter-release.keystore | CI workflow |
+
+### 17 Screens Android
+
+| Screen | Vai trò | Mô tả |
+|--------|---------|-------|
+| Splash | All | Animation + auto-login check |
+| Login | Public | Email/password + biometric fingerprint |
+| Dashboard | Admin, Manager, Viewer | Tổng quan: học viên, tài chính, lớp học |
+| Attendance | Admin, Manager, Teacher | Điểm danh theo ngày, lịch, batch save |
+| QR Scanner | Admin, Manager, Teacher | CameraX + ML Kit QR → auto attendance |
+| Students | Admin, Manager | Danh sách + CRUD học viên |
+| Finance | Admin, Manager, Accountant | Hóa đơn, thu chi, payroll |
+| Staff | Admin | Quản lý nhân viên (MANAGER/ACCOUNTANT) |
+| Profile | All | Thông tin user, sync, dark mode, logout |
+| Announcements | Admin, Manager, Teacher | Thông báo CRUD |
+| Parent Dashboard | Parent | Tổng quan con em |
+| Parent Attendance | Parent | Lịch chuyên cần con |
+| Parent Finance | Parent | Học phí, VietQR, hóa đơn |
+| Parent Reports | Parent | Nhận xét giáo viên, tiến bộ |
+| More | All | Đổi mật khẩu, phiên bản, cập nhật |
+| Update Dialog | All | Check GitHub Releases + download APK |
+| Transactions | Admin, Manager, Accountant | Lịch sử giao dịch |
+
+### Auto-update cơ chế
+
+```
+App start → AppUpdateManager.checkForUpdate()
+  → GitHub API: GET /repos/ldat78705-hue/TT/releases/latest
+  → Compare normalizeVersion(remote) > normalizeVersion(current)
+  → If update available → Show UpdateDialog
+  → User clicks "Download" → DownloadManager → FileProvider → Install APK
+```
+
+### CI/CD Android (`.github/workflows/build-apk.yml`)
+
+Trigger: push to `main` → GitHub Actions:
+1. Setup JDK 17 + Android SDK
+2. `./gradlew assembleRelease`
+3. Rename APK → `EduCenterPro-v{version}.apk`
+4. Create GitHub Release with APK attached
+5. App tự phát hiện bản mới → dialog cập nhật
+
+### Lưu ý khi nâng cấp Android
+
+#### ⚠️ KHÔNG được làm
+1. **KHÔNG đổi `applicationId`** (`com.educenter.pro`) — sẽ thành app mới, user mất data
+2. **KHÔNG đổi Room schema** mà không tăng `version` + thêm migration — app crash
+3. **KHÔNG xóa `passthrough()` trong Zod schemas** — Android gửi extra fields sẽ bị reject
+
+#### ✅ An toàn khi nâng cấp
+1. **Thêm screen mới**: Tạo `ui/screens/{name}/`, thêm route trong `AppNavigation.kt`
+2. **Thêm API operation**: Thêm hàm trong `DataRepository.kt`, gọi từ ViewModel
+3. **Thêm field mới**: Thêm vào Model với `= ""` default → Gson tự bỏ qua nếu server không gửi
+4. **Bump version**: Tăng `versionCode` + `versionName` trong `app/build.gradle.kts`
+5. **Thêm dependency**: Thêm vào `app/build.gradle.kts`, inject qua `AppModule.kt`
+
+#### 🔑 Files quan trọng nhất (Android)
+1. `data/model/Models.kt` — Cấu trúc dữ liệu Android
+2. `data/repository/DataRepository.kt` — Toàn bộ business logic
+3. `ui/navigation/AppNavigation.kt` — Routing + phân quyền
+4. `di/AppModule.kt` — DI configuration (API URL, Room, Auth)
+5. `app/build.gradle.kts` — Dependencies + version
+
+---
+
+> **Tạo bởi**: Antigravity AI Assistant | **Dự án**: EduCenter Pro v2.7 | **Cập nhật**: 17/06/2026
