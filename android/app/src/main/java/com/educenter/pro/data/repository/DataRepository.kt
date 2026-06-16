@@ -436,7 +436,9 @@ class DataRepository @Inject constructor(
 
     suspend fun addStaff(name: String, email: String, role: String, password: String) = withContext(Dispatchers.IO) {
         try {
-            val payload = mapOf("name" to name, "email" to email, "role" to role, "password" to password)
+            // Server expects payload.id — generate from name
+            val id = name.trim().uppercase().replace(" ", "_")
+            val payload = mapOf("id" to id, "name" to name, "email" to email, "role" to role, "password" to password, "phone" to "", "status" to "ACTIVE")
             val updatedData = apiService.executeOperation(OperationPayload("addStaff", payload))
             saveAndCache(updatedData)
         } catch (e: Exception) { e.printStackTrace(); throw e }
@@ -444,7 +446,9 @@ class DataRepository @Inject constructor(
 
     suspend fun updateStaff(originalId: String, name: String, email: String, role: String, password: String) = withContext(Dispatchers.IO) {
         try {
-            val payload = mapOf("originalId" to originalId, "name" to name, "email" to email, "role" to role, "password" to password)
+            // Server expects { originalId, updatedStaff: { id, name, ... } }
+            val updatedStaff = mapOf("id" to originalId, "name" to name, "email" to email, "role" to role, "password" to password, "phone" to "", "status" to "ACTIVE")
+            val payload = mapOf("originalId" to originalId, "updatedStaff" to updatedStaff)
             val updatedData = apiService.executeOperation(OperationPayload("updateStaff", payload))
             saveAndCache(updatedData)
         } catch (e: Exception) { e.printStackTrace(); throw e }
@@ -497,10 +501,11 @@ class DataRepository @Inject constructor(
                 }
             }
 
-            // Map role to the format expected by the server
+            // Map role to the format expected by the server Zod schema
+            // Server accepts: ADMIN, TEACHER, MANAGER, ACCOUNTANT, PARENT, VIEWER
             val roleStr = when (role) {
                 com.educenter.pro.data.model.UserRole.TEACHER -> "TEACHER"
-                com.educenter.pro.data.model.UserRole.PARENT -> "STUDENT"
+                com.educenter.pro.data.model.UserRole.PARENT -> "PARENT"
                 else -> role.name
             }
 

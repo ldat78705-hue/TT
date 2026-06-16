@@ -61,15 +61,15 @@ fun LoginScreen(
     LaunchedEffect(Unit) {
         val biometricManager = BiometricManager.from(context)
         val canAuth = biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK)
-        val hasSavedCreds = context.getSharedPreferences("educenter_biometric", android.content.Context.MODE_PRIVATE)
+        val hasSavedCreds = getEncryptedBiometricPrefs(context)
             .getBoolean("biometric_enabled", false)
         showBiometricButton = canAuth == BiometricManager.BIOMETRIC_SUCCESS && hasSavedCreds
     }
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
-            // Save credentials for biometric login on next time
-            val prefs = context.getSharedPreferences("educenter_biometric", android.content.Context.MODE_PRIVATE)
+            // Save credentials for biometric login on next time (encrypted)
+            val prefs = getEncryptedBiometricPrefs(context)
             prefs.edit()
                 .putBoolean("biometric_enabled", true)
                 .putString("saved_email", uiState.email)
@@ -319,9 +319,9 @@ fun LoginScreen(
                                 val biometricPrompt = BiometricPrompt(activity, executor,
                                     object : BiometricPrompt.AuthenticationCallback() {
                                         override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                                            val prefs = context.getSharedPreferences("educenter_biometric", android.content.Context.MODE_PRIVATE)
-                                            val savedEmail = prefs.getString("saved_email", "") ?: ""
-                                            val savedPassword = prefs.getString("saved_password", "") ?: ""
+                                             val prefs = getEncryptedBiometricPrefs(context)
+                                             val savedEmail = prefs.getString("saved_email", "") ?: ""
+                                             val savedPassword = prefs.getString("saved_password", "") ?: ""
                                             if (savedEmail.isNotEmpty() && savedPassword.isNotEmpty()) {
                                                 viewModel.onEmailChange(savedEmail)
                                                 viewModel.onPasswordChange(savedPassword)
@@ -378,5 +378,25 @@ fun LoginScreen(
                 modifier = Modifier.padding(bottom = 24.dp)
             )
         }
+    }
+}
+
+/**
+ * Encrypted SharedPreferences for biometric credential storage.
+ * Falls back to regular prefs if encryption fails (e.g., old devices).
+ */
+private fun getEncryptedBiometricPrefs(context: android.content.Context): android.content.SharedPreferences {
+    return try {
+        androidx.security.crypto.EncryptedSharedPreferences.create(
+            "educenter_biometric_secure",
+            androidx.security.crypto.MasterKeys.getOrCreate(
+                androidx.security.crypto.MasterKeys.AES256_GCM_SPEC
+            ),
+            context,
+            androidx.security.crypto.EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            androidx.security.crypto.EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
+    } catch (e: Exception) {
+        context.getSharedPreferences("educenter_biometric", android.content.Context.MODE_PRIVATE)
     }
 }

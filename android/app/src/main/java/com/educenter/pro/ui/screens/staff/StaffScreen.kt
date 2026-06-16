@@ -183,9 +183,9 @@ private fun AddStaffDialog(
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var selectedRole by remember { mutableStateOf("VIEWER") }
+    var selectedRole by remember { mutableStateOf("MANAGER") }
 
-    val roles = listOf("ADMIN" to "Quản trị", "MANAGER" to "Quản lý", "ACCOUNTANT" to "Kế toán", "VIEWER" to "Xem")
+    val roles = listOf("MANAGER" to "Quản lý", "ACCOUNTANT" to "Kế toán")
 
     AlertDialog(
         onDismissRequest = onDismiss,
