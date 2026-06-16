@@ -5,7 +5,7 @@ import { verifyToken } from './_lib/jwt.js';
 import { UserRole } from '../types.js';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, doc, getDoc, getDocs, collection, writeBatch, onSnapshot, runTransaction } from 'firebase/firestore';
-import { hashPassword } from './_lib/crypto.js';
+import { hashPassword, verifyPassword } from './_lib/crypto.js';
 import { authenticateServer } from './_lib/serverAuth.js';
 import { validateOperation } from './_lib/validation.js';
 import fs from 'fs';
@@ -1005,6 +1005,43 @@ export default async function handler(req: any, res: any) {
                     return res.status(403).send('Từ chối: Bạn chỉ có thể thay đổi mật khẩu của chính mình');
                 }
             }
+            
+            // Server-side currentPassword verification (bcrypt-aware)
+            // operations.ts only does plain string compare which breaks with bcrypt hashes
+            if (operation.payload.currentPassword) {
+                const { userId, role: pwRole, currentPassword: inputCurrent } = operation.payload;
+                let storedPassword: string | null = null;
+                
+                // Load current data to check stored password
+                const pwCheckData = await getSplitData(centerId);
+                
+                if (pwRole === UserRole.ADMIN) {
+                    storedPassword = pwCheckData.settings?.adminPassword || '123456';
+                } else {
+                    let userList: any[] = [];
+                    if (pwRole === UserRole.PARENT) userList = pwCheckData.students;
+                    else if (pwRole === UserRole.TEACHER) userList = pwCheckData.teachers;
+                    else if (pwRole === UserRole.MANAGER || pwRole === UserRole.ACCOUNTANT) userList = pwCheckData.staff;
+                    
+                    const targetUser = userList.find((u: any) => u.id === userId);
+                    if (targetUser) {
+                        const dobPwd = targetUser.dob ? targetUser.dob.split('-').reverse().join('') : null;
+                        storedPassword = targetUser.password || dobPwd;
+                    }
+                }
+                
+                if (storedPassword) {
+                    // Support bcrypt, SHA-256, and plaintext passwords
+                    const isValid = inputCurrent === storedPassword || verifyPassword(inputCurrent, storedPassword);
+                    if (!isValid) {
+                        return res.status(400).send('Mật khẩu hiện tại không đúng.');
+                    }
+                }
+                
+                // Clear currentPassword so operations.ts skips its own (broken) plain-string check
+                delete operation.payload.currentPassword;
+            }
+            
             if (operation.payload.newPassword) {
                 operation.payload.newPassword = hashPassword(operation.payload.newPassword);
             }

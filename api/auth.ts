@@ -2,7 +2,7 @@ import { signToken } from './_lib/jwt.js';
 import { UserRole } from '../types.js';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, doc, getDoc, getDocs, collection } from 'firebase/firestore';
-import { hashPassword, verifyPassword } from './_lib/crypto.js';
+import { verifyPassword } from './_lib/crypto.js';
 import { authenticateServer } from './_lib/serverAuth.js';
 import fs from 'fs';
 import path from 'path';
@@ -124,7 +124,7 @@ export default async function handler(req: any, res: any) {
         }
 
         await authenticateServer();
-        const hashedInputPassword = hashPassword(password);
+        // Note: verifyPassword() handles hash comparison internally, no pre-hash needed
 
         // Step 0: Check if identifier matches a center's loginUsername
         let effectiveCenterId = centerId || null;
@@ -193,7 +193,7 @@ export default async function handler(req: any, res: any) {
                 const cId = docSnap.id;
                 try {
                     const authData = await getAuthData(cId);
-                    const result = tryAuthInData(authData, identifier, password, hashedInputPassword);
+                    const result = tryAuthInData(authData, identifier, password, '');
                     if (result) {
                         const token = await signToken({
                             userId: result.user.id,
@@ -229,7 +229,7 @@ export default async function handler(req: any, res: any) {
         }
 
         const data = await getAuthData(effectiveCenterId || '_legacy');
-        const result = tryAuthInData(data, identifier, password, hashedInputPassword);
+        const result = tryAuthInData(data, identifier, password, '');
 
         if (result) {
             const token = await signToken({
