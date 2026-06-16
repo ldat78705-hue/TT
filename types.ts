@@ -85,6 +85,12 @@ export interface ClassSchedule {
   roomId?: string; // Optional room assignment
 }
 
+export enum ClassStatus {
+  ACTIVE = 'ACTIVE',
+  PAUSED = 'PAUSED',
+  ENDED = 'ENDED',
+}
+
 export interface Class {
   id: string;
   name: string;
@@ -93,6 +99,9 @@ export interface Class {
   schedule: ClassSchedule[];
   studentIds: string[];
   fee: ClassFee;
+  classStatus?: ClassStatus;
+  startDate?: string; // "YYYY-MM-DD"
+  endDate?: string;   // "YYYY-MM-DD"
 }
 
 export interface AttendanceRecord {

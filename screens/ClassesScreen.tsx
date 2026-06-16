@@ -6,7 +6,7 @@ import { useToast } from '../hooks/useToast';
 import { Button } from '../components/common/Button';
 import { Modal } from '../components/common/Modal';
 import { ICONS } from '../constants';
-import { Class, UserRole, FeeType, ClassSchedule, Teacher, Student, Room, PersonStatus } from '../types';
+import { Class, UserRole, FeeType, ClassSchedule, Teacher, Student, Room, PersonStatus, ClassStatus } from '../types';
 import { CurrencyInput } from '../components/common/CurrencyInput';
 import { ConfirmationModal } from '../components/common/ConfirmationModal';
 import { ListItemCard } from '../components/common/ListItemCard';
@@ -140,7 +140,7 @@ const ClassForm: React.FC<{
 
     const initialSchedule: ClassSchedule = { dayOfWeek: 'Monday', startTime: '18:00', endTime: '19:30' };
     const [formData, setFormData] = useState<Class>(() => {
-        const defaults = {
+        const defaults: Class = {
             id: '',
             name: '',
             subject: '',
@@ -148,6 +148,9 @@ const ClassForm: React.FC<{
             studentIds: [],
             fee: { type: FeeType.MONTHLY, amount: 0 },
             schedule: [initialSchedule],
+            classStatus: ClassStatus.ACTIVE,
+            startDate: '',
+            endDate: '',
         };
         const { studentIds, teacherIds, ...restCls } = cls || {};
         return { ...defaults, ...restCls, studentIds: studentIds || [], teacherIds: teacherIds || [] };
@@ -237,6 +240,22 @@ const ClassForm: React.FC<{
                     <div>
                         <label className="block text-sm font-medium">Môn học</label>
                         <input type="text" name="subject" value={formData.subject} onChange={handleChange} className="form-input mt-1" required />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium">Trạng thái lớp</label>
+                        <select name="classStatus" value={formData.classStatus || ClassStatus.ACTIVE} onChange={e => setFormData(prev => ({ ...prev, classStatus: e.target.value as ClassStatus }))} className="form-select mt-1">
+                            <option value={ClassStatus.ACTIVE}>🟢 Đang mở</option>
+                            <option value={ClassStatus.PAUSED}>🟡 Tạm dừng</option>
+                            <option value={ClassStatus.ENDED}>🔴 Đã kết thúc</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium">Ngày bắt đầu</label>
+                        <input type="date" name="startDate" value={formData.startDate || ''} onChange={handleChange} className="form-input mt-1" />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium">Ngày kết thúc</label>
+                        <input type="date" name="endDate" value={formData.endDate || ''} onChange={handleChange} className="form-input mt-1" />
                     </div>
                     <div>
                         <label className="block text-sm font-medium">Giáo viên <span className="text-red-500">*</span></label>
@@ -331,6 +350,7 @@ export const ClassesScreen: React.FC = () => {
     const [editingClass, setEditingClass] = useState<Class | undefined>(undefined);
     const [confirmModalState, setConfirmModalState] = useState<{ isOpen: boolean; class: Class | null }>({ isOpen: false, class: null });
     const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState<'ALL' | ClassStatus>('ALL');
 
     const canManage = role === UserRole.ADMIN || role === UserRole.MANAGER;
     const canDoAttendance = role === UserRole.ADMIN || role === UserRole.MANAGER || role === UserRole.TEACHER;
@@ -368,13 +388,30 @@ export const ClassesScreen: React.FC = () => {
         : classes, [classes, role, user]);
 
     const filteredClasses = useMemo(() => {
-        if (!searchQuery.trim()) return userClasses;
-        const queryWords = searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
-        return userClasses.filter(c => {
-            const searchableText = `${c.id} ${c.name} ${c.subject} ${getTeacherNames(c.teacherIds)}`.toLowerCase();
-            return queryWords.every(word => searchableText.includes(word));
-        });
-    }, [userClasses, searchQuery, teachers]);
+        let result = userClasses;
+        // Filter by status
+        if (statusFilter !== 'ALL') {
+            result = result.filter(c => (c.classStatus || ClassStatus.ACTIVE) === statusFilter);
+        }
+        // Filter by search query
+        if (searchQuery.trim()) {
+            const queryWords = searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
+            result = result.filter(c => {
+                const searchableText = `${c.id} ${c.name} ${c.subject} ${getTeacherNames(c.teacherIds)}`.toLowerCase();
+                return queryWords.every(word => searchableText.includes(word));
+            });
+        }
+        return result;
+    }, [userClasses, searchQuery, statusFilter, teachers]);
+
+    const getStatusBadge = (cls: Class) => {
+        const status = cls.classStatus || ClassStatus.ACTIVE;
+        switch (status) {
+            case ClassStatus.ACTIVE: return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">🟢 Đang mở</span>;
+            case ClassStatus.PAUSED: return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">🟡 Tạm dừng</span>;
+            case ClassStatus.ENDED: return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">🔴 Đã kết thúc</span>;
+        }
+    };
     
     const handleCloseModal = () => {
         setEditingClass(undefined);
@@ -447,14 +484,24 @@ export const ClassesScreen: React.FC = () => {
                     </div>
                 )}
             </div>
-             <div className="card-base p-4">
+             <div className="card-base p-4 flex flex-col sm:flex-row gap-3">
                 <input 
                     type="text" 
                     placeholder="Tìm kiếm lớp học (mã, tên, môn, giáo viên)..." 
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
-                    className="form-input w-full"
+                    className="form-input flex-1"
                 />
+                <select
+                    value={statusFilter}
+                    onChange={e => setStatusFilter(e.target.value as any)}
+                    className="form-select w-full sm:w-44"
+                >
+                    <option value="ALL">Tất cả trạng thái</option>
+                    <option value={ClassStatus.ACTIVE}>🟢 Đang mở</option>
+                    <option value={ClassStatus.PAUSED}>🟡 Tạm dừng</option>
+                    <option value={ClassStatus.ENDED}>🔴 Đã kết thúc</option>
+                </select>
             </div>
             
             {filteredClasses.length === 0 ? (
@@ -472,7 +519,10 @@ export const ClassesScreen: React.FC = () => {
                                     <h2 className="text-xl font-bold text-primary">
                                         <Link to={`/class/${cls.id}`} className="hover:underline">{cls.name}</Link>
                                     </h2>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">ID: {cls.id}</p>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">ID: {cls.id}</p>
+                                        {getStatusBadge(cls)}
+                                    </div>
                                     <p className="font-semibold">{cls.subject}</p>
                                     <p className="text-gray-500 dark:text-gray-400 mt-2">GV: {getTeacherNames(cls.teacherIds)}</p>
                                     <p className="text-gray-500 dark:text-gray-400">Sĩ số: {getActiveStudentCount(cls.studentIds)}</p>
@@ -515,6 +565,7 @@ export const ClassesScreen: React.FC = () => {
                                 details={[
                                     { label: "Mã Lớp", value: cls.id },
                                     { label: "Môn", value: cls.subject },
+                                    { label: "Trạng thái", value: getStatusBadge(cls) },
                                     { label: "Sĩ số", value: getActiveStudentCount(cls.studentIds) },
                                     { label: "GV", value: getTeacherNames(cls.teacherIds) },
                                 ]}

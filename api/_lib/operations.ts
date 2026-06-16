@@ -358,6 +358,24 @@ export function applyOperation(
                     teacherIds: currentTeacherIds
                 });
             }
+
+            // Auto-notify teachers when parent submits leave request
+            if (status === 'EXCUSED_ABSENT' && note && note.startsWith('PHHS xin phép')) {
+                const cls = data.classes.find(c => c.id === classId);
+                const student = data.students.find(s => s.id === studentId);
+                if (cls && student) {
+                    const dateFormatted = date.split('-').reverse().join('/');
+                    data.announcements.unshift({
+                        id: generateUniqueId('ANN'),
+                        title: `📝 Xin nghỉ phép: ${student.name}`,
+                        content: `PH của học viên ${student.name} (${studentId}) xin phép nghỉ lớp ${cls.name} ngày ${dateFormatted}.\nLý do: ${note.replace('PHHS xin phép: ', '')}`,
+                        createdAt: getVietnamTime(),
+                        createdBy: 'Hệ thống',
+                        targetAudience: 'TEACHERS' as any,
+                        classId: classId,
+                    });
+                }
+            }
             break;
         }
         case 'deleteAttendanceForDate': {
