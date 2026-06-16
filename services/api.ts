@@ -166,6 +166,7 @@ export const updateStudent = (payload: { originalId: string, updatedStudent: Stu
 export const deleteStudent = (studentId: string) => patchData({ op: 'deleteStudent', payload: { studentId } });
 export const addStudentNote = (payload: { studentId: string; note: { text: string; createdBy: string } }) => patchData({ op: 'addStudentNote', payload });
 export const deleteStudentNote = (payload: { studentId: string; noteId: string }) => patchData({ op: 'deleteStudentNote', payload });
+export const updateStudentTags = (payload: { studentId: string; tags: string[] }) => patchData({ op: 'updateStudentTags', payload });
 
 export const addTeacher = (payload: Teacher) => patchData({ op: 'addTeacher', payload });
 export const updateTeacher = (payload: { originalId: string, updatedTeacher: Teacher }) => patchData({ op: 'updateTeacher', payload });

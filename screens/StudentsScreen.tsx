@@ -363,7 +363,10 @@ export const StudentsScreen: React.FC = () => {
                 return queryWords.every(word => normalizedClassName.includes(word));
             });
 
-            return nameScore > 0 || phoneMatch || idMatch || classMatch;
+            // Check tags
+            const tagMatch = (s.tags || []).some(tag => removeAccents(tag.toLowerCase()).includes(normalizedQuery));
+
+            return nameScore > 0 || phoneMatch || idMatch || classMatch || tagMatch;
         });
     }, [state.students, state.classes, searchQuery, classFilter]);
     
@@ -481,9 +484,20 @@ export const StudentsScreen: React.FC = () => {
         { 
             header: 'Họ tên', 
             accessor: (item: Student) => (
-                <Link to={`/student/${item.id}`} className="text-primary dark:text-indigo-400 hover:underline font-semibold">
-                    {item.name}
-                </Link>
+                <div>
+                    <Link to={`/student/${item.id}`} className="text-primary dark:text-indigo-400 hover:underline font-semibold">
+                        {item.name}
+                    </Link>
+                    {item.tags && item.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-0.5">
+                            {item.tags.map(tag => (
+                                <span key={tag} className="px-1.5 py-0 text-[9px] rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 font-medium">
+                                    {tag}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                </div>
             ),
             sortable: true,
             sortKey: 'name' as keyof Student,

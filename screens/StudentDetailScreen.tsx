@@ -206,7 +206,7 @@ const AttendanceSummaryWidget: React.FC<{
 
 export const StudentDetailScreen: React.FC = () => {
     const { id } = useParams<{ id: string }>();
-    const { state, addAdjustment, updateTransaction, deleteTransaction, updateAttendance, deleteStudent, addStudentNote, deleteStudentNote } = useData();
+    const { state, addAdjustment, updateTransaction, deleteTransaction, updateAttendance, deleteStudent, addStudentNote, deleteStudentNote, updateStudentTags } = useData();
     const { toast } = useToast();
     const { role } = useAuth();
     const navigate = useNavigate();
@@ -221,6 +221,7 @@ export const StudentDetailScreen: React.FC = () => {
     const [statusHistoryModalOpen, setStatusHistoryModalOpen] = useState(false);
     const [noteText, setNoteText] = useState('');
     const [isAddingNote, setIsAddingNote] = useState(false);
+    const [tagInput, setTagInput] = useState('');
 
     // Filter State
     const [filterMonth, setFilterMonth] = useState(new Date().getMonth() + 1);
@@ -540,6 +541,55 @@ export const StudentDetailScreen: React.FC = () => {
                                     <p><strong>Miễn giảm học phí:</strong> {student.discountPercentage ? `${student.discountPercentage}%` : 'Không'}</p>
                                     <p className="col-span-1 md:col-span-2"><strong>Địa chỉ:</strong> {student.address}</p>
                                 </div>
+                                {/* Tags */}
+                                {role !== UserRole.PARENT && (
+                                    <div className="mt-4 pt-4 border-t dark:border-gray-700">
+                                        <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">🏷️ Nhãn</h3>
+                                        <div className="flex flex-wrap gap-2 mb-2">
+                                            {(student.tags || []).map(tag => (
+                                                <span key={tag} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200">
+                                                    {tag}
+                                                    {canManage && (
+                                                        <button
+                                                            onClick={() => updateStudentTags({ studentId: student.id, tags: (student.tags || []).filter(t => t !== tag) }).then(() => toast.success('Đã xóa nhãn.')).catch(() => toast.error('Lỗi'))}
+                                                            className="ml-0.5 hover:text-red-500 transition-colors"
+                                                        >×</button>
+                                                    )}
+                                                </span>
+                                            ))}
+                                            {(!student.tags || student.tags.length === 0) && <span className="text-xs text-gray-400">Chưa có nhãn</span>}
+                                        </div>
+                                        {canManage && (
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <input
+                                                    type="text"
+                                                    value={tagInput}
+                                                    onChange={e => setTagInput(e.target.value)}
+                                                    onKeyDown={e => {
+                                                        if (e.key === 'Enter' && tagInput.trim()) {
+                                                            e.preventDefault();
+                                                            const newTag = tagInput.trim();
+                                                            if (!(student.tags || []).includes(newTag)) {
+                                                                updateStudentTags({ studentId: student.id, tags: [...(student.tags || []), newTag] }).then(() => { setTagInput(''); toast.success('Đã thêm nhãn.'); }).catch(() => toast.error('Lỗi'));
+                                                            }
+                                                        }
+                                                    }}
+                                                    placeholder="Thêm nhãn..."
+                                                    className="form-input text-xs py-1 w-32"
+                                                />
+                                                {['VIP', 'Cần theo dõi', 'Ưu tiên', 'Học bổng'].filter(s => !(student.tags || []).includes(s)).slice(0, 3).map(suggestion => (
+                                                    <button
+                                                        key={suggestion}
+                                                        onClick={() => updateStudentTags({ studentId: student.id, tags: [...(student.tags || []), suggestion] }).then(() => toast.success('Đã thêm nhãn.')).catch(() => toast.error('Lỗi'))}
+                                                        className="text-[10px] px-2 py-0.5 rounded-full border border-dashed border-gray-300 dark:border-gray-600 text-gray-400 hover:border-indigo-400 hover:text-indigo-500 transition-colors"
+                                                    >
+                                                        + {suggestion}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                              <div 
                                 className={`card-base flex flex-col items-center justify-center text-center ${balanceBg} ${canManage && student.balance < 0 ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}

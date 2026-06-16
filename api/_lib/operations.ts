@@ -185,6 +185,14 @@ export function applyOperation(
             }
             break;
         }
+        case 'updateStudentTags': {
+            const { studentId, tags } = payload;
+            const student = data.students.find(s => s.id === studentId);
+            if (student) {
+                student.tags = tags;
+            }
+            break;
+        }
         
         // TEACHER OPERATIONS
         case 'addTeacher': {

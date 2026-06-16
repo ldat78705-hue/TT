@@ -10,6 +10,7 @@ import { Button } from '../components/common/Button';
 import { getVietnamTime } from '../utils/date';
 import { OnboardingWizard } from '../components/common/OnboardingWizard';
 import { TeacherPayrollTab } from '../components/finance/TeacherPayrollTab';
+import { DashboardCharts } from '../components/dashboard/DashboardCharts';
 
 const toLocalDateString = (date: Date): string => {
     const year = date.getFullYear();
@@ -217,7 +218,7 @@ const AlertsAndAnnouncementsWidget: React.FC<{
 const AdminDashboard: React.FC = () => {
     const { state } = useData();
     const { role } = useAuth();
-    const { students, classes, announcements, income, teachers, attendance, transactions } = state;
+    const { students, classes, announcements, income, expenses, teachers, attendance, transactions } = state;
 
     const totalStudents = students.filter(s => s.status === PersonStatus.ACTIVE).length;
     const activeClasses = classes.length;
@@ -368,6 +369,7 @@ const AdminDashboard: React.FC = () => {
     };
 
     const widgets = [
+        { key: 'charts', label: '📊 Biểu đồ Thu-Chi & Chuyên cần' },
         { key: 'calendar', label: '📅 Lịch học tuần' },
         { key: 'schedule', label: '🕐 Lịch học hôm nay' },
         { key: 'alerts', label: '🔔 Cảnh báo & Thông báo' },
@@ -425,6 +427,16 @@ const AdminDashboard: React.FC = () => {
                     color={todayAttendanceInfo.done === todayAttendanceInfo.total && todayAttendanceInfo.total > 0 ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'}
                 />
             </div>
+
+            {/* Dashboard Charts */}
+            {canViewFinancials && widgetVisibility.charts !== false && (
+                <DashboardCharts
+                    transactions={transactions}
+                    income={income}
+                    expenses={expenses}
+                    attendance={attendance}
+                />
+            )}
 
             {/* Weekly Calendar */}
             {widgetVisibility.calendar !== false && (

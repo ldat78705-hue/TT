@@ -57,6 +57,7 @@ export interface Student extends BasePerson {
   discountPercentage?: number; // Discount percentage (0-100)
   billedCourses?: string[]; // Array of classIds that have been billed as PER_COURSE
   internalNotes?: { id: string; text: string; createdAt: string; createdBy: string }[]; // Staff-only notes
+  tags?: string[]; // Labels: VIP, Cần theo dõi, Ưu tiên, etc.
 }
 
 export interface Teacher extends BasePerson {
