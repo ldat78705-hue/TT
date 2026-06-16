@@ -34,7 +34,7 @@ class MainActivity : AppCompatActivity() {
 
                         // Check for updates on app start
                         LaunchedEffect(Unit) {
-                            appUpdateManager.checkForUpdate()
+                            appUpdateManager.checkForUpdate(force = true)
                         }
 
                         // Show update dialog if available
