@@ -10,6 +10,7 @@ import { Modal } from '../components/common/Modal';
 import { ICONS, ROUTES } from '../constants';
 import { Transaction, ProgressReport, PersonStatus, TransactionType, Class, AttendanceStatus, UserRole, AttendanceRecord } from '../types';
 import { CurrencyInput } from '../components/common/CurrencyInput';
+import { CertificateGenerator } from '../components/common/CertificateGenerator';
 import { ListItemCard } from '../components/common/ListItemCard';
 import { ConfirmationModal } from '../components/common/ConfirmationModal';
 import { PaymentModal } from '../components/finance/PaymentModal';
@@ -511,7 +512,8 @@ export const StudentDetailScreen: React.FC = () => {
                             </div>
                         </div>
                         {canManage && (
-                            <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">
+                            <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto flex-wrap">
+                                <CertificateGenerator student={student} classes={classes} settings={state.settings} />
                                 <Button variant="secondary" onClick={handleEdit} className="flex-1 sm:flex-none">{ICONS.edit} Sửa</Button>
                                 <Button variant="danger" onClick={() => setDeleteStudentConfirmOpen(true)} className="flex-1 sm:flex-none">{ICONS.delete} Xóa</Button>
                             </div>
