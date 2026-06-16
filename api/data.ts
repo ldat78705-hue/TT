@@ -776,8 +776,8 @@ export default async function handler(req: any, res: any) {
             const allowedOps = [
                 'addIncome', 'updateIncome', 'deleteIncome', 
                 'addExpense', 'updateExpense', 'deleteExpense', 
-                'updateTransaction', 'addAdjustment', 'addAdvancePayment', 'cancelInvoice', 
-                'updateInvoiceStatus', 'updateUserPassword'
+                'updateTransaction', 'deleteTransaction', 'addAdjustment', 'addAdvancePayment', 'cancelInvoice', 
+                'updateInvoiceStatus', 'generatePayrolls', 'updatePayroll', 'updateUserPassword'
             ];
             if (!allowedOps.includes(operation.op)) {
                  return res.status(403).send('Từ chối: Kế toán chỉ được thay đổi dữ liệu tài chính');

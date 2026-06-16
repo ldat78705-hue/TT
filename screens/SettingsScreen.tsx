@@ -335,6 +335,16 @@ export const SettingsScreen: React.FC = () => {
         <div className="space-y-8 max-w-4xl mx-auto">
             <h1 className="text-3xl font-bold">Cài đặt</h1>
 
+            {isViewer && (
+                <div className="flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl">
+                    <span className="text-2xl">👁️</span>
+                    <div>
+                        <p className="font-semibold text-amber-800 dark:text-amber-200">Chế độ Chỉ xem</p>
+                        <p className="text-sm text-amber-600 dark:text-amber-400">Bạn đang đăng nhập với vai trò Viewer. Tất cả cài đặt chỉ hiển thị để xem, không thể thay đổi.</p>
+                    </div>
+                </div>
+            )}
+
             <form onSubmit={handleSettingsSubmit} className="space-y-8">
                 <div className="card-base">
                     <h2 className="text-2xl font-bold mb-6">Cài đặt Trung tâm</h2>

@@ -55,3 +55,7 @@ android/.gradle/
 android/app/build/
 android/build/
 *.apk
+
+# Embedded repos (accidental)
+thuhocphitudong/
+SmsForwarder-ref/

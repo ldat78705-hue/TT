@@ -106,7 +106,7 @@ export const FinanceScreen: React.FC = () => {
     const { role } = useAuth();
     const location = useLocation();
     
-    const [activeTab, setActiveTab] = useState<FinanceTab>('overview');
+    const [activeTab, setActiveTab] = useState<FinanceTab>(role === UserRole.TEACHER ? 'my_payroll' : 'overview');
     
     // Default to current month
     const today = new Date();

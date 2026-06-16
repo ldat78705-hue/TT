@@ -309,7 +309,7 @@ const AppRoutes: React.FC = () => {
                     <Route path={ROUTES.SETTINGS} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.VIEWER]}><SettingsScreen /></ProtectedRoute>} />
                     <Route path={ROUTES.ANNOUNCEMENTS} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.TEACHER, UserRole.VIEWER]}><AnnouncementsScreen /></ProtectedRoute>} />
                     <Route path={ROUTES.ROOMS} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.VIEWER]}><RoomsScreen /></ProtectedRoute>} />
-                    <Route path={ROUTES.AUDIT_LOG} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.VIEWER]}><AuditLogScreen /></ProtectedRoute>} />
+                    <Route path={ROUTES.AUDIT_LOG} element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MANAGER, UserRole.VIEWER]}><AuditLogScreen /></ProtectedRoute>} />
                     <Route path={ROUTES.TEACHER_CALENDAR} element={<ProtectedRoute allowedRoles={[UserRole.TEACHER, UserRole.ADMIN, UserRole.MANAGER, UserRole.VIEWER]}><TeacherCalendarScreen /></ProtectedRoute>} />
                 </Route>
 
