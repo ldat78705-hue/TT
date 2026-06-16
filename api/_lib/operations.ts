@@ -965,6 +965,18 @@ export function applyOperation(
             }
             break;
         }
+        case 'markAnnouncementsReadBatch': {
+            const { announcementIds, userId } = payload;
+            const now = getVietnamTime();
+            (announcementIds || []).forEach((annId: string) => {
+                const announcement = data.announcements.find(a => a.id === annId);
+                if (announcement) {
+                    if (!announcement.readBy) announcement.readBy = {};
+                    announcement.readBy[userId] = now;
+                }
+            });
+            break;
+        }
         
         // SETTINGS & DATA MANAGEMENT
         case 'updateSettings': {

@@ -1,0 +1,151 @@
+import { z } from 'zod';
+
+/**
+ * Zod validation schemas for API operations.
+ * Only validates critical fields to prevent data corruption.
+ * Operations without schemas pass through without validation (safe fallback).
+ */
+
+// --- Reusable field schemas ---
+const idField = z.string().min(1, 'Mã không được để trống').max(50, 'Mã quá dài');
+const nameField = z.string().min(1, 'Tên không được để trống').max(200, 'Tên quá dài');
+const dateField = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày phải có định dạng YYYY-MM-DD');
+
+// --- Operation schemas ---
+
+const studentSchema = z.object({
+    id: idField,
+    name: nameField,
+    dob: dateField,
+    phone: z.string().max(20),
+    address: z.string().max(500),
+    parentName: z.string().max(200),
+    email: z.string().max(200).optional(),
+    status: z.enum(['ACTIVE', 'INACTIVE']),
+}).passthrough(); // Allow additional fields
+
+const addStudentSchema = z.object({
+    student: studentSchema,
+    classIds: z.array(z.string()),
+});
+
+const updateStudentSchema = z.object({
+    originalId: idField,
+    updatedStudent: studentSchema,
+    classIds: z.array(z.string()),
+});
+
+const teacherSchema = z.object({
+    id: idField,
+    name: nameField,
+    dob: dateField,
+    phone: z.string().max(20),
+    status: z.enum(['ACTIVE', 'INACTIVE']),
+    salaryType: z.enum(['PER_SESSION', 'MONTHLY']),
+    rate: z.number().min(0),
+}).passthrough();
+
+const staffSchema = z.object({
+    id: idField,
+    name: nameField,
+    phone: z.string().max(20),
+    status: z.enum(['ACTIVE', 'INACTIVE']),
+    role: z.enum(['MANAGER', 'ACCOUNTANT']),
+}).passthrough();
+
+const classSchema = z.object({
+    id: idField,
+    name: nameField,
+    teacherIds: z.array(z.string()),
+    studentIds: z.array(z.string()),
+    subject: z.string().max(200),
+    fee: z.object({
+        type: z.enum(['PER_SESSION', 'MONTHLY', 'PER_COURSE']),
+        amount: z.number().min(0),
+    }),
+    schedule: z.array(z.object({
+        dayOfWeek: z.enum(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']),
+        startTime: z.string(),
+        endTime: z.string(),
+    }).passthrough()),
+}).passthrough();
+
+const adjustmentSchema = z.object({
+    studentId: idField,
+    amount: z.number().positive('Số tiền phải lớn hơn 0'),
+    date: dateField,
+    description: z.string().min(1, 'Mô tả không được để trống').max(500),
+    type: z.enum(['CREDIT', 'DEBIT']),
+    paymentMethod: z.enum(['transfer', 'cash']).optional(),
+});
+
+const advancePaymentSchema = z.object({
+    studentId: idField,
+    amount: z.number().positive('Số tiền phải lớn hơn 0'),
+    date: dateField,
+    description: z.string().max(500),
+    paymentMethod: z.enum(['transfer', 'cash']).optional(),
+}).passthrough();
+
+const monthYearSchema = z.object({
+    month: z.number().int().min(1).max(12),
+    year: z.number().int().min(2000).max(2100),
+});
+
+const passwordSchema = z.object({
+    userId: z.string().min(1),
+    role: z.enum(['ADMIN', 'TEACHER', 'MANAGER', 'ACCOUNTANT', 'PARENT', 'VIEWER']),
+    newPassword: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
+    currentPassword: z.string().optional(),
+});
+
+const roomSchema = z.object({
+    name: nameField,
+    capacity: z.number().int().min(1, 'Sức chứa tối thiểu 1'),
+    description: z.string().max(500),
+});
+
+const announcementSchema = z.object({
+    title: z.string().min(1, 'Tiêu đề không được để trống').max(200),
+    content: z.string().min(1, 'Nội dung không được để trống'),
+    createdAt: z.string(),
+    createdBy: z.string(),
+}).passthrough();
+
+// --- Schema map ---
+const operationSchemas: Record<string, z.ZodSchema> = {
+    addStudent: addStudentSchema,
+    updateStudent: updateStudentSchema,
+    addTeacher: teacherSchema,
+    updateTeacher: z.object({ originalId: idField, updatedTeacher: teacherSchema }),
+    addStaff: staffSchema,
+    updateStaff: z.object({ originalId: idField, updatedStaff: staffSchema }),
+    addClass: classSchema,
+    updateClass: z.object({ originalId: idField, updatedClass: classSchema }),
+    addAdjustment: adjustmentSchema,
+    addAdvancePayment: advancePaymentSchema,
+    generateInvoices: monthYearSchema,
+    generatePayrolls: monthYearSchema,
+    updateUserPassword: passwordSchema,
+    addRoom: roomSchema,
+    updateRoom: roomSchema.extend({ id: idField }),
+    addAnnouncement: announcementSchema,
+};
+
+/**
+ * Validate an operation's payload against its schema.
+ * Returns null if valid or if no schema exists (safe passthrough).
+ * Returns error message string if invalid.
+ */
+export function validateOperation(op: string, payload: any): string | null {
+    const schema = operationSchemas[op];
+    if (!schema) return null; // No schema = no validation = pass through safely
+
+    const result = schema.safeParse(payload);
+    if (result.success) return null;
+
+    // Format first error message for user-friendly display
+    const firstError = result.error.issues[0];
+    const path = firstError.path.length > 0 ? `${firstError.path.join('.')}: ` : '';
+    return `${path}${firstError.message}`;
+}

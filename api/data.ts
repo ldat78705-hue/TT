@@ -7,6 +7,7 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, doc, getDoc, getDocs, collection, writeBatch, onSnapshot, runTransaction } from 'firebase/firestore';
 import { hashPassword } from './_lib/crypto.js';
 import { authenticateServer } from './_lib/serverAuth.js';
+import { validateOperation } from './_lib/validation.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -123,9 +124,47 @@ function getCenterCache(centerId: string): CenterCache {
 /** Remove a center from the in-memory cache (called when center is deleted) */
 export function invalidateCenterCache(centerId: string) {
     centerCaches.delete(centerId);
+    centerRegistryCache.delete(centerId);
+}
+
+// Cache center registry status to avoid Firestore read on every request
+const centerRegistryCache = new Map<string, { status: string; checkedAt: number }>();
+const CENTER_REGISTRY_TTL = 60_000; // 1 minute TTL
+
+async function validateCenterStatus(centerId: string): Promise<{ valid: boolean; error?: string }> {
+    if (!centerId || centerId === '_legacy') return { valid: true };
+    
+    const cached = centerRegistryCache.get(centerId);
+    const now = Date.now();
+    if (cached && now - cached.checkedAt < CENTER_REGISTRY_TTL) {
+        if (cached.status === 'DELETED') return { valid: false, error: 'Trung tâm đã bị xóa khỏi hệ thống. Vui lòng đăng xuất.' };
+        if (cached.status === 'LOCKED') return { valid: false, error: 'Trung tâm đã bị khóa. Vui lòng liên hệ quản trị viên hệ thống.' };
+        return { valid: true };
+    }
+    
+    try {
+        const centerDoc = await getDoc(doc(db, 'centers_registry', centerId));
+        if (!centerDoc.exists()) {
+            centerRegistryCache.set(centerId, { status: 'DELETED', checkedAt: now });
+            return { valid: false, error: 'Trung tâm đã bị xóa khỏi hệ thống. Vui lòng đăng xuất.' };
+        }
+        const centerData = centerDoc.data();
+        const status = centerData.status || 'ACTIVE';
+        centerRegistryCache.set(centerId, { status, checkedAt: now });
+        if (status === 'LOCKED') {
+            return { valid: false, error: 'Trung tâm đã bị khóa. Vui lòng liên hệ quản trị viên hệ thống.' };
+        }
+        return { valid: true };
+    } catch (e) {
+        console.error('Center validation error:', e);
+        return { valid: true }; // Fail open on network errors
+    }
 }
 
 let isLocked = false;
+
+// Per-center lock map for multi-tenant performance
+const centerLocks = new Map<string, boolean>();
 
 // Listen to _sync document changes in the background to invalidate cache across instances
 function setupSyncListener(centerId: string) {
@@ -150,15 +189,28 @@ function setupSyncListener(centerId: string) {
     });
 }
 
-async function acquireLock(): Promise<void> {
-    while (isLocked) {
-        await new Promise(resolve => setTimeout(resolve, 50));
+async function acquireLock(centerId?: string): Promise<void> {
+    if (centerId) {
+        // Per-center lock: only blocks writes to the same center
+        while (centerLocks.get(centerId)) {
+            await new Promise(resolve => setTimeout(resolve, 30));
+        }
+        centerLocks.set(centerId, true);
+    } else {
+        // Global lock fallback
+        while (isLocked) {
+            await new Promise(resolve => setTimeout(resolve, 30));
+        }
+        isLocked = true;
     }
-    isLocked = true;
 }
 
-function releaseLock() {
-    isLocked = false;
+function releaseLock(centerId?: string) {
+    if (centerId) {
+        centerLocks.delete(centerId);
+    } else {
+        isLocked = false;
+    }
 }
 
 // Helper to check JWT
@@ -338,7 +390,7 @@ function applySmartWindowFilter(data: any) {
         });
     }
     if (filtered.settings) {
-        const { adminPassword, zaloAccessToken, zaloTokenExpiresAt, webhookSecretKey, ...safeSettings } = filtered.settings;
+        const { adminPassword, viewerPassword, zaloAccessToken, zaloTokenExpiresAt, zaloAppId, zaloSecretKey, zaloRefreshToken, webhookSecretKey, ...safeSettings } = filtered.settings;
         filtered.settings = safeSettings;
     }
 
@@ -352,9 +404,11 @@ function applySmartWindowFilter(data: any) {
 function applyParentFilter(data: any, studentId: string): any {
     const filtered = { ...data };
 
-    // Only their own student
+    // Only their own student (strip internal staff-only data)
     if (filtered.students) {
-        filtered.students = filtered.students.filter((s: any) => s.id === studentId);
+        filtered.students = filtered.students
+            .filter((s: any) => s.id === studentId)
+            .map((s: any) => { const { internalNotes, tags, ...rest } = s; return rest; });
     }
 
     // Only classes the student is enrolled in
@@ -439,11 +493,11 @@ function applyTeacherFilter(data: any, teacherId: string): any {
         });
     }
 
-    // Only students in teacher's classes (strip balance info)
+    // Only students in teacher's classes (strip balance + internal notes)
     if (filtered.students) {
         filtered.students = filtered.students
             .filter((s: any) => teacherStudentIds.has(s.id))
-            .map((s: any) => ({ ...s, balance: 0 })); // Hide financial balance
+            .map((s: any) => { const { balance, internalNotes, ...rest } = s; return { ...rest, balance: 0 }; });
     }
 
     // Only attendance for teacher's classes
@@ -479,8 +533,78 @@ function applyTeacherFilter(data: any, teacherId: string): any {
     return filtered;
 }
 
+// Map operations to the collections they affect — used to skip unnecessary shard comparisons
+// CRITICAL: Must match EXACTLY what each case in operations.ts touches
+function getAffectedCollections(opName: string): string[] | null {
+    const map: Record<string, string[]> = {
+        // Student operations
+        addStudent: ['students', 'classes'],
+        updateStudent: ['students', 'classes', 'attendance', 'invoices', 'progressReports', 'transactions'],
+        deleteStudent: ['students', 'classes', 'transactions', 'attendance', 'progressReports', 'invoices'],
+        addStudentNote: ['students'],
+        deleteStudentNote: ['students'],
+        updateStudentTags: ['students'],
+        // Teacher operations
+        addTeacher: ['teachers'],
+        updateTeacher: ['teachers', 'classes', 'attendance', 'payrolls', 'expenses'],
+        deleteTeacher: ['teachers', 'classes'],
+        // Staff operations
+        addStaff: ['staff'],
+        updateStaff: ['staff'],
+        deleteStaff: ['staff'],
+        // Class operations
+        addClass: ['classes'],
+        updateClass: ['classes', 'attendance', 'progressReports', 'announcements', 'payrolls'],
+        deleteClass: ['classes', 'progressReports', 'announcements'],
+        // Attendance — updateSingleAttendance can also create announcements
+        updateAttendance: ['attendance'],
+        updateSingleAttendance: ['attendance', 'announcements'],
+        deleteAttendanceForDate: ['attendance'],
+        deleteAttendanceByMonth: ['attendance'],
+        // Finance
+        addAdjustment: ['transactions', 'students'],
+        addAdvancePayment: ['transactions', 'students', 'invoices'],
+        updateTransaction: ['transactions', 'students'],
+        deleteTransaction: ['transactions', 'students'],
+        clearAllTransactions: ['transactions', 'students', 'invoices'],
+        generateInvoices: ['invoices', 'transactions', 'students'],
+        cancelInvoice: ['invoices', 'transactions', 'students'],
+        updateInvoiceStatus: ['invoices', 'transactions', 'students'],
+        // Payrolls — can also create/update/delete expenses
+        generatePayrolls: ['payrolls', 'expenses'],
+        updatePayroll: ['payrolls', 'expenses'],
+        // Reports
+        addProgressReport: ['progressReports'],
+        addBulkProgressReports: ['progressReports'],
+        updateProgressReport: ['progressReports'],
+        deleteProgressReport: ['progressReports'],
+        // Income/Expense
+        addIncome: ['income'],
+        updateIncome: ['income'],
+        deleteIncome: ['income'],
+        addExpense: ['expenses'],
+        updateExpense: ['expenses'],
+        deleteExpense: ['expenses'],
+        // Announcements
+        addAnnouncement: ['announcements'],
+        deleteAnnouncement: ['announcements'],
+        markAnnouncementRead: ['announcements'],
+        markAnnouncementsReadBatch: ['announcements'],
+        // Settings
+        updateSettings: ['settings'],
+        updateUserPassword: ['teachers', 'staff', 'students', 'settings'],
+        // Rooms — deleteRoom also modifies classes (removes roomId from schedules)
+        addRoom: ['rooms'],
+        updateRoom: ['rooms'],
+        deleteRoom: ['rooms', 'classes'],
+        // Audit
+        addAuditLog: ['auditLogs'],
+    };
+    return map[opName] || null; // null = compare all (safe fallback for unknown ops)
+}
+
 export async function executeOperationInternal(operation: { op: string, payload: any }, centerId: string = '_legacy') {
-    await acquireLock();
+    await acquireLock(centerId);
     try {
         await authenticateServer();
         const cache = getCenterCache(centerId);
@@ -490,11 +614,18 @@ export async function executeOperationInternal(operation: { op: string, payload:
         const updatedData = applyOperation(dataClone, operation);
         const updatedShards = shardAppData(updatedData);
 
+        // Performance: Only compare shards that this operation could have changed
+        const affectedCollections = getAffectedCollections(operation.op);
+
         const batch = writeBatch(db);
         let hasChanges = false;
         const pendingRawStringsUpdates: Record<string, string | null> = {};
         
         Object.keys(updatedShards).forEach(key => {
+            // Skip shards that couldn't have been affected by this operation
+            if (affectedCollections && !affectedCollections.some(col => key === col || key.startsWith(col + '_'))) {
+                return;
+            }
             const oldStr = cache.rawShardStrings[key];
             const newStr = JSON.stringify(updatedShards[key]);
             if (oldStr !== newStr) {
@@ -504,8 +635,12 @@ export async function executeOperationInternal(operation: { op: string, payload:
             }
         });
 
+        // Only check deletions for affected collections
         Object.keys(cache.rawShardStrings).forEach(key => {
             if (key !== '_sync' && updatedShards[key] === undefined) {
+                if (affectedCollections && !affectedCollections.some(col => key === col || key.startsWith(col + '_'))) {
+                    return;
+                }
                 batch.delete(doc(db, colName, key));
                 hasChanges = true;
                 pendingRawStringsUpdates[key] = null;
@@ -533,12 +668,12 @@ export async function executeOperationInternal(operation: { op: string, payload:
         }
         return applySmartWindowFilter(updatedData);
     } finally {
-        releaseLock();
+        releaseLock(centerId);
     }
 }
 
 export async function executeAttendanceTransaction(payload: any, centerId: string = '_legacy') {
-    await acquireLock();
+    await acquireLock(centerId);
     try {
         await authenticateServer();
         const cache = getCenterCache(centerId);
@@ -555,7 +690,12 @@ export async function executeAttendanceTransaction(payload: any, centerId: strin
         // We also need to read classes to get teacherIds if needed
         shardsAffected.add('classes');
 
+        // Track new records with generated IDs for cache update
+        let committedNewRecords: any[] = [];
+        
         await runTransaction(db, async (transaction) => {
+            // Reset on each retry attempt to prevent duplicate records
+            committedNewRecords = [];
             const shardRefs = Array.from(shardsAffected).map(k => doc(db, colName, k));
             const snapshots = await Promise.all(shardRefs.map(ref => transaction.get(ref)));
             
@@ -606,6 +746,7 @@ export async function executeAttendanceTransaction(payload: any, centerId: strin
                 }));
                 
                 updatedShardsData[sKey].push(...recordsWithIds);
+                committedNewRecords.push(...recordsWithIds);
             });
 
             // Write back
@@ -619,19 +760,42 @@ export async function executeAttendanceTransaction(payload: any, centerId: strin
             transaction.set(syncRef, { syncId: newSyncId, lastUpdatedAt: Date.now() });
         });
         
-        // Force full refresh next time
+        // Performance: Update attendance in-place in cache instead of full re-read
+        if (cache.cachedData) {
+            const updatedData = { ...cache.cachedData };
+            // Remove old records for affected class+date combos
+            const classDateKeys = new Set<string>();
+            records.forEach((r: any) => classDateKeys.add(`${r.classId}|${r.date}`));
+            const filteredAttendance = updatedData.attendance.filter((a: any) => !classDateKeys.has(`${a.classId}|${a.date}`));
+            // Add the committed new records (which have generated IDs and teacherIds)
+            updatedData.attendance = [...filteredAttendance, ...committedNewRecords];
+            cache.cachedData = updatedData as any;
+            const newSyncFromTx = Date.now().toString() + '_' + Math.random().toString(36).substring(2);
+            cache.localSyncId = newSyncFromTx;
+            
+            // Also update rawShardStrings for affected attendance shards
+            // to prevent false-positive dirty writes on subsequent operations
+            const affectedShardKeys = new Set<string>();
+            records.forEach((r: any) => affectedShardKeys.add(getShardKey(r, 'attendance')));
+            for (const sKey of affectedShardKeys) {
+                const shardRecords = updatedData.attendance.filter((a: any) => getShardKey(a, 'attendance') === sKey);
+                cache.rawShardStrings[sKey] = JSON.stringify(shardRecords);
+            }
+            
+            return applySmartWindowFilter(updatedData);
+        }
+        
+        // Fallback: full re-read if cache was empty
         cache.cachedData = null;
         cache.fetchPromise = null;
-        
-        // Return latest full data
         return applySmartWindowFilter(await getSplitData(centerId));
     } finally {
-        releaseLock();
+        releaseLock(centerId);
     }
 }
 
 export async function executeTuitionTransaction(payload: any, centerId: string = '_legacy') {
-    await acquireLock();
+    await acquireLock(centerId);
     try {
         await authenticateServer();
         const cache = getCenterCache(centerId);
@@ -640,6 +804,17 @@ export async function executeTuitionTransaction(payload: any, centerId: string =
         const finalAmount = type === 'CREDIT' ? amount : -amount;
         
         const shardKey = getShardKey({ date }, 'transactions');
+        const generateUniqueId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+        const newTxRecord = { 
+            id: generateUniqueId('TRX'), 
+            studentId, 
+            date, 
+            type: type === 'CREDIT' ? 'PAYMENT' : 'ADJUSTMENT_DEBIT', 
+            description, 
+            amount: finalAmount, 
+            paymentMethod: paymentMethod || 'transfer' 
+        };
+        let newSyncId = '';
         
         await runTransaction(db, async (transaction) => {
             const txRef = doc(db, colName, shardKey);
@@ -653,36 +828,43 @@ export async function executeTuitionTransaction(payload: any, centerId: string =
             const student = students.find((s: any) => s.id === studentId);
             if (student) {
                 student.balance += finalAmount;
-                // Note: Recalculate invoices logic is omitted here for simplicity because manual payments 
-                // typically don't trigger invoice recalculation directly unless they cover the invoice fully.
-                // The full recalculation runs on standard save.
             }
             
-            const generateUniqueId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
-            transactions.push({ 
-                id: generateUniqueId('TRX'), 
-                studentId, 
-                date, 
-                type: type === 'CREDIT' ? 'PAYMENT' : 'ADJUSTMENT_DEBIT', 
-                description, 
-                amount: finalAmount, 
-                paymentMethod: paymentMethod || 'transfer' 
-            });
+            transactions.push(newTxRecord);
             
             transaction.set(txRef, { data: transactions });
             transaction.set(studentsRef, { data: students });
             
             const syncRef = doc(db, colName, '_sync');
-            const newSyncId = Date.now().toString() + '_' + Math.random().toString(36).substring(2);
+            newSyncId = Date.now().toString() + '_' + Math.random().toString(36).substring(2);
             transaction.set(syncRef, { syncId: newSyncId, lastUpdatedAt: Date.now() });
         });
         
+        // Performance: Update cache in-place instead of full re-read from Firestore
+        if (cache.cachedData) {
+            const updatedData = { ...cache.cachedData };
+            // Update student balance
+            updatedData.students = updatedData.students.map((s: any) => 
+                s.id === studentId ? { ...s, balance: s.balance + finalAmount } : s
+            );
+            // Add transaction
+            updatedData.transactions = [...updatedData.transactions, newTxRecord as any];
+            cache.cachedData = updatedData as any;
+            cache.localSyncId = newSyncId;
+            // Update raw shard strings for dirty-check
+            cache.rawShardStrings['students'] = JSON.stringify(updatedData.students);
+            const txShardData = JSON.parse(cache.rawShardStrings[shardKey] || '[]');
+            txShardData.push(newTxRecord);
+            cache.rawShardStrings[shardKey] = JSON.stringify(txShardData);
+            return applySmartWindowFilter(updatedData);
+        }
+        
+        // Fallback: full re-read if cache was empty
         cache.cachedData = null;
         cache.fetchPromise = null;
-        
         return applySmartWindowFilter(await getSplitData(centerId));
     } finally {
-        releaseLock();
+        releaseLock(centerId);
     }
 }
 
@@ -694,28 +876,14 @@ export default async function handler(req: any, res: any) {
     // Extract centerId from JWT - backward compatible with old tokens
     const centerId = (authPayload as any).centerId || '_legacy';
 
-    // === CRITICAL: Validate center still exists and is active ===
-    if (centerId && centerId !== '_legacy') {
-        try {
-            const centerDoc = await getDoc(doc(db, 'centers_registry', centerId));
-            if (!centerDoc.exists()) {
-                return res.status(403).json({ 
-                    success: false, 
-                    error: 'Trung tâm đã bị xóa khỏi hệ thống. Vui lòng đăng xuất.',
-                    forceLogout: true 
-                });
-            }
-            const centerData = centerDoc.data();
-            if (centerData.status === 'LOCKED') {
-                return res.status(403).json({ 
-                    success: false, 
-                    error: 'Trung tâm đã bị khóa. Vui lòng liên hệ quản trị viên hệ thống.',
-                    forceLogout: true 
-                });
-            }
-        } catch (e) {
-            console.error('Center validation error:', e);
-        }
+    // === CRITICAL: Validate center still exists and is active (cached) ===
+    const centerValidation = await validateCenterStatus(centerId);
+    if (!centerValidation.valid) {
+        return res.status(403).json({ 
+            success: false, 
+            error: centerValidation.error,
+            forceLogout: true 
+        });
     }
     if (req.method === 'GET') {
         try {
@@ -765,6 +933,12 @@ export default async function handler(req: any, res: any) {
         if (role === UserRole.VIEWER) {
             return res.status(403).send('Từ chối: Bạn không có quyền sửa đổi dữ liệu');
         }
+
+        // Validate operation payload with Zod schemas
+        const validationError = validateOperation(operation.op, operation.payload);
+        if (validationError) {
+            return res.status(400).send(`Dữ liệu không hợp lệ: ${validationError}`);
+        }
         // MANAGER: block dangerous admin-only operations
         if (role === UserRole.MANAGER) {
             const blockedManagerOps = ['clearCollections', 'updateSettings'];
@@ -778,7 +952,7 @@ export default async function handler(req: any, res: any) {
                 'addExpense', 'updateExpense', 'deleteExpense', 
                 'updateTransaction', 'deleteTransaction', 'addAdjustment', 'addAdvancePayment', 'cancelInvoice', 
                 'updateInvoiceStatus', 'generatePayrolls', 'updatePayroll', 'updateUserPassword',
-                'markAnnouncementRead'
+                'markAnnouncementRead', 'markAnnouncementsReadBatch'
             ];
             if (!allowedOps.includes(operation.op)) {
                  return res.status(403).send('Từ chối: Kế toán chỉ được thay đổi dữ liệu tài chính');
@@ -790,14 +964,15 @@ export default async function handler(req: any, res: any) {
                 'updateAttendance',
                 'addProgressReport', 'updateProgressReport', 'deleteProgressReport', 'addBulkProgressReports',
                 'addAnnouncement', 'updateAnnouncement', 'deleteAnnouncement',
-                'updateUserPassword', 'addAuditLog', 'markAnnouncementRead'
+                'updateUserPassword', 'addAuditLog', 'markAnnouncementRead', 'markAnnouncementsReadBatch',
+                'addStudentNote', 'deleteStudentNote', 'updateStudentTags'
             ];
             if (!allowedTeacherOps.includes(operation.op)) {
                 return res.status(403).send('Từ chối: Giáo viên không có quyền thực hiện thao tác này');
             }
         }
         if (role === UserRole.PARENT) {
-            const allowedParentOps = ['updateUserPassword', 'updateSingleAttendance', 'markAnnouncementRead'];
+            const allowedParentOps = ['updateUserPassword', 'updateSingleAttendance', 'markAnnouncementRead', 'markAnnouncementsReadBatch'];
             if (!allowedParentOps.includes(operation.op)) {
                 return res.status(403).send('Từ chối: Bạn không có quyền sửa đổi dữ liệu');
             }
@@ -836,33 +1011,36 @@ export default async function handler(req: any, res: any) {
         }
 
         // Hash passwords for other operations
+        // Helper: detect if a string is already a bcrypt or SHA-256 hash
+        const isAlreadyHashed = (s: string) => s.startsWith('$2a$') || s.startsWith('$2b$') || /^[0-9a-f]{64}$/i.test(s);
+        
         if (operation.op === 'addTeacher' || operation.op === 'updateTeacher') {
             const t = operation.payload.teacher || operation.payload.updatedTeacher;
-            if (t && t.password && t.password.length < 64) { // Basic check to avoid re-hashing
+            if (t && t.password && !isAlreadyHashed(t.password)) {
                 t.password = hashPassword(t.password);
             }
         }
         if (operation.op === 'addStaff' || operation.op === 'updateStaff') {
             const s = operation.payload.staff || operation.payload.updatedStaff;
-            if (s && s.password && s.password.length < 64) {
+            if (s && s.password && !isAlreadyHashed(s.password)) {
                 s.password = hashPassword(s.password);
             }
         }
         if (operation.op === 'addStudent' || operation.op === 'updateStudent') {
             const st = operation.payload.student || operation.payload.updatedStudent;
-            if (st && st.password && st.password.length < 64) {
+            if (st && st.password && !isAlreadyHashed(st.password)) {
                 st.password = hashPassword(st.password);
             }
         }
         if (operation.op === 'updateSettings') {
             const set = operation.payload;
-            if (set && set.adminPassword && set.adminPassword.length < 64) {
+            if (set && set.adminPassword && !isAlreadyHashed(set.adminPassword)) {
                 set.adminPassword = hashPassword(set.adminPassword);
             }
         }
 
         if (operation.op === 'restoreData') {
-            await acquireLock();
+            await acquireLock(centerId);
             try {
                 await authenticateServer();
                 const colName = getCollectionName(centerId);
@@ -912,7 +1090,7 @@ export default async function handler(req: any, res: any) {
                 }
                 return res.status(400).send(`Thao tác thất bại: ${errorMessage}`);
             } finally {
-                releaseLock();
+                releaseLock(centerId);
             }
         } else {
             try {
@@ -925,14 +1103,31 @@ export default async function handler(req: any, res: any) {
                     responseData = await executeOperationInternal(operation, centerId);
                 }
 
-                // === AUDIT LOG ===
+                // === AUDIT LOG (lightweight direct write — no lock/full-data overhead) ===
                 try {
                     const userName = (authPayload as any).name || (authPayload as any).email || 'Unknown';
                     const userId = (authPayload as any).userId || (authPayload as any).sub || '';
                     const auditEntry = buildAuditEntry(operation.op, operation.payload, userId, userName);
                     if (auditEntry) {
-                        // Fire-and-forget: don't block response for logging
-                        executeOperationInternal({ op: 'addAuditLog', payload: auditEntry }, centerId).catch(() => {});
+                        // Fire-and-forget: directly append to auditLogs doc without full executeOperationInternal
+                        const colName = getCollectionName(centerId);
+                        const auditRef = doc(db, colName, 'auditLogs');
+                        getDoc(auditRef).then(snap => {
+                            const existing = snap.exists() ? snap.data().data || [] : [];
+                            // Keep only last 500 entries to prevent bloat
+                            const trimmed = existing.length >= 500 ? existing.slice(-499) : existing;
+                            trimmed.push(auditEntry);
+                            const batch = writeBatch(db);
+                            batch.set(auditRef, { data: trimmed });
+                            batch.commit().then(() => {
+                                // Update in-memory cache if present
+                                const c = getCenterCache(centerId);
+                                if (c.cachedData) {
+                                    (c.cachedData as any).auditLogs = trimmed;
+                                    c.rawShardStrings['auditLogs'] = JSON.stringify(trimmed);
+                                }
+                            }).catch(() => {});
+                        }).catch(() => {});
                     }
                 } catch (logErr) { /* silently ignore audit failures */ }
 

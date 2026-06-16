@@ -34,7 +34,7 @@ interface StoredSession {
 }
 
 interface AuthContextType extends AuthState {
-  login: (identifier: string, password?: string, centerId?: string) => Promise<boolean>;
+  login: (identifier: string, password?: string, centerId?: string, prefetchedResponse?: any) => Promise<boolean>;
   logout: () => Promise<void>;
   isAuthLoading: boolean;
 }
@@ -115,11 +115,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }
 
 
-  const login = async (identifier: string, password?: string, centerId?: string): Promise<boolean> => {
-    if (!password) return false;
+  const login = async (identifier: string, password?: string, centerId?: string, prefetchedResponse?: any): Promise<boolean> => {
+    if (!password && !prefetchedResponse) return false;
 
     try {
-      const response = await loginApi(identifier, password, centerId);
+      // Use prefetched response if available, otherwise call API
+      const response = prefetchedResponse || await loginApi(identifier, password!, centerId);
       if (response && response.token && response.user && response.role) {
         setAuth({ isAuthenticated: true, user: response.user, role: response.role });
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({ 

@@ -7,6 +7,7 @@ import { Invoice, TransactionType } from '../../types';
 import { ICONS } from '../../constants';
 import { useData } from '../../hooks/useDataContext';
 import { useToast } from '../../hooks/useToast';
+import { escapeHtml, printHtml } from '../../utils/html';
 
 declare global {
     interface Window {
@@ -118,10 +119,14 @@ export const TuitionFeeNoticeModal: React.FC<TuitionFeeNoticeModalProps> = ({ is
 
     const handleExportPdf = () => {
         const { outstandingDebt: od, openingCredit: oc, totalDue: td } = financialData;
-        const centerName = settings.name || 'Trung tâm';
-        const centerPhone = settings.phone || '';
-        const centerAddress = settings.address || '';
-        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>HoaDon_${invoice.id}</title>
+        const e = escapeHtml; // shorthand
+        const centerName = e(settings.name || 'Trung tâm');
+        const centerPhone = e(settings.phone || '');
+        const centerAddress = e(settings.address || '');
+        const qrUrl = td > 0 && settings.bankAccountNumber
+            ? `https://img.vietqr.io/image/${e(settings.bankBin || '970422')}-${e(settings.bankAccountNumber)}-compact2.jpg?amount=${td}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(settings.bankAccountHolder || '')}`
+            : '';
+        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>HoaDon_${e(invoice.id)}</title>
 <style>*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
 body{padding:40px;color:#1e293b}
 .header{text-align:center;margin-bottom:24px;border-bottom:2px solid #6366f1;padding-bottom:16px}
@@ -147,33 +152,28 @@ ${centerAddress ? `<p>${centerAddress}</p>` : ''}
 ${centerPhone ? `<p>ĐT: ${centerPhone}</p>` : ''}
 <p style="margin-top:8px;font-size:16px;font-weight:700;color:#1e293b">PHIẾU THÔNG BÁO HỌC PHÍ</p></div>
 <div class="section"><h2>Thông tin học viên</h2>
-<div class="row border"><span class="label">Họ tên:</span><span class="value">${student.name}</span></div>
-<div class="row border"><span class="label">Mã HV:</span><span class="value">${student.id}</span></div>
-<div class="row border"><span class="label">Kỳ thanh toán:</span><span class="value">${invoice.month}</span></div>
+<div class="row border"><span class="label">Họ tên:</span><span class="value">${e(student.name)}</span></div>
+<div class="row border"><span class="label">Mã HV:</span><span class="value">${e(student.id)}</span></div>
+<div class="row border"><span class="label">Kỳ thanh toán:</span><span class="value">${e(invoice.month)}</span></div>
 <div class="row"><span class="label">Ngày lập:</span><span class="value">${new Date(invoice.generatedDate).toLocaleDateString('vi-VN')}</span></div></div>
 <div class="section"><h2>Chi tiết học phí</h2>
 ${od > 0 ? `<div class="row border"><span class="label">Dư nợ kỳ trước</span><span class="value">${formatCurrency(od)}</span></div>` : ''}
 ${oc > 0 ? `<div class="row border"><span class="label">Số dư trả trước</span><span class="value" style="color:#16a34a">-${formatCurrency(oc)}</span></div>` : ''}
 <div class="row border"><span class="label">Học phí phát sinh</span><span class="value">${formatCurrency(invoice.amount)}</span></div>
-<div class="details">${invoice.details}</div>
+<div class="details">${e(invoice.details)}</div>
 <div class="total-row"><span>TỔNG THANH TOÁN</span><span>${formatCurrency(td)}</span></div></div>
 ${td > 0 && settings.bankAccountNumber ? `<div class="payment-box">
 <h3>Thông tin chuyển khoản</h3>
-<p>Ngân hàng: <strong>${settings.bankName || ''}</strong></p>
-<p>Số TK: <strong>${settings.bankAccountNumber}</strong></p>
-<p>Chủ TK: <strong>${settings.bankAccountHolder || ''}</strong></p>
+<p>Ngân hàng: <strong>${e(settings.bankName || '')}</strong></p>
+<p>Số TK: <strong>${e(settings.bankAccountNumber)}</strong></p>
+<p>Chủ TK: <strong>${e(settings.bankAccountHolder || '')}</strong></p>
 <p style="margin-top:8px">Nội dung chuyển khoản:</p>
-<p class="transfer-content">${transferContent}</p></div>` : ''}
+<p class="transfer-content">${e(transferContent)}</p>
+${qrUrl ? `<img src="${qrUrl}" style="width:180px;height:180px;margin:8px auto;display:block" alt="QR thanh toán" />` : ''}
+</div>` : ''}
 <div class="footer"><p>Phiếu được tạo tự động bởi hệ thống ${centerName}</p></div>
 </body></html>`;
-        const printWindow = window.open('', '_blank');
-        if (printWindow) {
-            printWindow.document.write(html);
-            printWindow.document.close();
-            printWindow.onload = () => {
-                setTimeout(() => { printWindow.print(); }, 300);
-            };
-        }
+        printHtml(html);
     };
 
     return (

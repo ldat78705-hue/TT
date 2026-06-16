@@ -14,6 +14,7 @@ import { ConfirmationModal } from '../components/common/ConfirmationModal';
 import { getVietnamTime, formatVietnamDate } from '../utils/date';
 import { BulkProgressModal } from '../components/progress/BulkProgressModal';
 import { ExportButton } from '../components/common/ExportButton';
+import { printHtml } from '../utils/html';
 
 
 const ProgressReportForm: React.FC<{
@@ -597,9 +598,7 @@ export const ClassDetailScreen: React.FC = () => {
                                     for (let i = 0; i < cards.length; i += cardsPerPage) {
                                         pages.push(`<div style="display:flex;flex-wrap:wrap;gap:3mm;justify-content:center;align-content:flex-start;width:190mm;min-height:277mm;page-break-after:always;">${cards.slice(i, i + cardsPerPage).join('')}</div>`);
                                     }
-                                    const pw = window.open('', '_blank');
-                                    if (!pw) return;
-                                    pw.document.write(`<!DOCTYPE html><html><head><title>Thẻ QR - ${cls.name}</title>
+                                    const html = `<!DOCTYPE html><html><head><title>Thẻ QR - ${cls.name}</title>
                                         <style>
                                             *{margin:0;padding:0;box-sizing:border-box}
                                             body{font-family:'Segoe UI',Arial,sans-serif}
@@ -609,9 +608,8 @@ export const ClassDetailScreen: React.FC = () => {
                                         </style>
                                     </head><body>
                                         <div class="page-container">${pages.join('')}</div>
-                                    </body></html>`);
-                                    pw.document.close();
-                                    setTimeout(() => pw.print(), 1000);
+                                    </body></html>`;
+                                    printHtml(html, 1000);
                                 }}>
                                     🖨️ In thẻ QR cả lớp ({sortedClassStudents.length})
                                 </Button>
@@ -625,9 +623,7 @@ export const ClassDetailScreen: React.FC = () => {
                                         <button
                                             onClick={() => {
                                                 const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(item.id)}&format=png`;
-                                                const pw = window.open('', '_blank');
-                                                if (!pw) return;
-                                                pw.document.write(`<!DOCTYPE html><html><head><title>Thẻ QR - ${item.name}</title>
+                                                const html = `<!DOCTYPE html><html><head><title>Thẻ QR - ${item.name}</title>
                                                     <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;display:flex;justify-content:center;padding:20mm}
                                                     @page{size:A4;margin:10mm}
                                                     @media print{body{-webkit-print-color-adjust:exact}}</style>
@@ -640,9 +636,8 @@ export const ClassDetailScreen: React.FC = () => {
                                                             <div style="font-size:9px;color:#999;margin-top:1px;">${cls.name}</div>
                                                         </div>
                                                     </div>
-                                                </body></html>`);
-                                                pw.document.close();
-                                                setTimeout(() => pw.print(), 800);
+                                                </body></html>`;
+                                                printHtml(html, 800);
                                             }}
                                             className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 text-xs underline whitespace-nowrap"
                                             title="In thẻ QR cho học viên này"
@@ -669,9 +664,7 @@ export const ClassDetailScreen: React.FC = () => {
                                         <button
                                             onClick={() => {
                                                 const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(student.id)}&format=png`;
-                                                const pw = window.open('', '_blank');
-                                                if (!pw) return;
-                                                pw.document.write(`<!DOCTYPE html><html><head><title>Thẻ QR - ${student.name}</title>
+                                                const html = `<!DOCTYPE html><html><head><title>Thẻ QR - ${student.name}</title>
                                                     <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;display:flex;justify-content:center;padding:20mm}
                                                     @page{size:A4;margin:10mm}
                                                     @media print{body{-webkit-print-color-adjust:exact}}</style>
@@ -684,9 +677,8 @@ export const ClassDetailScreen: React.FC = () => {
                                                             <div style="font-size:9px;color:#999;margin-top:1px;">${cls.name}</div>
                                                         </div>
                                                     </div>
-                                                </body></html>`);
-                                                pw.document.close();
-                                                setTimeout(() => pw.print(), 800);
+                                                </body></html>`;
+                                                printHtml(html, 800);
                                             }}
                                             className="text-xs text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 underline"
                                         >

@@ -8,6 +8,23 @@ import { ROUTES, ICONS } from '../constants';
 import { useData } from '../hooks/useDataContext';
 import { ForgotPasswordModal } from '../components/auth/ChangePasswordModal';
 
+// Sanitize HTML: strip <script>, event handlers, and dangerous tags to prevent XSS
+const sanitizeHtml = (html: string): string => {
+    if (!html) return '';
+    return html
+        .replace(/<script[\s\S]*?<\/script>/gi, '')
+        .replace(/<iframe[\s\S]*?<\/iframe>/gi, '')
+        .replace(/<object[\s\S]*?<\/object>/gi, '')
+        .replace(/<embed[\s\S]*?\/?>|<\/embed>/gi, '')
+        .replace(/<form[\s\S]*?<\/form>/gi, '')
+        .replace(/<link[^>]*>/gi, '')
+        .replace(/<meta[^>]*>/gi, '')
+        .replace(/<base[^>]*>/gi, '')
+        .replace(/\son\w+\s*=\s*["'][^"']*["']/gi, '')
+        .replace(/\son\w+\s*=\s*\S+/gi, '')
+        .replace(/javascript\s*:/gi, 'blocked:');
+};
+
 const BrandHeader: React.FC<{ settings: CenterSettings }> = ({ settings }) => {
     const { loginHeaderContent } = settings;
 
@@ -17,7 +34,7 @@ const BrandHeader: React.FC<{ settings: CenterSettings }> = ({ settings }) => {
         <div className="text-center md:text-left">
             <div 
                 className="login-header-content"
-                dangerouslySetInnerHTML={{ __html: loginHeaderContent || defaultContent }} 
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(loginHeaderContent || defaultContent) }} 
             />
         </div>
     );
@@ -57,7 +74,8 @@ export const LoginScreen: React.FC = () => {
                 if (response.mustChangePassword) {
                     sessionStorage.setItem('must_change_password', 'true');
                 }
-                const success = await login(identifier, password);
+                // Pass the already-fetched response to avoid a second API call
+                const success = await login(identifier, password, undefined, response);
                 if (!success) {
                     toast.error("Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.");
                 }

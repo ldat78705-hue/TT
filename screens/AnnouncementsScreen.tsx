@@ -254,7 +254,7 @@ const ProgressReportForm: React.FC<{
 };
 
 export const AnnouncementsScreen: React.FC = () => {
-    const { state, addAnnouncement, deleteAnnouncement, markAnnouncementRead, addProgressReport, updateProgressReport, deleteProgressReport, addBulkProgressReports } = useData();
+    const { state, addAnnouncement, deleteAnnouncement, markAnnouncementsReadBatch, addProgressReport, updateProgressReport, deleteProgressReport, addBulkProgressReports } = useData();
     const { user, role } = useAuth();
     const { toast } = useToast();
     const [activeTab, setActiveTab] = useState<'progress' | 'announcements'>('progress');
@@ -272,16 +272,24 @@ export const AnnouncementsScreen: React.FC = () => {
     const canManageAnnouncements = role === UserRole.ADMIN || role === UserRole.MANAGER || role === UserRole.TEACHER;
     const canManageProgress = role === UserRole.ADMIN || role === UserRole.MANAGER || role === UserRole.TEACHER;
 
-    // Auto-mark announcements as read when viewing
+    // Auto-mark announcements as read when viewing (batch: 1 API call)
+    const markReadFiredRef = useRef(false);
     useEffect(() => {
         if (activeTab !== 'announcements' || !user?.id) return;
+        if (markReadFiredRef.current) return;
         const userId = user.id;
-        state.announcements.forEach(ann => {
-            if (!ann.readBy?.[userId]) {
-                markAnnouncementRead({ announcementId: ann.id, userId }).catch(() => {});
-            }
-        });
+        const unreadIds = state.announcements
+            .filter(ann => !ann.readBy?.[userId])
+            .map(ann => ann.id);
+        if (unreadIds.length > 0) {
+            markReadFiredRef.current = true;
+            markAnnouncementsReadBatch({ announcementIds: unreadIds, userId }).catch(() => {});
+        }
     }, [activeTab, state.announcements.length]); // eslint-disable-line react-hooks/exhaustive-deps
+    // Reset ref when tab changes away
+    useEffect(() => {
+        if (activeTab !== 'announcements') markReadFiredRef.current = false;
+    }, [activeTab]);
 
     // --- Announcements Handlers ---
     const handleAddAnnouncement = async (data: { title: string; content: string; targetAudience: AnnouncementTarget; classId?: string; targetStudentIds?: string[]; scheduledFor?: string }) => {

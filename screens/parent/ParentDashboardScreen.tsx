@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useData } from '../../hooks/useDataContext';
 import { Student, Class, AttendanceStatus, Announcement, ClassSchedule } from '../../types';
@@ -88,7 +88,7 @@ const ScheduleWidget: React.FC<{ enrolledClasses: Class[] }> = ({ enrolledClasse
 
 export const ParentDashboardScreen: React.FC = () => {
     const { user } = useAuth();
-    const { state, markAnnouncementRead } = useData();
+    const { state, markAnnouncementsReadBatch } = useData();
     const student = user as Student;
 
     const studentData = useMemo(() => {
@@ -145,14 +145,18 @@ export const ParentDashboardScreen: React.FC = () => {
             .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }, [student, state.classes, state.announcements]);
 
-    // Auto-mark announcements as read
+    // Auto-mark announcements as read (batch: 1 API call)
+    const parentMarkReadRef = useRef(false);
     useEffect(() => {
         if (!student?.id || relevantAnnouncements.length === 0) return;
-        relevantAnnouncements.forEach(ann => {
-            if (!ann.readBy?.[student.id]) {
-                markAnnouncementRead({ announcementId: ann.id, userId: student.id }).catch(() => {});
-            }
-        });
+        if (parentMarkReadRef.current) return;
+        const unreadIds = relevantAnnouncements
+            .filter(ann => !ann.readBy?.[student.id])
+            .map(ann => ann.id);
+        if (unreadIds.length > 0) {
+            parentMarkReadRef.current = true;
+            markAnnouncementsReadBatch({ announcementIds: unreadIds, userId: student.id }).catch(() => {});
+        }
     }, [relevantAnnouncements.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
     if (!student || !studentData) {

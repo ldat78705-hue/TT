@@ -10,6 +10,7 @@ import { ICONS } from '../constants';
 import { ConfirmationModal } from '../components/common/ConfirmationModal';
 import { Modal } from '../components/common/Modal';
 import { zaloSendAbsence } from '../services/api';
+import { printHtml } from '../utils/html';
 
 export const AttendanceScreen: React.FC = () => {
     const { classId, date } = useParams<{ classId: string; date: string }>();
@@ -388,9 +389,7 @@ export const AttendanceScreen: React.FC = () => {
                                         acc[st] = (acc[st] || 0) + 1;
                                         return acc;
                                     }, {} as Record<string, number>);
-                                    const pw = window.open('', '_blank');
-                                    if (!pw) return;
-                                    pw.document.write(`<!DOCTYPE html><html><head><title>Điểm danh - ${cls?.name} - ${date}</title>
+                                    const html = `<!DOCTYPE html><html><head><title>Điểm danh - ${cls?.name} - ${date}</title>
                                         <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;padding:15mm}
                                         @page{size:A4;margin:15mm}
                                         table{border-collapse:collapse;width:100%}th{background:#f3f4f6;font-weight:600}
@@ -424,9 +423,8 @@ export const AttendanceScreen: React.FC = () => {
                                             <div><b>Giáo viên</b><div style="height:50px"></div><div style="border-top:1px solid #999;padding-top:4px">Ký tên</div></div>
                                             <div><b>Quản lý</b><div style="height:50px"></div><div style="border-top:1px solid #999;padding-top:4px">Ký tên</div></div>
                                         </div>
-                                    </body></html>`);
-                                    pw.document.close();
-                                    setTimeout(() => pw.print(), 500);
+                                    </body></html>`;
+                                    printHtml(html);
                                 }}
                                 className="print-hidden"
                                 title="In bảng điểm danh"

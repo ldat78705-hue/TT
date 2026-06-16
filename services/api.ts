@@ -111,7 +111,7 @@ export async function loadInitialData(retries = 2): Promise<Omit<AppData, 'loadi
     } catch (error) {
         if (retries > 0 && error instanceof Error && error.message !== 'Unauthorized') {
             console.warn(`Data load failed, retrying... (${retries} attempts left)`);
-            await new Promise(res => setTimeout(res, 1000));
+            await new Promise(res => setTimeout(res, retries > 1 ? 500 : 1000));
             return loadInitialData(retries - 1);
         }
         throw error;
@@ -217,6 +217,7 @@ export const deleteExpense = (itemId: string) => patchData({ op: 'deleteExpense'
 export const addAnnouncement = (payload: Omit<Announcement, 'id'>) => patchData({ op: 'addAnnouncement', payload });
 export const deleteAnnouncement = (id: string) => patchData({ op: 'deleteAnnouncement', payload: { id } });
 export const markAnnouncementRead = (payload: { announcementId: string; userId: string }) => patchData({ op: 'markAnnouncementRead', payload });
+export const markAnnouncementsReadBatch = (payload: { announcementIds: string[]; userId: string }) => patchData({ op: 'markAnnouncementsReadBatch', payload });
 
 export const addRoom = (payload: { name: string; capacity: number; description: string }) => patchData({ op: 'addRoom', payload });
 export const updateRoom = (payload: { id: string; name: string; capacity: number; description: string }) => patchData({ op: 'updateRoom', payload });

@@ -9,6 +9,7 @@ import { useData } from './hooks/useDataContext';
 import { ToastProvider } from './context/ToastContext';
 import { ToastContainer } from './components/common/Toast';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { ScreenSkeleton } from './components/common/ScreenSkeleton';
 
 // Layouts
 import { Sidebar } from './components/layout/Sidebar';
@@ -52,11 +53,15 @@ import { Button } from './components/common/Button';
 // --- Components ---
 
 const ThemeStyle: React.FC<{ themeColor: string; sidebarColor?: string }> = ({ themeColor, sidebarColor }) => {
+  // Validate hex color format to prevent CSS injection
+  const isValidHexColor = (c: string) => /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(c);
+  const safeTheme = isValidHexColor(themeColor) ? themeColor : '#4f46e5';
+  const safeSidebar = sidebarColor && isValidHexColor(sidebarColor) ? sidebarColor : '#1f2937';
   const styleContent = `
     :root { 
-      --color-primary: ${themeColor}; 
-      --color-primary-dark: ${themeColor}dd; 
-      --color-sidebar-bg-dark: ${sidebarColor || '#1f2937'};
+      --color-primary: ${safeTheme}; 
+      --color-primary-dark: ${safeTheme}dd; 
+      --color-sidebar-bg-dark: ${safeSidebar};
     }
   `;
   return <style>{styleContent}</style>;
@@ -156,7 +161,7 @@ const AppLayout: React.FC = () => {
                             </button>
                         </div>
                     )}
-                    <React.Suspense fallback={<div className="flex justify-center items-center h-full p-8">{ICONS.loading}</div>}>
+                    <React.Suspense fallback={<ScreenSkeleton />}>
                         <Outlet />
                     </React.Suspense>
                 </main>
@@ -210,7 +215,7 @@ const ParentLayout: React.FC = () => {
                         </button>
                     </div>
                 )}
-                <React.Suspense fallback={<div className="flex justify-center items-center h-full p-8">{ICONS.loading}</div>}>
+                <React.Suspense fallback={<ScreenSkeleton />}>
                     <Outlet />
                 </React.Suspense>
             </main>
@@ -266,22 +271,22 @@ const AppRoutes: React.FC = () => {
                 {/* Public pages */}
                 <Route path={ROUTES.LANDING} element={
                     isAuthenticated ? <Navigate to={role === UserRole.PARENT ? ROUTES.PARENT_DASHBOARD : ROUTES.DASHBOARD} replace /> :
-                    <React.Suspense fallback={<div className="flex h-screen w-screen items-center justify-center bg-slate-900">{ICONS.loading}</div>}>
+                    <React.Suspense fallback={<div className="flex h-screen w-screen items-center justify-center bg-slate-900"><ScreenSkeleton /></div>}>
                         <LandingPage />
                     </React.Suspense>
                 } />
                 <Route path={ROUTES.GUIDE} element={
-                    <React.Suspense fallback={<div className="flex h-screen w-screen items-center justify-center bg-slate-900">{ICONS.loading}</div>}>
+                    <React.Suspense fallback={<div className="flex h-screen w-screen items-center justify-center bg-slate-900"><ScreenSkeleton /></div>}>
                         <GuidePage />
                     </React.Suspense>
                 } />
                 <Route path="/super-admin" element={
-                    <React.Suspense fallback={<div className="flex h-screen w-screen items-center justify-center bg-slate-900">{ICONS.loading}</div>}>
+                    <React.Suspense fallback={<div className="flex h-screen w-screen items-center justify-center bg-slate-900"><ScreenSkeleton /></div>}>
                         <SuperAdminScreen />
                     </React.Suspense>
                 } />
                 <Route path={ROUTES.LOGIN} element={
-                    <React.Suspense fallback={<div className="flex h-screen w-screen items-center justify-center bg-slate-50 dark:bg-slate-900">{ICONS.loading}</div>}>
+                    <React.Suspense fallback={<div className="flex h-screen w-screen items-center justify-center bg-slate-50 dark:bg-slate-900"><ScreenSkeleton /></div>}>
                         <LoginScreen />
                     </React.Suspense>
                 } />

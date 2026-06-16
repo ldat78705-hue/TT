@@ -2,7 +2,7 @@ import { signToken } from './_lib/jwt.js';
 import { UserRole } from '../types.js';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, doc, getDoc, getDocs, collection } from 'firebase/firestore';
-import { hashPassword } from './_lib/crypto.js';
+import { hashPassword, verifyPassword } from './_lib/crypto.js';
 import { authenticateServer } from './_lib/serverAuth.js';
 import fs from 'fs';
 import path from 'path';
@@ -49,13 +49,14 @@ function isDefaultPassword(user: any, password: string, role: string): boolean {
 }
 
 // Try to authenticate a user within a specific center's data
-function tryAuthInData(data: any, identifier: string, password: string, hashedPassword: string): { user: any, role: string, mustChangePassword: boolean } | null {
+function tryAuthInData(data: any, identifier: string, password: string, _hashedPassword: string): { user: any, role: string, mustChangePassword: boolean } | null {
     const upperIdentifier = identifier.toUpperCase();
 
     // 1. Admin
     if (upperIdentifier === 'ADMIN' || upperIdentifier === 'ADMIN_USER') {
         const adminPassword = data.settings?.adminPassword || '123456';
-        if (password === adminPassword || hashedPassword === adminPassword) {
+        // Support bcrypt, SHA-256, and plaintext admin passwords
+        if (password === adminPassword || verifyPassword(password, adminPassword)) {
             const mustChange = password === '123456';
             const adminName = data.settings?.adminDisplayName || 'Admin';
             return { user: { id: 'ADMIN_USER', name: adminName, role: UserRole.ADMIN }, role: UserRole.ADMIN, mustChangePassword: mustChange };
@@ -65,8 +66,11 @@ function tryAuthInData(data: any, identifier: string, password: string, hashedPa
 
     // 2. Viewer
     if (upperIdentifier === 'VIEWER' || upperIdentifier === 'VIEWER_USER') {
-        if (data.settings?.viewerAccountActive !== false && (password === 'viewer123' || hashedPassword === 'viewer123')) {
-            return { user: { id: 'VIEWER_USER', name: 'Viewer', role: UserRole.VIEWER }, role: UserRole.VIEWER, mustChangePassword: false };
+        if (data.settings?.viewerAccountActive !== false) {
+            const viewerPwd = data.settings?.viewerPassword || 'viewer123';
+            if (password === viewerPwd || verifyPassword(password, viewerPwd)) {
+                return { user: { id: 'VIEWER_USER', name: 'Viewer', role: UserRole.VIEWER }, role: UserRole.VIEWER, mustChangePassword: false };
+            }
         }
         return null;
     }
@@ -74,7 +78,7 @@ function tryAuthInData(data: any, identifier: string, password: string, hashedPa
     // 3. Teacher
     if (data.teachers) {
         const teacher = data.teachers.find((t: any) => t.id && t.id.toUpperCase() === upperIdentifier);
-        if (teacher && (teacher.password === password || teacher.password === hashedPassword)) {
+        if (teacher && teacher.password && verifyPassword(password, teacher.password)) {
             return { user: teacher, role: teacher.role || UserRole.TEACHER, mustChangePassword: isDefaultPassword(teacher, password, teacher.role || UserRole.TEACHER) };
         }
     }
@@ -82,7 +86,7 @@ function tryAuthInData(data: any, identifier: string, password: string, hashedPa
     // 4. Staff
     if (data.staff) {
         const staffMember = data.staff.find((s: any) => s.id && s.id.toUpperCase() === upperIdentifier);
-        if (staffMember && (staffMember.password === password || staffMember.password === hashedPassword)) {
+        if (staffMember && staffMember.password && verifyPassword(password, staffMember.password)) {
             return { user: staffMember, role: staffMember.role || UserRole.MANAGER, mustChangePassword: isDefaultPassword(staffMember, password, staffMember.role || UserRole.MANAGER) };
         }
     }
@@ -92,8 +96,9 @@ function tryAuthInData(data: any, identifier: string, password: string, hashedPa
         const student = data.students.find((s: any) => s.id && s.id.toUpperCase() === upperIdentifier);
         if (student) {
             const dobPassword = student.dob ? student.dob.split('-').reverse().join('') : null;
-            const correctPassword = student.password || dobPassword;
-            if (password === correctPassword || hashedPassword === correctPassword) {
+            const storedPassword = student.password || dobPassword;
+            // Support plaintext DOB passwords, bcrypt, and SHA-256
+            if (storedPassword && (password === storedPassword || verifyPassword(password, storedPassword))) {
                 return { user: student, role: UserRole.PARENT, mustChangePassword: isDefaultPassword(student, password, UserRole.PARENT) };
             }
         }
@@ -158,8 +163,7 @@ export default async function handler(req: any, res: any) {
                     }
                 }
 
-                const hashedInput = hashPassword(password);
-                if (centerData?.loginPassword !== hashedInput) {
+                if (!centerData?.loginPassword || !verifyPassword(password, centerData.loginPassword)) {
                     return res.status(401).json({ error: 'Mật khẩu không đúng' });
                 }
 

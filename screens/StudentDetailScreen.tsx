@@ -14,6 +14,7 @@ import { CertificateGenerator } from '../components/common/CertificateGenerator'
 import { ListItemCard } from '../components/common/ListItemCard';
 import { ConfirmationModal } from '../components/common/ConfirmationModal';
 import { PaymentModal } from '../components/finance/PaymentModal';
+import { printHtml } from '../utils/html';
 
 const transactionTypeMap: Record<TransactionType, string> = {
     [TransactionType.INVOICE]: 'Hóa đơn',
@@ -571,19 +572,28 @@ export const StudentDetailScreen: React.FC = () => {
                                                         if (e.key === 'Enter' && tagInput.trim()) {
                                                             e.preventDefault();
                                                             const newTag = tagInput.trim();
-                                                            if (!(student.tags || []).includes(newTag)) {
-                                                                updateStudentTags({ studentId: student.id, tags: [...(student.tags || []), newTag] }).then(() => { setTagInput(''); toast.success('Đã thêm nhãn.'); }).catch(() => toast.error('Lỗi'));
-                                                            }
+                                                            const currentTags = student.tags || [];
+                                                            if (currentTags.length >= 20) { toast.error('Tối đa 20 nhãn.'); return; }
+                                                            if (currentTags.some(t => t.toLowerCase() === newTag.toLowerCase())) { toast.error('Nhãn đã tồn tại.'); setTagInput(''); return; }
+                                                            updateStudentTags({ studentId: student.id, tags: [...currentTags, newTag] }).then(() => { setTagInput(''); toast.success('Đã thêm nhãn.'); }).catch(() => toast.error('Lỗi'));
                                                         }
                                                     }}
                                                     placeholder="Thêm nhãn..."
                                                     className="form-input text-xs py-1 w-32"
+                                                    maxLength={30}
+                                                    disabled={(student.tags || []).length >= 20}
                                                 />
-                                                {['VIP', 'Cần theo dõi', 'Ưu tiên', 'Học bổng'].filter(s => !(student.tags || []).includes(s)).slice(0, 3).map(suggestion => (
+                                                {(student.tags || []).length >= 20 && <span className="text-[10px] text-amber-500">Đã đạt giới hạn 20 nhãn</span>}
+                                                {['VIP', 'Cần theo dõi', 'Ưu tiên', 'Học bổng'].filter(s => !(student.tags || []).some(t => t.toLowerCase() === s.toLowerCase())).slice(0, 3).map(suggestion => (
                                                     <button
                                                         key={suggestion}
-                                                        onClick={() => updateStudentTags({ studentId: student.id, tags: [...(student.tags || []), suggestion] }).then(() => toast.success('Đã thêm nhãn.')).catch(() => toast.error('Lỗi'))}
+                                                        onClick={() => {
+                                                            const currentTags = student.tags || [];
+                                                            if (currentTags.length >= 20) { toast.error('Tối đa 20 nhãn.'); return; }
+                                                            updateStudentTags({ studentId: student.id, tags: [...currentTags, suggestion] }).then(() => toast.success('Đã thêm nhãn.')).catch(() => toast.error('Lỗi'));
+                                                        }}
                                                         className="text-[10px] px-2 py-0.5 rounded-full border border-dashed border-gray-300 dark:border-gray-600 text-gray-400 hover:border-indigo-400 hover:text-indigo-500 transition-colors"
+                                                        disabled={(student.tags || []).length >= 20}
                                                     >
                                                         + {suggestion}
                                                     </button>
@@ -673,9 +683,7 @@ export const StudentDetailScreen: React.FC = () => {
                                         <td style="border:1px solid #ddd;padding:6px 8px;text-align:right;font-size:12px;color:${t.amount >= 0 ? '#16a34a' : '#dc2626'}">${t.amount.toLocaleString('vi-VN')} ₫</td>
                                         <td style="border:1px solid #ddd;padding:6px 8px;text-align:right;font-size:12px;font-weight:600;color:${t.endingBalance < 0 ? '#dc2626' : '#111'}">${t.endingBalance.toLocaleString('vi-VN')} ₫</td>
                                     </tr>`).join('');
-                                    const pw = window.open('', '_blank');
-                                    if (!pw) return;
-                                    pw.document.write(`<!DOCTYPE html><html><head><title>Sổ cái - ${student.name}</title>
+                                    const html = `<!DOCTYPE html><html><head><title>Sổ cái - ${student.name}</title>
                                         <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;padding:15mm}
                                         @page{size:A4;margin:15mm}
                                         table{border-collapse:collapse;width:100%}th{background:#f3f4f6;font-weight:600}
@@ -701,9 +709,8 @@ export const StudentDetailScreen: React.FC = () => {
                                         <div style="text-align:right;margin-top:10px;font-size:12px;color:#666">
                                             Tổng: ${sortedTransactionsWithEndingBalance.length} giao dịch | Ngày in: ${new Date().toLocaleDateString('vi-VN')}
                                         </div>
-                                    </body></html>`);
-                                    pw.document.close();
-                                    setTimeout(() => pw.print(), 500);
+                                    </body></html>`;
+                                    printHtml(html);
                                 }} className="print-hidden">
                                     {ICONS.print} <span className="ml-1">In sổ</span>
                                 </Button>

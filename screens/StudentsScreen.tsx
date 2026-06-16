@@ -14,6 +14,7 @@ import { ResetPasswordModal } from '../components/auth/ChangePasswordModal';
 import { PaymentModal } from '../components/finance/PaymentModal';
 import { ExportButton } from '../components/common/ExportButton';
 import { zaloSendTuition, zaloGetFollowersList } from '../services/api';
+import { printHtml } from '../utils/html';
 
 const removeAccents = (str: string) => {
   if (!str) return '';
@@ -689,9 +690,7 @@ export const StudentsScreen: React.FC = () => {
             pages.push(`<div style="display:flex;flex-wrap:wrap;gap:${layout.gap};justify-content:center;align-content:flex-start;width:190mm;min-height:277mm;page-break-after:always;">${pageCards.join('')}</div>`);
         }
 
-        const pw = window.open('', '_blank');
-        if (!pw) return;
-        pw.document.write(`<!DOCTYPE html><html><head><title>Thẻ QR Điểm danh</title>
+        const html = `<!DOCTYPE html><html><head><title>Thẻ QR Điểm danh</title>
             <style>
                 * { margin: 0; padding: 0; box-sizing: border-box; }
                 body { font-family: 'Segoe UI', Arial, sans-serif; }
@@ -701,9 +700,8 @@ export const StudentsScreen: React.FC = () => {
             </style>
         </head><body>
             <div class="page-container">${pages.join('')}</div>
-        </body></html>`);
-        pw.document.close();
-        setTimeout(() => pw.print(), 1000);
+        </body></html>`;
+        printHtml(html, 1000);
         setShowQRPrintModal(false);
     };
 

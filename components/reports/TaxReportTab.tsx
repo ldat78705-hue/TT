@@ -3,6 +3,7 @@ import { useData } from '../../hooks/useDataContext';
 import { TransactionType } from '../../types';
 import { Button } from '../common/Button';
 import { ICONS } from '../../constants';
+import { printHtml } from '../../utils/html';
 
 import { getVietnamTime } from '../../utils/date';
 
@@ -113,9 +114,7 @@ export const TaxReportTab: React.FC = () => {
     const handlePrint = () => {
         if (!previewRef.current) return;
         const content = previewRef.current.innerHTML;
-        const pw = window.open('', '_blank');
-        if (!pw) return;
-        pw.document.write(`<!DOCTYPE html><html><head><title>Sổ doanh thu - ${settings.name}</title>
+        const html = `<!DOCTYPE html><html><head><title>Sổ doanh thu - ${settings.name}</title>
             <style>
                 * { margin: 0; padding: 0; box-sizing: border-box; }
                 body { font-family: "Times New Roman", Times, serif; padding: 15mm; color: black; background: white; }
@@ -136,9 +135,8 @@ export const TaxReportTab: React.FC = () => {
                     thead { display: table-header-group; }
                 }
             </style>
-        </head><body>${content}</body></html>`);
-        pw.document.close();
-        setTimeout(() => pw.print(), 500);
+        </head><body>${content}</body></html>`;
+        printHtml(html);
     };
 
     const formatDate = (dateStr: string) => {

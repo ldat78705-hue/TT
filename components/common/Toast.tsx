@@ -26,10 +26,10 @@ const Toast: React.FC<{ toast: ToastMessage, onRemove: (id: number) => void }> =
     };
 
     return (
-        <div className={`flex items-center text-white p-4 rounded-md shadow-lg ${typeClasses[toast.type]}`}>
+        <div className={`flex items-center text-white p-4 rounded-md shadow-lg ${typeClasses[toast.type]}`} role="alert">
             <div className="mr-3">{ICONS[toast.type]}</div>
             <div>{toast.message}</div>
-            <button onClick={() => onRemove(toast.id)} className="ml-4 text-xl font-bold">&times;</button>
+            <button onClick={() => onRemove(toast.id)} className="ml-4 text-xl font-bold" aria-label="Đóng thông báo">&times;</button>
         </div>
     );
 };
@@ -39,7 +39,7 @@ export const ToastContainer: React.FC = () => {
     const { toasts, removeToast } = useToast();
 
     return (
-        <div className="fixed top-5 right-5 z-[100] space-y-3">
+        <div className="fixed top-5 right-5 z-[100] space-y-3" aria-live="polite" aria-atomic="true">
             {toasts.map(toast => (
                 <Toast key={toast.id} toast={toast} onRemove={removeToast} />
             ))}

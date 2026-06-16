@@ -93,6 +93,7 @@ interface DataContextType {
     addAnnouncement: (data: Omit<Announcement, 'id'>) => Promise<void>;
     deleteAnnouncement: (id: string) => Promise<void>;
     markAnnouncementRead: (payload: { announcementId: string; userId: string }) => Promise<void>;
+    markAnnouncementsReadBatch: (payload: { announcementIds: string[]; userId: string }) => Promise<void>;
     deleteAttendanceForDate: (payload: { classId: string, date: string }) => Promise<void>;
     updateUserPassword: (payload: { userId: string; role: UserRole; newPassword: string; currentPassword?: string }) => Promise<void>;
     clearCollections: (collectionKeys: ('students' | 'teachers' | 'staff' | 'classes')[]) => Promise<void>;
@@ -139,7 +140,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Helper function to handle API operations that return the full updated state
   // This replaces the manual state updates which were causing type errors
   const handleStateUpdateOperation = <T,>(apiFunc: (payload: T) => Promise<Omit<AppData, 'loading'>>, opName?: string) => async (payload: T) => {
-    if (isSubmitting) return;
+    if (isSubmitting) throw new Error('Đang xử lý, vui lòng đợi...');
     setIsSubmitting(true);
     setError(null);
     
@@ -251,6 +252,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     addAnnouncement: handleStateUpdateOperation(api.addAnnouncement, 'addAnnouncement'),
     deleteAnnouncement: handleStateUpdateOperation(api.deleteAnnouncement, 'deleteAnnouncement'),
     markAnnouncementRead: handleStateUpdateOperation(api.markAnnouncementRead, 'markAnnouncementRead'),
+    markAnnouncementsReadBatch: handleStateUpdateOperation(api.markAnnouncementsReadBatch, 'markAnnouncementsReadBatch'),
     
     addRoom: handleStateUpdateOperation(api.addRoom, 'addRoom'),
     updateRoom: handleStateUpdateOperation(api.updateRoom, 'updateRoom'),

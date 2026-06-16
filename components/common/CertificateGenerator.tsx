@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Student, Class, CenterSettings } from '../../types';
 import { Button } from '../common/Button';
 import { Modal } from '../common/Modal';
+import { escapeHtml, printHtml } from '../../utils/html';
 
 interface Props {
     student: Student;
@@ -22,8 +23,9 @@ export const CertificateGenerator: React.FC<Props> = ({ student, classes, settin
         const selectedClass = classes.find(c => c.id === selectedClassId);
         if (!selectedClass) return;
 
-        const centerName = settings.name || 'Trung tâm';
-        const centerAddress = settings.address || '';
+        const e = escapeHtml; // shorthand
+        const centerName = e(settings.name || 'Trung tâm');
+        const centerAddress = e(settings.address || '');
         const formattedDate = new Date(completionDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
         
         const gradeColors: Record<string, string> = {
@@ -34,11 +36,11 @@ export const CertificateGenerator: React.FC<Props> = ({ student, classes, settin
         };
         const accentColor = gradeColors[grade] || '#6366f1';
 
-        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>ChungChi_${student.id}</title>
+        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>ChungChi_${e(student.id)}</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600;700&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
-body{display:flex;justify-content:center;align-items:center;min-height:100vh;background:#f1f5f9;font-family:'Inter',sans-serif}
+body{display:flex;justify-content:center;align-items:center;min-height:100vh;background:#f1f5f9;font-family:'Inter','Segoe UI',system-ui,sans-serif}
 .cert{width:297mm;height:210mm;background:white;position:relative;overflow:hidden;padding:20mm 25mm}
 .border-frame{position:absolute;inset:8mm;border:3px solid ${accentColor};border-radius:4px}
 .border-inner{position:absolute;inset:11mm;border:1px solid ${accentColor}40;border-radius:2px}
@@ -48,12 +50,12 @@ body{display:flex;justify-content:center;align-items:center;min-height:100vh;bac
 .corner-bl{bottom:14mm;left:14mm;border-bottom:3px solid;border-left:3px solid}
 .corner-br{bottom:14mm;right:14mm;border-bottom:3px solid;border-right:3px solid}
 .content{position:relative;z-index:1;text-align:center;height:100%;display:flex;flex-direction:column;justify-content:space-between}
-.header h1{font-family:'Playfair Display',serif;font-size:16px;color:#64748b;letter-spacing:4px;text-transform:uppercase;margin-bottom:4px}
-.header h2{font-family:'Playfair Display',serif;font-size:42px;color:${accentColor};margin:8px 0;letter-spacing:2px}
+.header h1{font-family:'Playfair Display',Georgia,'Times New Roman',serif;font-size:16px;color:#64748b;letter-spacing:4px;text-transform:uppercase;margin-bottom:4px}
+.header h2{font-family:'Playfair Display',Georgia,'Times New Roman',serif;font-size:42px;color:${accentColor};margin:8px 0;letter-spacing:2px}
 .header .subtitle{font-size:14px;color:#94a3b8;letter-spacing:3px;text-transform:uppercase}
 .body{flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px}
 .body .label{font-size:13px;color:#94a3b8;text-transform:uppercase;letter-spacing:2px}
-.body .name{font-family:'Playfair Display',serif;font-size:36px;color:#1e293b;border-bottom:2px solid ${accentColor}40;padding-bottom:8px;display:inline-block}
+.body .name{font-family:'Playfair Display',Georgia,'Times New Roman',serif;font-size:36px;color:#1e293b;border-bottom:2px solid ${accentColor}40;padding-bottom:8px;display:inline-block}
 .body .course{font-size:18px;color:#475569;margin-top:12px}
 .body .course strong{color:${accentColor};font-weight:700}
 .body .grade{display:inline-block;padding:6px 24px;border:2px solid ${accentColor};border-radius:50px;font-size:14px;font-weight:700;color:${accentColor};letter-spacing:2px;text-transform:uppercase;margin-top:8px}
@@ -82,10 +84,10 @@ body{display:flex;justify-content:center;align-items:center;min-height:100vh;bac
         </div>
         <div class="body">
             <p class="label">Được cấp cho</p>
-            <p class="name">${student.name}</p>
-            <p class="course">Đã hoàn thành khóa học <strong>${selectedClass.name}</strong></p>
-            <p class="course">${selectedClass.subject ? `Môn: ${selectedClass.subject}` : ''}</p>
-            <span class="grade">Xếp loại: ${grade}</span>
+            <p class="name">${e(student.name)}</p>
+            <p class="course">Đã hoàn thành khóa học <strong>${e(selectedClass.name)}</strong></p>
+            <p class="course">${selectedClass.subject ? `Môn: ${e(selectedClass.subject)}` : ''}</p>
+            <span class="grade">Xếp loại: ${e(grade)}</span>
             <p class="desc">Đã hoàn thành đầy đủ nội dung chương trình đào tạo và đạt yêu cầu đầu ra của khóa học.</p>
         </div>
         <div class="footer">
@@ -96,7 +98,7 @@ body{display:flex;justify-content:center;align-items:center;min-height:100vh;bac
             <div class="sign">
                 <p style="height:40px"></p>
                 <div class="sign-line"></div>
-                <p class="sign-name">${settings.adminDisplayName || 'Giám đốc'}</p>
+                <p class="sign-name">${e(settings.adminDisplayName || 'Giám đốc')}</p>
                 <p class="sign-title">Giám đốc Trung tâm</p>
             </div>
         </div>
@@ -104,12 +106,7 @@ body{display:flex;justify-content:center;align-items:center;min-height:100vh;bac
 </div>
 </body></html>`;
 
-        const pw = window.open('', '_blank');
-        if (pw) {
-            pw.document.write(html);
-            pw.document.close();
-            pw.onload = () => setTimeout(() => pw.print(), 500);
-        }
+        printHtml(html, 800);
     };
 
     return (
