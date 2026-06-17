@@ -9,7 +9,7 @@ import { z } from 'zod';
 // --- Reusable field schemas ---
 const idField = z.string().min(1, 'Mã không được để trống').max(50, 'Mã quá dài');
 const nameField = z.string().min(1, 'Tên không được để trống').max(200, 'Tên quá dài');
-const dateField = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày phải có định dạng YYYY-MM-DD');
+const dateField = z.string().regex(/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?)?$/, 'Ngày phải có định dạng YYYY-MM-DD hoặc YYYY-MM-DDTHH:mm:ss');
 
 // --- Operation schemas ---
 
