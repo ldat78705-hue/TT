@@ -41,13 +41,17 @@ class AnnouncementsViewModel @Inject constructor(
     fun addAnnouncement(title: String, content: String, target: String) {
         val createdBy = dataRepository.getLoggedInUserName().ifEmpty { "Admin" }
         viewModelScope.launch {
-            dataRepository.addAnnouncement(title, content, createdBy, target)
+            try {
+                dataRepository.addAnnouncement(title, content, createdBy, target)
+            } catch (e: Exception) { e.printStackTrace() }
         }
     }
 
     fun deleteAnnouncement(id: String) {
         viewModelScope.launch {
-            dataRepository.deleteAnnouncement(id)
+            try {
+                dataRepository.deleteAnnouncement(id)
+            } catch (e: Exception) { e.printStackTrace() }
         }
     }
 }

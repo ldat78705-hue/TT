@@ -132,7 +132,11 @@ class StudentsViewModel @Inject constructor(
         val userName = dataRepository.getLoggedInUserName()
         val description = "Thanh toán HP - ghi nhận bởi $userName (App)"
         viewModelScope.launch {
-            dataRepository.recordTransaction(studentId, amount, description, dateStr, "CREDIT", paymentMethod)
+            try {
+                dataRepository.recordTransaction(studentId, amount, description, dateStr, "CREDIT", paymentMethod)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 

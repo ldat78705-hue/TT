@@ -80,7 +80,9 @@ class ClassesViewModel @Inject constructor(
         val classId = _selectedClass.value?.id ?: return
         val todayStr = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
         viewModelScope.launch {
-            dataRepository.recordAttendance(classId, studentId, todayStr, status)
+            try {
+                dataRepository.recordAttendance(classId, studentId, todayStr, status)
+            } catch (e: Exception) { e.printStackTrace() }
         }
     }
 
