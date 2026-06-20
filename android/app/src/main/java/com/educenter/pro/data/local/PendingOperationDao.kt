@@ -23,4 +23,7 @@ interface PendingOperationDao {
 
     @Query("DELETE FROM pending_operations WHERE status = 'PENDING'")
     suspend fun clearAll()
+
+    @Query("DELETE FROM pending_operations WHERE operationName = :opName AND status = 'PENDING' AND payload LIKE :payloadPattern")
+    suspend fun deleteByPattern(opName: String, payloadPattern: String)
 }

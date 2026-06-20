@@ -21,6 +21,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -37,6 +39,9 @@ class DataRepository @Inject constructor(
 
     private val _pendingOpsCount = MutableStateFlow(0)
     val pendingOpsCount: StateFlow<Int> = _pendingOpsCount.asStateFlow()
+
+    // Mutex to serialize attendance save operations — prevents race conditions
+    private val attendanceMutex = Mutex()
 
     private val _currentUserRole = MutableStateFlow<com.educenter.pro.data.model.UserRole>(com.educenter.pro.data.model.UserRole.VIEWER)
     val currentUserRole: StateFlow<com.educenter.pro.data.model.UserRole> = _currentUserRole.asStateFlow()
@@ -150,55 +155,42 @@ class DataRepository @Inject constructor(
 
     // BATCH save - mirrors Web's updateAttendance (1 API call for all students)
     // Supports OFFLINE mode: queues operation if network fails
+    // Uses Mutex to prevent concurrent saves that cause cross-class data corruption
     suspend fun recordAttendanceBatch(
         classId: String,
         date: String,
         entries: Map<String, Map<String, String>> // studentId -> {status, note}
-    ) = withContext(Dispatchers.IO) {
-        val records = entries.map { (studentId, data) ->
-            mapOf(
-                "classId" to classId,
-                "studentId" to studentId,
-                "date" to date,
-                "status" to (data["status"] ?: "UNMARKED"),
-                "note" to (data["note"] ?: "")
-            )
-        }
-        try {
-            val op = OperationPayload("updateAttendance", records)
-            val updatedData = apiService.executeOperation(op)
-            saveAndCache(updatedData)
-        } catch (e: Exception) {
-            // OFFLINE FALLBACK: Queue the operation for later sync
-            val payloadJson = gson.toJson(mapOf("op" to "updateAttendance", "payload" to records))
-            pendingOpDao.insert(PendingOperationEntity(
-                operationName = "updateAttendance",
-                payload = payloadJson
-            ))
-            _pendingOpsCount.value = pendingOpDao.getPendingCount()
-
-            // Optimistic local update: update cached attendance data
-            val currentData = _appData.value
-            if (currentData != null) {
-                val updatedAttendance = currentData.attendance.toMutableList()
-                // Remove existing records for this class/date
-                updatedAttendance.removeAll { it.classId == classId && it.date == date }
-                // Add new records
-                records.forEach { r ->
-                    updatedAttendance.add(com.educenter.pro.data.model.AttendanceRecord(
-                        id = "PENDING-${System.currentTimeMillis()}-${r["studentId"]}",
-                        classId = classId,
-                        studentId = r["studentId"] ?: "",
-                        date = date,
-                        status = r["status"] ?: "UNMARKED",
-                        note = r["note"] ?: ""
-                    ))
-                }
-                val updatedData = currentData.copy(attendance = updatedAttendance)
-                _appData.value = updatedData
-                shardDao.insertShards(listOf(ShardEntity(id = "app_data", data = gson.toJson(updatedData))))
+    ) = attendanceMutex.withLock {
+        withContext(Dispatchers.IO) {
+            val records = entries.map { (studentId, data) ->
+                mapOf(
+                    "classId" to classId,
+                    "studentId" to studentId,
+                    "date" to date,
+                    "status" to (data["status"] ?: "UNMARKED"),
+                    "note" to (data["note"] ?: "")
+                )
             }
-            // Don't throw - silently queued
+            try {
+                val op = OperationPayload("updateAttendance", records)
+                val updatedData = apiService.executeOperation(op)
+                saveAndCache(updatedData)
+            } catch (e: Exception) {
+                // OFFLINE FALLBACK: Queue the operation for later sync
+                // Dedup: remove any existing pending op for same class+date
+                try {
+                    pendingOpDao.deleteByPattern("updateAttendance", "%\"classId\":\"$classId\"%\"date\":\"$date\"%")
+                } catch (_: Exception) { }
+
+                val payloadJson = gson.toJson(mapOf("op" to "updateAttendance", "payload" to records))
+                pendingOpDao.insert(PendingOperationEntity(
+                    operationName = "updateAttendance",
+                    payload = payloadJson
+                ))
+                _pendingOpsCount.value = pendingOpDao.getPendingCount()
+                // No optimistic local update — data syncs when connection restores
+                // This prevents cross-class data corruption from stale cache writes
+            }
         }
     }
 

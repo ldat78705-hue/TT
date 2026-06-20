@@ -53,6 +53,9 @@ class AttendanceViewModel @Inject constructor(
     private val _saveSuccess = MutableStateFlow<Boolean?>(null)
     val saveSuccess: StateFlow<Boolean?> = _saveSuccess.asStateFlow()
 
+    // Timestamp when save completed — used to suppress combine flow from overwriting user data
+    private var _lastSaveCompletedAt = 0L
+
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing = _isRefreshing.asStateFlow()
 
@@ -184,8 +187,10 @@ class AttendanceViewModel @Inject constructor(
                 }
                 map.toMap()
             }.collect { map ->
-                // Only update if not currently saving (avoid overwriting user changes mid-save)
-                if (!_isSaving.value) {
+                // Guard: Don't overwrite attendanceMap while saving or within 2s after save
+                // This prevents server response from resetting the map when user switches classes
+                val cooldownElapsed = System.currentTimeMillis() - _lastSaveCompletedAt > 2000
+                if (!_isSaving.value && cooldownElapsed) {
                     _attendanceMap.value = map
                 }
             }
@@ -248,6 +253,10 @@ class AttendanceViewModel @Inject constructor(
                     dataRepository.recordAttendanceBatch(classId, date, markedEntries)
                 }
                 _saveSuccess.value = true
+                _lastSaveCompletedAt = System.currentTimeMillis()
+
+                // Force sync to ensure we have the latest data from server
+                try { dataRepository.syncData(force = true) } catch (_: Exception) { }
             } catch (e: Exception) {
                 e.printStackTrace()
                 _saveSuccess.value = false
