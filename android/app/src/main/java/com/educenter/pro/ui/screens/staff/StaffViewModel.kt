@@ -32,30 +32,26 @@ class StaffViewModel @Inject constructor(
     val currentUserRole = repository.currentUserRole
 
     init {
-        loadData()
-    }
-
-    private fun loadData() {
+        // Reactively update staff list when appData changes
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
-            repository.syncData()
-            updateFromRepo()
-            _uiState.value = _uiState.value.copy(isLoading = false)
+            repository.appData.collect { appData ->
+                if (appData != null) {
+                    _uiState.value = _uiState.value.copy(staffList = appData.staff, isLoading = false)
+                }
+            }
+        }
+        // Sync fresh data from server
+        viewModelScope.launch {
+            try { repository.syncData() } catch (_: Exception) { }
         }
     }
 
     fun refresh() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isRefreshing = true)
-            repository.syncData(force = true)
-            updateFromRepo()
+            try { repository.syncData(force = true) } catch (_: Exception) { }
             _uiState.value = _uiState.value.copy(isRefreshing = false)
         }
-    }
-
-    private fun updateFromRepo() {
-        val data = repository.appData.value ?: return
-        _uiState.value = _uiState.value.copy(staffList = data.staff)
     }
 
     fun addStaff(name: String, email: String, role: String, password: String) {
@@ -63,7 +59,6 @@ class StaffViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isSaving = true)
             try {
                 repository.addStaff(name, email, role, password)
-                updateFromRepo()
                 _uiState.value = _uiState.value.copy(isSaving = false, saveSuccess = true)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(isSaving = false, error = e.message)
@@ -75,7 +70,6 @@ class StaffViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 repository.deleteStaff(staffId)
-                updateFromRepo()
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(error = e.message)
             }

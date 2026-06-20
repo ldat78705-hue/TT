@@ -140,13 +140,12 @@ class QRScannerViewModel @Inject constructor(
             return
         }
 
-        // Success! Record attendance
+        // Success! Record attendance (use single-record API to avoid overwriting other scanned students)
         viewModelScope.launch {
             try {
-                val entries = mapOf(studentId to mapOf("status" to "PRESENT", "note" to "QR"))
-                repository.recordAttendanceBatch(state.selectedClassId, todayDate, entries)
+                repository.recordAttendance(state.selectedClassId, studentId, todayDate, "PRESENT", "QR")
             } catch (e: Exception) {
-                // Will be queued offline
+                // Network error - will need to retry
             }
         }
 
