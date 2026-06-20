@@ -28,12 +28,11 @@ class SplashViewModel @Inject constructor(
 
     private fun loadData() {
         viewModelScope.launch {
-            dataRepository.syncData()
+            try { dataRepository.syncData() } catch (_: Exception) { }
+            // Collect appData — even if sync failed, cache may have data
             dataRepository.appData.collect { appData ->
-                if (appData != null) {
-                    _settings.value = appData.settings
-                    _isReady.value = true
-                }
+                _settings.value = appData?.settings
+                _isReady.value = true
             }
         }
     }

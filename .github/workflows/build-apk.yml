@@ -80,13 +80,12 @@ jobs:
             
             > ⚠️ Lần đầu cần cho phép "Cài từ nguồn không xác định" trong Cài đặt điện thoại
             
-            ### 🐛 Sửa lỗi v2.7:
-            - 🔧 Sửa lỗi thêm nhân viên thiếu mã ID → server crash
-            - 🔧 Sửa lỗi cập nhật nhân viên sai format payload
-            - 🔑 Sửa lỗi đổi mật khẩu phụ huynh gửi sai role
-            - 🛡️ Staff dialog chỉ cho phép role MANAGER/ACCOUNTANT (đúng server)
-            - 🔒 Mật khẩu biometric lưu bằng EncryptedSharedPreferences
-            - 📢 Sửa lỗi tạo thông báo bị Zod reject (createdAt optional)
+            ### 🔧 Cải thiện v2.8.3:
+            - 🔴 Sửa lỗi nghiêm trọng: App đứng vĩnh viễn ở màn hình khởi động khi mất mạng
+            - 🟡 Sửa lỗi quét QR không hiện danh sách lớp khi offline
+            - 🟡 Sửa lỗi nút đồng bộ bị quay loading mãi khi mất kết nối
+            - 🔒 Tăng cường bảo mật: Không còn log dữ liệu nhạy cảm ra Logcat
+            - ⚡ Cải thiện ổn định chung cho tất cả màn hình
           generate_release_notes: true
           draft: false
           prerelease: false

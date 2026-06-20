@@ -87,7 +87,9 @@ object AppModule {
     @Singleton
     fun provideOkHttpClient(prefs: SharedPreferences): OkHttpClient {
         val logging = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            // BASIC only logs request/response lines — NOT body content
+            // This prevents passwords, tokens, and personal data from leaking to Logcat
+            level = HttpLoggingInterceptor.Level.BASIC
         }
         return OkHttpClient.Builder()
             .addInterceptor(logging)

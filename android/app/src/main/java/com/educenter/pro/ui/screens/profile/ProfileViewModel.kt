@@ -41,7 +41,7 @@ class ProfileViewModel @Inject constructor(
     fun manualSync() {
         viewModelScope.launch {
             _isSyncing.value = true
-            dataRepository.syncData(force = true)
+            try { dataRepository.syncData(force = true) } catch (_: Exception) { }
             _isSyncing.value = false
         }
     }

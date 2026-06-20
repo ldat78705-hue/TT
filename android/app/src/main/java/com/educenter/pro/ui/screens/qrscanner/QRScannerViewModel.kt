@@ -53,7 +53,7 @@ class QRScannerViewModel @Inject constructor(
 
     private fun loadClasses() {
         viewModelScope.launch {
-            repository.syncData()
+            try { repository.syncData() } catch (_: Exception) { }
             val data = repository.appData.value ?: return@launch
             val students = data.students.filter { it.status == PersonStatus.ACTIVE }
 
