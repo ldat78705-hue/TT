@@ -71,6 +71,7 @@ fun AttendanceScreen(
     val saveSuccess by viewModel.saveSuccess.collectAsState()
     val pendingOpsCount by viewModel.pendingOpsCount.collectAsState()
     val attendedClassIds by viewModel.attendedClassIds.collectAsState()
+    val activeStudentCounts by viewModel.activeStudentCounts.collectAsState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
     val isViewer by viewModel.isViewer.collectAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -131,6 +132,7 @@ fun AttendanceScreen(
                 scheduledClasses = scheduledClasses,
                 allClasses = classes,
                 attendedClassIds = attendedClassIds,
+                activeStudentCounts = activeStudentCounts,
                 onDateChange = { viewModel.selectDate(it) },
                 onClassClick = { viewModel.selectClass(it) },
                 onNavigateToQR = onNavigateToQR,
@@ -237,6 +239,7 @@ private fun ScheduleView(
     scheduledClasses: List<com.educenter.pro.data.model.ClassModel>,
     allClasses: List<com.educenter.pro.data.model.ClassModel>,
     attendedClassIds: Set<String>,
+    activeStudentCounts: Map<String, Int> = emptyMap(),
     onDateChange: (String) -> Unit,
     onClassClick: (String) -> Unit,
     onNavigateToQR: () -> Unit = {},
@@ -413,7 +416,7 @@ private fun ScheduleView(
         } else {
             items(scheduledClasses) { cls ->
                 val isAttended = attendedClassIds.contains(cls.id)
-                ScheduleClassCard(cls = cls, isAttended = isAttended, onClassClick = onClassClick)
+                ScheduleClassCard(cls = cls, isAttended = isAttended, activeCount = activeStudentCounts[cls.id], onClassClick = onClassClick)
             }
         }
 
@@ -445,7 +448,7 @@ private fun ScheduleView(
             val unscheduledClasses = allClasses.filter { all -> scheduledClasses.none { it.id == all.id } }
             items(unscheduledClasses) { cls ->
                 val isAttended = attendedClassIds.contains(cls.id)
-                ScheduleClassCard(cls = cls, isAttended = isAttended, onClassClick = onClassClick)
+                ScheduleClassCard(cls = cls, isAttended = isAttended, activeCount = activeStudentCounts[cls.id], onClassClick = onClassClick)
             }
         }
     }
@@ -455,6 +458,7 @@ private fun ScheduleView(
 private fun ScheduleClassCard(
     cls: com.educenter.pro.data.model.ClassModel,
     isAttended: Boolean,
+    activeCount: Int? = null,
     onClassClick: (String) -> Unit
 ) {
     Card(
@@ -511,7 +515,7 @@ private fun ScheduleClassCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "👥 Sĩ số: ${cls.studentIds.size} học viên",
+                    "👥 Sĩ số: ${activeCount ?: cls.studentIds.size} học viên",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 14.sp

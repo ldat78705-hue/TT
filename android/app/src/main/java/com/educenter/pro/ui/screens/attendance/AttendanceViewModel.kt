@@ -33,6 +33,17 @@ class AttendanceViewModel @Inject constructor(
         .map { it?.students ?: emptyList() }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
+    // Active student count per class — for schedule card display
+    val activeStudentCounts: StateFlow<Map<String, Int>> = combine(
+        allStudents,
+        classes
+    ) { students, clsList ->
+        val activeIds = students.filter { it.status == PersonStatus.ACTIVE }.map { it.id }.toSet()
+        clsList.associate { cls ->
+            cls.id to cls.studentIds.count { activeIds.contains(it) }
+        }
+    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyMap())
+
     private val allAttendance: StateFlow<List<AttendanceRecord>> = dataRepository.appData
         .map { it?.attendance ?: emptyList() }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())

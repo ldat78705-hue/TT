@@ -80,12 +80,12 @@ jobs:
             
             > ⚠️ Lần đầu cần cho phép "Cài từ nguồn không xác định" trong Cài đặt điện thoại
             
-            ### 🔧 Cải thiện v2.8.3:
-            - 🔴 Sửa lỗi nghiêm trọng: App đứng vĩnh viễn ở màn hình khởi động khi mất mạng
-            - 🟡 Sửa lỗi quét QR không hiện danh sách lớp khi offline
-            - 🟡 Sửa lỗi nút đồng bộ bị quay loading mãi khi mất kết nối
-            - 🔒 Tăng cường bảo mật: Không còn log dữ liệu nhạy cảm ra Logcat
-            - ⚡ Cải thiện ổn định chung cho tất cả màn hình
+            ### 🔧 Cải thiện v2.8.4:
+            - 🔴 Sửa lỗi sĩ số hiển thị sai: Bên ngoài ghi 28 nhưng bên trong chỉ 17 HS
+              → Giờ sĩ số bên ngoài chỉ đếm học viên đang theo học (ACTIVE)
+            - ⚡ Kế thừa tất cả cải thiện từ v2.8.3:
+              - Sửa app đứng khi offline, QR không hiện lớp, nút Sync quay mãi
+              - Tăng cường bảo mật log dữ liệu
           generate_release_notes: true
           draft: false
           prerelease: false
