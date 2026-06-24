@@ -849,7 +849,7 @@ fun StudentDetailDialog(
                                                 },
                                                 label = { Text("+ $suggestion", fontSize = 11.sp) },
                                                 shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                                                border = AssistChipDefaults.assistChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
+                                                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                                             )
                                         }
                                 }
