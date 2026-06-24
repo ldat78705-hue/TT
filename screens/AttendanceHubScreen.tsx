@@ -249,6 +249,7 @@ const UnscheduledClassesSection: React.FC<{
     eventsForSelectedDay: CalendarEvent[];
     selectedDate: string;
 }> = ({ relevantClasses, eventsForSelectedDay, selectedDate }) => {
+    const { state } = useData();
     const [isExpanded, setIsExpanded] = useState(false);
 
     // Find classes NOT in today's scheduled events
@@ -289,7 +290,7 @@ const UnscheduledClassesSection: React.FC<{
                                 <div>
                                     <h4 className="font-semibold text-sm text-gray-800 dark:text-gray-200">{cls.name}</h4>
                                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                                        {cls.studentIds?.length || 0} học viên • Ngoài lịch
+                                        {(cls.studentIds || []).filter(id => state.students.some(s => s.id === id && s.status === 'ACTIVE')).length} học viên • Ngoài lịch
                                     </p>
                                 </div>
                             </div>

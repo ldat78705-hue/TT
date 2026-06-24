@@ -148,5 +148,42 @@ class StudentsViewModel @Inject constructor(
     val settings = dataRepository.appData
         .map { it?.settings }
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
-}
 
+    // ============ TAGS & NOTES ============
+
+    private val _tagNoteError = MutableStateFlow<String?>(null)
+    val tagNoteError = _tagNoteError.asStateFlow()
+
+    fun clearTagNoteError() { _tagNoteError.value = null }
+
+    fun addStudentNote(studentId: String, text: String) {
+        viewModelScope.launch {
+            try {
+                val createdBy = dataRepository.getLoggedInUserName()
+                dataRepository.addStudentNote(studentId, text, createdBy)
+            } catch (e: Exception) {
+                _tagNoteError.value = "Lỗi thêm ghi chú: ${e.message}"
+            }
+        }
+    }
+
+    fun deleteStudentNote(studentId: String, noteId: String) {
+        viewModelScope.launch {
+            try {
+                dataRepository.deleteStudentNote(studentId, noteId)
+            } catch (e: Exception) {
+                _tagNoteError.value = "Lỗi xóa ghi chú: ${e.message}"
+            }
+        }
+    }
+
+    fun updateStudentTags(studentId: String, tags: List<String>) {
+        viewModelScope.launch {
+            try {
+                dataRepository.updateStudentTags(studentId, tags)
+            } catch (e: Exception) {
+                _tagNoteError.value = "Lỗi cập nhật nhãn: ${e.message}"
+            }
+        }
+    }
+}

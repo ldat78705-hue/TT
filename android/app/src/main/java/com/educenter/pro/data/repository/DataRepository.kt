@@ -256,6 +256,35 @@ class DataRepository @Inject constructor(
         } catch (e: Exception) { e.printStackTrace() }
     }
 
+    // ============ STUDENT TAGS & NOTES ============
+
+    suspend fun addStudentNote(studentId: String, text: String, createdBy: String) = withContext(Dispatchers.IO) {
+        try {
+            val payload = mapOf(
+                "studentId" to studentId,
+                "note" to mapOf("text" to text, "createdBy" to createdBy)
+            )
+            val updatedData = apiService.executeOperation(OperationPayload("addStudentNote", payload))
+            saveAndCache(updatedData)
+        } catch (e: Exception) { e.printStackTrace(); throw e }
+    }
+
+    suspend fun deleteStudentNote(studentId: String, noteId: String) = withContext(Dispatchers.IO) {
+        try {
+            val payload = mapOf("studentId" to studentId, "noteId" to noteId)
+            val updatedData = apiService.executeOperation(OperationPayload("deleteStudentNote", payload))
+            saveAndCache(updatedData)
+        } catch (e: Exception) { e.printStackTrace(); throw e }
+    }
+
+    suspend fun updateStudentTags(studentId: String, tags: List<String>) = withContext(Dispatchers.IO) {
+        try {
+            val payload = mapOf("studentId" to studentId, "tags" to tags)
+            val updatedData = apiService.executeOperation(OperationPayload("updateStudentTags", payload))
+            saveAndCache(updatedData)
+        } catch (e: Exception) { e.printStackTrace(); throw e }
+    }
+
     // Legacy bulk save (kept for compat)
     suspend fun saveStudents(newStudents: List<Student>) = withContext(Dispatchers.IO) {
         val current = _appData.value?.students ?: emptyList()

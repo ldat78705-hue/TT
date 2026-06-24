@@ -20,6 +20,13 @@ data class Settings(
     val messageTemplates: Map<String, String>? = null
 )
 
+data class StudentNote(
+    val id: String = "",
+    val text: String = "",
+    val createdAt: String = "",
+    val createdBy: String = ""
+)
+
 data class Student(
     val id: String = "",
     val name: String = "",
@@ -35,6 +42,9 @@ data class Student(
     val discountPercentage: Double = 0.0,
     val dob: String = "",
     val password: String? = null,
+    // Tags and internal notes
+    val tags: List<String>? = null,
+    val internalNotes: List<StudentNote>? = null,
     // Fields preserved from server - not editable in App UI but must be kept
     val createdAt: String = "",
     val statusChangedAt: String? = null,

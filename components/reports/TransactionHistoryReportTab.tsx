@@ -3,11 +3,15 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useData } from '../../hooks/useDataContext';
 import { Table, SortConfig, Column } from '../common/Table';
 import { Transaction, TransactionType, Class, Student } from '../../types';
+import { Button } from '../common/Button';
 import { ExportButton } from '../common/ExportButton';
 import { Pagination } from '../common/Pagination';
 import { ListItemCard } from '../common/ListItemCard';
 import { formatVietnamDate } from '../../utils/date';
 import { ReceiptModal } from '../finance/ReceiptModal';
+import { ICONS } from '../../constants';
+import { printHtml, escapeHtml } from '../../utils/html';
+import { buildPrintableReport } from '../../utils/reportPrintTemplates';
 
 const ITEMS_PER_PAGE = 15;
 
@@ -158,7 +162,48 @@ export const TransactionHistoryReportTab: React.FC<TransactionHistoryReportTabPr
         <div className="card-base">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
                 <h2 className="text-xl font-semibold">Lịch sử Giao dịch</h2>
-                <ExportButton data={exportData} columns={exportColumns} filenameBase={`LichSuGiaoDich_${startDate}_${endDate}`} />
+                <div className="flex flex-wrap gap-2">
+                    <Button onClick={() => {
+                        const totalCredit = sortedData.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0);
+                        const totalDebit = sortedData.filter(t => t.amount < 0).reduce((s, t) => s + t.amount, 0);
+                        const html = buildPrintableReport({
+                            title: 'Lịch Sử Giao Dịch',
+                            subtitle: classFilter !== 'all' ? `Lớp: ${state.classes.find(c => c.id === classFilter)?.name || ''}` : undefined,
+                            centerName: state.settings.name,
+                            dateRange: { from: startDate, to: endDate },
+                            columns: [
+                                { header: 'STT', align: 'center', width: '35px' },
+                                { header: 'Ngày', width: '90px' },
+                                { header: 'Học viên' },
+                                { header: 'Diễn giải' },
+                                { header: 'Loại', width: '85px' },
+                                { header: 'Hình thức', width: '85px' },
+                                { header: 'Số tiền', align: 'right', width: '110px' },
+                            ],
+                            rows: sortedData.map((t, idx) => [
+                                String(idx + 1),
+                                escapeHtml(formatVietnamDate(t.date)),
+                                escapeHtml(t.studentName),
+                                escapeHtml(t.description),
+                                escapeHtml(transactionTypeMap[t.type]),
+                                escapeHtml(t.paymentMethodStr),
+                                t.amount >= 0
+                                    ? `<span style="color:#16a34a;font-weight:600">${t.amount.toLocaleString('vi-VN')} ₫</span>`
+                                    : `<span style="color:#dc2626;font-weight:600">${t.amount.toLocaleString('vi-VN')} ₫</span>`,
+                            ]),
+                            summary: [
+                                { label: 'Tổng thu', value: `${totalCredit.toLocaleString('vi-VN')} ₫` },
+                                { label: 'Tổng chi', value: `${Math.abs(totalDebit).toLocaleString('vi-VN')} ₫` },
+                                { label: 'Ròng', value: `${(totalCredit + totalDebit).toLocaleString('vi-VN')} ₫` },
+                            ],
+                            orientation: 'landscape',
+                        });
+                        printHtml(html);
+                    }} variant="secondary">
+                        {ICONS.print} In báo cáo
+                    </Button>
+                    <ExportButton data={exportData} columns={exportColumns} filenameBase={`LichSuGiaoDich_${startDate}_${endDate}`} />
+                </div>
             </div>
             <input 
                 type="text"

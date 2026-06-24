@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
@@ -24,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.educenter.pro.data.model.Student
 import com.educenter.pro.data.model.ClassModel
+import com.educenter.pro.data.model.UserRole
 import com.educenter.pro.ui.components.PullRefreshWrapper
 import java.text.NumberFormat
 import java.util.Locale
@@ -292,7 +294,10 @@ fun StudentsScreen(
                 attendanceRecords = studentAtt,
                 classes = classes,
                 onDismiss = { selectedStudentForDetails = null },
-                settings = settings
+                settings = settings,
+                viewModel = viewModel,
+                canManage = canManage,
+                currentUserRole = currentUserRole
             )
         }
     }
@@ -535,7 +540,10 @@ fun StudentDetailDialog(
     attendanceRecords: List<com.educenter.pro.data.model.AttendanceRecord>,
     classes: List<ClassModel>,
     onDismiss: () -> Unit,
-    settings: com.educenter.pro.data.model.Settings? = null
+    settings: com.educenter.pro.data.model.Settings? = null,
+    viewModel: StudentsViewModel? = null,
+    canManage: Boolean = false,
+    currentUserRole: UserRole = UserRole.VIEWER
 ) {
     val currencyFormatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
     var selectedTab by remember { mutableStateOf(0) }
@@ -662,9 +670,12 @@ fun StudentDetailDialog(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
+                val showTagsNotes = currentUserRole != UserRole.PARENT && currentUserRole != UserRole.VIEWER
+                val tabTitles = if (showTagsNotes) listOf("💰 Tài chính", "📋 Điểm danh", "🏷️ Nhãn & Ghi chú") else listOf("💰 Tài chính", "📋 Điểm danh")
                 TabRow(selectedTabIndex = selectedTab) {
-                    Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("💰 Tài chính", fontSize = 14.sp) })
-                    Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("📋 Điểm danh", fontSize = 14.sp) })
+                    tabTitles.forEachIndexed { index, title ->
+                        Tab(selected = selectedTab == index, onClick = { selectedTab = index }, text = { Text(title, fontSize = 13.sp) })
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -733,6 +744,193 @@ fun StudentDetailDialog(
                                         Text("$statusText $statusLabel", color = statusColor, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                     }
                                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Tags & Notes tab
+                if (selectedTab == 2 && viewModel != null) {
+                    var tagInput by remember { mutableStateOf("") }
+                    var noteInput by remember { mutableStateOf("") }
+                    val tagSuggestions = listOf("VIP", "Cần theo dõi", "Ưu tiên", "Học bổng", "Nghỉ nhiều", "Nợ học phí")
+                    val currentTags = student.tags ?: emptyList()
+                    val currentNotes = student.internalNotes ?: emptyList()
+
+                    LazyColumn {
+                        // === TAGS SECTION ===
+                        item {
+                            Text("🏷️ Nhãn", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                        item {
+                            // Existing tags as chips
+                            if (currentTags.isEmpty()) {
+                                Text("Chưa có nhãn", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 8.dp))
+                            } else {
+                                @OptIn(ExperimentalLayoutApi::class)
+                                FlowRow(
+                                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    currentTags.forEach { tag ->
+                                        InputChip(
+                                            selected = true,
+                                            onClick = {},
+                                            label = { Text(tag, fontSize = 13.sp) },
+                                            trailingIcon = if (canManage) {
+                                                {
+                                                    IconButton(
+                                                        onClick = {
+                                                            viewModel.updateStudentTags(student.id, currentTags.filter { it != tag })
+                                                        },
+                                                        modifier = Modifier.size(18.dp)
+                                                    ) {
+                                                        Icon(Icons.Default.Close, contentDescription = "Xóa nhãn", modifier = Modifier.size(14.dp))
+                                                    }
+                                                }
+                                            } else null,
+                                            colors = InputChipDefaults.inputChipColors(
+                                                selectedContainerColor = Color(0xFF818CF8).copy(alpha = 0.15f),
+                                                selectedLabelColor = Color(0xFF4338CA)
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        // Add tag input
+                        if (canManage && currentTags.size < 20) {
+                            item {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    OutlinedTextField(
+                                        value = tagInput,
+                                        onValueChange = { if (it.length <= 30) tagInput = it },
+                                        label = { Text("Thêm nhãn...") },
+                                        singleLine = true,
+                                        modifier = Modifier.weight(1f),
+                                        textStyle = MaterialTheme.typography.bodySmall
+                                    )
+                                    Button(
+                                        onClick = {
+                                            val newTag = tagInput.trim()
+                                            if (newTag.isNotBlank() && currentTags.none { it.equals(newTag, ignoreCase = true) }) {
+                                                viewModel.updateStudentTags(student.id, currentTags + newTag)
+                                                tagInput = ""
+                                            }
+                                        },
+                                        enabled = tagInput.trim().isNotBlank(),
+                                        contentPadding = PaddingValues(horizontal = 12.dp)
+                                    ) {
+                                        Text("+", fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(6.dp))
+                                // Quick suggestions
+                                @OptIn(ExperimentalLayoutApi::class)
+                                FlowRow(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    tagSuggestions
+                                        .filter { suggestion -> currentTags.none { it.equals(suggestion, ignoreCase = true) } }
+                                        .take(4)
+                                        .forEach { suggestion ->
+                                            AssistChip(
+                                                onClick = {
+                                                    viewModel.updateStudentTags(student.id, currentTags + suggestion)
+                                                },
+                                                label = { Text("+ $suggestion", fontSize = 11.sp) },
+                                                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                                                border = AssistChipDefaults.assistChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
+                                            )
+                                        }
+                                }
+                            }
+                        }
+
+                        // === NOTES SECTION ===
+                        item {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            HorizontalDivider()
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text("📝 Ghi chú nội bộ", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Text("Chỉ nhân viên trung tâm xem được.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                        // Add note input
+                        if (canManage) {
+                            item {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    OutlinedTextField(
+                                        value = noteInput,
+                                        onValueChange = { noteInput = it },
+                                        label = { Text("Nhập ghi chú...") },
+                                        singleLine = true,
+                                        modifier = Modifier.weight(1f),
+                                        textStyle = MaterialTheme.typography.bodySmall
+                                    )
+                                    Button(
+                                        onClick = {
+                                            if (noteInput.trim().isNotBlank()) {
+                                                viewModel.addStudentNote(student.id, noteInput.trim())
+                                                noteInput = ""
+                                            }
+                                        },
+                                        enabled = noteInput.trim().isNotBlank(),
+                                        contentPadding = PaddingValues(horizontal = 12.dp)
+                                    ) {
+                                        Text("Thêm")
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+                        }
+                        // Notes list
+                        if (currentNotes.isEmpty()) {
+                            item {
+                                Text("Chưa có ghi chú nội bộ.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 12.dp))
+                            }
+                        } else {
+                            items(currentNotes.sortedByDescending { it.createdAt }) { note ->
+                                Card(
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF7ED))
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(10.dp).fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.Top
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(note.text, fontSize = 14.sp, color = Color(0xFF1E293B))
+                                            Text(
+                                                "${note.createdBy} • ${note.createdAt.take(10)}",
+                                                fontSize = 11.sp,
+                                                color = Color(0xFF94A3B8)
+                                            )
+                                        }
+                                        if (canManage) {
+                                            IconButton(
+                                                onClick = { viewModel.deleteStudentNote(student.id, note.id) },
+                                                modifier = Modifier.size(28.dp)
+                                            ) {
+                                                Icon(Icons.Default.Delete, contentDescription = "Xóa", tint = Color(0xFFEF4444), modifier = Modifier.size(16.dp))
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }

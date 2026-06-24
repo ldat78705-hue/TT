@@ -183,4 +183,9 @@ class ClassesViewModel @Inject constructor(
     val settings = dataRepository.appData
         .map { it?.settings }
         .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Lazily, null)
+
+    // All students for active count display
+    val allStudents = dataRepository.appData
+        .map { it?.students ?: emptyList() }
+        .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Lazily, emptyList())
 }

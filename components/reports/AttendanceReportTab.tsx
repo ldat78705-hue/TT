@@ -1,4 +1,5 @@
 
+
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { useData } from '../../hooks/useDataContext';
 import { PersonStatus, AttendanceStatus } from '../../types';
@@ -9,6 +10,9 @@ import { Button } from '../common/Button';
 import { ExportButton } from '../common/ExportButton';
 import { ICONS } from '../../constants';
 import { PrintableAttendanceReport, AttendanceReportData } from './PrintableAttendanceReport';
+import { printHtml } from '../../utils/html';
+import { escapeHtml } from '../../utils/html';
+import { buildPrintableReport } from '../../utils/reportPrintTemplates';
 
 const ITEMS_PER_PAGE = 15;
 
@@ -182,6 +186,40 @@ export const AttendanceReportTab: React.FC<AttendanceReportTabProps> = ({ startD
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
                     <h2 className="text-xl font-semibold">Thống kê Chuyên cần</h2>
                     <div className="flex flex-wrap gap-2">
+                        <Button onClick={() => {
+                            const html = buildPrintableReport({
+                                title: 'Báo Cáo Chuyên Cần',
+                                subtitle: classFilter !== 'all' ? `Lớp: ${classes.find(c => c.id === classFilter)?.name || ''}` : undefined,
+                                centerName: state.settings.name,
+                                dateRange: { from: startDate, to: endDate },
+                                columns: [
+                                    { header: 'STT', align: 'center', width: '40px' },
+                                    { header: 'Mã HV', width: '80px' },
+                                    { header: 'Họ tên' },
+                                    { header: 'Các lớp học' },
+                                    { header: 'Tổng buổi', align: 'center', width: '70px' },
+                                    { header: 'Có mặt', align: 'center', width: '70px' },
+                                    { header: 'Có phép', align: 'center', width: '70px' },
+                                    { header: 'Không phép', align: 'center', width: '80px' },
+                                ],
+                                rows: sortedData.map((item, idx) => [
+                                    String(idx + 1),
+                                    escapeHtml(item.id),
+                                    escapeHtml(item.name),
+                                    escapeHtml(item.classNames),
+                                    String(item.totalSessions),
+                                    `<span style="color:#16a34a;font-weight:600">${item.presentCount}</span>`,
+                                    `<span style="color:#0d9488;font-weight:600">${item.absentCount}</span>`,
+                                    `<span style="color:#dc2626;font-weight:600">${item.unexcusedAbsentCount}</span>`,
+                                ]),
+                                summary: [
+                                    { label: 'Tổng học viên', value: String(sortedData.length) },
+                                ],
+                            });
+                            printHtml(html);
+                        }} variant="secondary">
+                            {ICONS.print} In báo cáo
+                        </Button>
                         <Button onClick={handleExportImage} variant="secondary" isLoading={isExportingImage}>
                             {ICONS.download} Xuất ảnh
                         </Button>

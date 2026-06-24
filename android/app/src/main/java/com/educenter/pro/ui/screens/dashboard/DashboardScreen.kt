@@ -466,8 +466,9 @@ fun DashboardScreen(
                             } catch (e: Exception) { "" }
                             val todaySchedule = classModel.schedule.find { it.dayOfWeek == todayDayName }
                             val timeStr = if (todaySchedule != null) "${todaySchedule.startTime} - ${todaySchedule.endTime} • " else ""
+                            val activeHvCount = classModel.studentIds.count { id -> uiState.allStudents.any { it.id == id && it.status == com.educenter.pro.data.model.PersonStatus.ACTIVE } }
                             Text(
-                                "${timeStr}${classModel.subject} • ${classModel.studentIds.size} HV",
+                                "${timeStr}${classModel.subject} • $activeHvCount HV",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

@@ -4,7 +4,11 @@ import { PersonStatus, AttendanceStatus } from '../../types';
 import { Table, SortConfig, Column } from '../common/Table';
 import { Pagination } from '../common/Pagination';
 import { ListItemCard } from '../common/ListItemCard';
+import { Button } from '../common/Button';
 import { ExportButton } from '../common/ExportButton';
+import { ICONS } from '../../constants';
+import { printHtml, escapeHtml } from '../../utils/html';
+import { buildPrintableReport } from '../../utils/reportPrintTemplates';
 
 const ITEMS_PER_PAGE = 15;
 
@@ -171,6 +175,40 @@ export const AbsentStudentsReportTab: React.FC<AbsentStudentsReportTabProps> = (
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
                 <h2 className="text-xl font-semibold">Học sinh nghỉ học theo ngày</h2>
                 <div className="flex flex-wrap gap-2 items-center">
+                    <Button onClick={() => {
+                        const html = buildPrintableReport({
+                            title: 'Danh Sách Học Sinh Nghỉ Học',
+                            subtitle: classFilter !== 'all' ? `Lớp: ${classes.find(c => c.id === classFilter)?.name || ''}` : undefined,
+                            centerName: state.settings.name,
+                            dateRange: { from: startDate, to: endDate },
+                            columns: [
+                                { header: 'STT', align: 'center', width: '40px' },
+                                { header: 'Mã HV', width: '80px' },
+                                { header: 'Họ tên' },
+                                { header: 'Lớp học' },
+                                { header: 'Ngày nghỉ', align: 'center', width: '100px' },
+                                { header: 'Trạng thái', align: 'center', width: '90px' },
+                                { header: 'Lý do' },
+                            ],
+                            rows: sortedData.map((item, idx) => [
+                                String(idx + 1),
+                                escapeHtml(item.id),
+                                escapeHtml(item.name),
+                                escapeHtml(item.className),
+                                escapeHtml(item.date),
+                                item.status === AttendanceStatus.UNEXCUSED_ABSENT
+                                    ? '<span style="color:#dc2626;font-weight:600">Không phép</span>'
+                                    : '<span style="color:#0d9488;font-weight:600">Có phép</span>',
+                                escapeHtml(item.reason),
+                            ]),
+                            summary: [
+                                { label: 'Tổng lượt nghỉ', value: String(sortedData.length) },
+                            ],
+                        });
+                        printHtml(html);
+                    }} variant="secondary">
+                        {ICONS.print} In báo cáo
+                    </Button>
                     <ExportButton data={exportData} columns={exportColumns} filenameBase={`HocSinhNghiHoc_${startDate}_${endDate}`} />
                 </div>
             </div>

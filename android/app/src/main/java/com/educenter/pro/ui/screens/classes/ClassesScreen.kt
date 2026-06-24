@@ -50,6 +50,7 @@ fun ClassesScreen(
     val isRefreshing by viewModel.isRefreshing.collectAsState()
     val currentUserRole by viewModel.currentUserRole.collectAsState()
     val settings by viewModel.settings.collectAsState()
+    val allStudents by viewModel.allStudents.collectAsState()
     val canManage = currentUserRole == com.educenter.pro.data.model.UserRole.ADMIN || currentUserRole == com.educenter.pro.data.model.UserRole.MANAGER
 
     var showAddClassDialog by remember { mutableStateOf(false) }
@@ -286,6 +287,7 @@ fun ClassesScreen(
                     items(classes) { classModel ->
                         ClassCard(
                             classModel = classModel,
+                            allStudents = allStudents,
                             onClick = { viewModel.selectClass(classModel) }
                         )
                     }
@@ -506,8 +508,9 @@ private fun shareStudentDebt(context: Context, student: Student, className: Stri
 }
 
 @Composable
-private fun ClassCard(classModel: ClassModel, onClick: () -> Unit) {
+private fun ClassCard(classModel: ClassModel, allStudents: List<Student> = emptyList(), onClick: () -> Unit) {
     val dayMap = mapOf("Monday" to "T2", "Tuesday" to "T3", "Wednesday" to "T4", "Thursday" to "T5", "Friday" to "T6", "Saturday" to "T7", "Sunday" to "CN")
+    val activeCount = classModel.studentIds.count { id -> allStudents.any { it.id == id && it.status == com.educenter.pro.data.model.PersonStatus.ACTIVE } }
     Card(
         modifier = Modifier.fillMaxWidth().clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
@@ -518,7 +521,7 @@ private fun ClassCard(classModel: ClassModel, onClick: () -> Unit) {
             Spacer(modifier = Modifier.height(4.dp))
             Text("Môn: ${classModel.subject}", style = MaterialTheme.typography.bodyMedium)
             Spacer(modifier = Modifier.height(4.dp))
-            Text("Sĩ số: ${classModel.studentIds.size} học sinh", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+            Text("Sĩ số: $activeCount học sinh", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
             // Show schedule per entry
             if (classModel.schedule.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(4.dp))

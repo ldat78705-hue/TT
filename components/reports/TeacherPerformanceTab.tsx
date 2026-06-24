@@ -1,5 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { Teacher, Class, AttendanceRecord, AttendanceStatus, PersonStatus } from '../../types';
+import { Button } from '../common/Button';
+import { ICONS } from '../../constants';
+import { printHtml, escapeHtml } from '../../utils/html';
+import { buildPrintableReport } from '../../utils/reportPrintTemplates';
 
 interface Props {
     teachers: Teacher[];
@@ -81,6 +85,45 @@ export const TeacherPerformanceTab: React.FC<Props> = ({ teachers, classes, atte
                         <option key={t.id} value={t.id}>{t.name}</option>
                     ))}
                 </select>
+                <Button onClick={() => {
+                    const html = buildPrintableReport({
+                        title: 'Báo Cáo Hiệu Suất Giáo Viên',
+                        centerName: '',
+                        dateRange: { from: startDate, to: endDate },
+                        columns: [
+                            { header: 'STT', align: 'center', width: '35px' },
+                            { header: 'Giáo viên' },
+                            { header: 'Môn', width: '80px' },
+                            { header: 'Số lớp', align: 'center', width: '60px' },
+                            { header: 'Số HS', align: 'center', width: '60px' },
+                            { header: 'Buổi dạy', align: 'center', width: '70px' },
+                            { header: 'Chuyên cần', align: 'center', width: '75px' },
+                            { header: 'Các lớp' },
+                        ],
+                        rows: filteredData.map((d, idx) => [
+                            String(idx + 1),
+                            escapeHtml(d.teacher.name),
+                            escapeHtml(d.teacher.subject),
+                            String(d.classCount),
+                            String(d.totalStudents),
+                            `<b>${d.sessionsTaught}</b>`,
+                            d.attendanceRate >= 80
+                                ? `<span style="color:#16a34a;font-weight:600">${d.attendanceRate}%</span>`
+                                : d.attendanceRate >= 60
+                                ? `<span style="color:#d97706;font-weight:600">${d.attendanceRate}%</span>`
+                                : `<span style="color:#dc2626;font-weight:600">${d.attendanceRate}%</span>`,
+                            escapeHtml(d.classNames.join(', ')),
+                        ]),
+                        summary: [
+                            { label: 'Tổng GV', value: String(filteredData.length) },
+                            { label: 'Tổng buổi dạy', value: String(totalSessions) },
+                            { label: 'TB chuyên cần', value: `${avgAttendance}%` },
+                        ],
+                    });
+                    printHtml(html);
+                }} variant="secondary">
+                    {ICONS.print} In báo cáo
+                </Button>
             </div>
 
             {/* KPI Summary */}

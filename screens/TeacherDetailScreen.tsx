@@ -14,7 +14,7 @@ export const TeacherDetailScreen: React.FC = () => {
     const { role } = useAuth();
     const { toast } = useToast();
     const navigate = useNavigate();
-    const { teachers, classes } = state;
+    const { teachers, classes, students } = state;
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
     const canManage = role === UserRole.ADMIN || role === UserRole.MANAGER;
@@ -100,7 +100,7 @@ export const TeacherDetailScreen: React.FC = () => {
                             assignedClasses.map(c => (
                                 <Link key={c.id} to={`/class/${c.id}`} className="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors shadow-sm">
                                     <p className="font-semibold text-primary">{c.name}</p>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">{c.subject} - Sĩ số: {(c.studentIds || []).length}</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">{c.subject} - Sĩ số: {(c.studentIds || []).filter(id => students.find(s => s.id === id && s.status === PersonStatus.ACTIVE)).length}</p>
                                 </Link>
                             ))
                         ) : (
