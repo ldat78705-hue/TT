@@ -115,11 +115,8 @@ const AppLayout: React.FC = () => {
 
     const pageTitle = useMemo(() => {
         const path = location.pathname;
-        if (path.startsWith(ROUTES.CLASS_DETAIL.split('/:')[0])) return 'Chi tiết Lớp học';
-        if (path.startsWith(ROUTES.STUDENT_DETAIL.split('/:')[0])) return 'Chi tiết Học viên';
-        if (path.startsWith(ROUTES.TEACHER_DETAIL.split('/:')[0])) return 'Chi tiết Giáo viên';
-        if (path.startsWith(ROUTES.ATTENDANCE_DETAIL.split('/:')[0])) return 'Điểm danh';
 
+        // Exact-match routes first (prevents prefix collision like /teacher-calendar vs /teacher/:id)
         switch (path) {
             case ROUTES.DASHBOARD: return 'Tổng quan';
             case ROUTES.STUDENTS: return 'Học viên';
@@ -134,8 +131,15 @@ const AppLayout: React.FC = () => {
             case ROUTES.ROOMS: return 'Phòng học';
             case ROUTES.AUDIT_LOG: return 'Lịch sử thao tác';
             case ROUTES.TEACHER_CALENDAR: return 'Lịch dạy';
-            default: return 'EduCenter Pro';
         }
+
+        // Dynamic routes (use trailing slash to avoid prefix collision)
+        if (path.startsWith(ROUTES.CLASS_DETAIL.split('/:')[0] + '/')) return 'Chi tiết Lớp học';
+        if (path.startsWith(ROUTES.STUDENT_DETAIL.split('/:')[0] + '/')) return 'Chi tiết Học viên';
+        if (path.startsWith(ROUTES.TEACHER_DETAIL.split('/:')[0] + '/')) return 'Chi tiết Giáo viên';
+        if (path.startsWith(ROUTES.ATTENDANCE_DETAIL.split('/:')[0] + '/')) return 'Điểm danh';
+
+        return 'EduCenter Pro';
     }, [location.pathname]);
 
     return (
