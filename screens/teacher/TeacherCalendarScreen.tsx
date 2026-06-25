@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useData } from '../../hooks/useDataContext';
 import { Calendar } from '../../components/common/Calendar';
-import { ClassSchedule, Teacher } from '../../types';
+import { ClassSchedule, Teacher, UserRole, PersonStatus } from '../../types';
 import { ROUTES, ICONS } from '../../constants';
 import { Link } from 'react-router-dom';
 import { getVietnamTime } from '../../utils/date';
@@ -20,18 +20,44 @@ const formatDateString = (date: Date): string => {
 };
 
 export const TeacherCalendarScreen: React.FC = () => {
-    const { user } = useAuth();
+    const { user, role } = useAuth();
     const { state } = useData();
     const [displayMonth, setDisplayMonth] = useState(() => new Date(getVietnamTime()));
     const [selectedDate, setSelectedDate] = useState(() => new Date(getVietnamTime()));
 
-    const teacherId = (user as Teacher)?.id || '';
-    const teacherName = (state.teachers as any[])?.find((t: any) => t.id === teacherId)?.name || (user as any)?.name || '';
+    // Admin/Manager can view all teachers' schedules
+    const isAdmin = role === UserRole.ADMIN || role === UserRole.MANAGER;
 
-    // Filter classes for this teacher
+    // Active teachers list for admin dropdown
+    const activeTeachers = useMemo(() => {
+        return state.teachers.filter(t => t.status === PersonStatus.ACTIVE);
+    }, [state.teachers]);
+
+    // For teacher role: use own ID. For admin: default to 'all', allow selection
+    const ownTeacherId = (user as Teacher)?.id || '';
+    const [selectedTeacherId, setSelectedTeacherId] = useState<string>(isAdmin ? 'all' : ownTeacherId);
+
+    // Determine which teacher IDs to show schedule for
+    const targetTeacherIds = useMemo(() => {
+        if (!isAdmin) return [ownTeacherId];
+        if (selectedTeacherId === 'all') return activeTeachers.map(t => t.id);
+        return [selectedTeacherId];
+    }, [isAdmin, ownTeacherId, selectedTeacherId, activeTeachers]);
+
+    // Display name
+    const displayName = useMemo(() => {
+        if (!isAdmin) {
+            return state.teachers.find(t => t.id === ownTeacherId)?.name || (user as any)?.name || '';
+        }
+        if (selectedTeacherId === 'all') return `Tất cả giáo viên (${activeTeachers.length})`;
+        return activeTeachers.find(t => t.id === selectedTeacherId)?.name || '';
+    }, [isAdmin, ownTeacherId, selectedTeacherId, activeTeachers, state.teachers, user]);
+
+    // Filter classes for target teachers
     const myClasses = useMemo(() => {
-        return state.classes.filter(c => (c.teacherIds || []).includes(teacherId));
-    }, [state.classes, teacherId]);
+        const idSet = new Set(targetTeacherIds);
+        return state.classes.filter(c => (c.teacherIds || []).some(tid => idSet.has(tid)));
+    }, [state.classes, targetTeacherIds]);
 
     // Stats
     const totalWeekSessions = useMemo(() => {
@@ -63,6 +89,7 @@ export const TeacherCalendarScreen: React.FC = () => {
             link: string;
             isAttended: boolean;
             isPast: boolean;
+            teacherNames: string;
         }[] = [];
 
         // Check attendance records for this date
@@ -81,6 +108,12 @@ export const TeacherCalendarScreen: React.FC = () => {
                         return st && st.status === 'ACTIVE';
                     }).length;
 
+                    // Get teacher names for this class
+                    const tNames = (cls.teacherIds || [])
+                        .map(tid => state.teachers.find(t => t.id === tid)?.name)
+                        .filter(Boolean)
+                        .join(', ');
+
                     events.push({
                         classId: cls.id,
                         className: cls.name,
@@ -91,6 +124,7 @@ export const TeacherCalendarScreen: React.FC = () => {
                         link: ROUTES.ATTENDANCE_DETAIL.replace(':classId', cls.id).replace(':date', dateString),
                         isAttended: attendanceByClass.has(cls.id),
                         isPast: normalizedSelectedDate < today,
+                        teacherNames: tNames,
                     });
                 }
             });
@@ -98,15 +132,31 @@ export const TeacherCalendarScreen: React.FC = () => {
 
         events.sort((a, b) => a.startTime.localeCompare(b.startTime));
         return events;
-    }, [myClasses, normalizedSelectedDate, state.attendance, state.students]);
+    }, [myClasses, normalizedSelectedDate, state.attendance, state.students, state.teachers]);
 
     return (
         <div className="flex flex-col h-full text-gray-800 dark:text-white">
             {/* Stats Header */}
             <div className="flex-shrink-0 px-4 md:px-6 pt-2 pb-2">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Xin chào, <span className="font-semibold text-gray-700 dark:text-gray-200">{teacherName}</span></p>
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex-1 min-w-0">
+                        {isAdmin ? (
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <label className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">Giáo viên:</label>
+                                <select
+                                    value={selectedTeacherId}
+                                    onChange={e => setSelectedTeacherId(e.target.value)}
+                                    className="form-select text-sm py-1.5 min-w-[180px]"
+                                >
+                                    <option value="all">📋 Tất cả ({activeTeachers.length} GV)</option>
+                                    {activeTeachers.map(t => (
+                                        <option key={t.id} value={t.id}>👤 {t.name}{t.subject ? ` (${t.subject})` : ''}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        ) : (
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Xin chào, <span className="font-semibold text-gray-700 dark:text-gray-200">{displayName}</span></p>
+                        )}
                     </div>
                     <div className="flex gap-3">
                         <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl px-3 py-1.5 text-center">
@@ -139,6 +189,9 @@ export const TeacherCalendarScreen: React.FC = () => {
                     <div className="px-4 pb-24 md:pb-6">
                         <h2 className="text-lg font-bold mb-4">
                             Lịch dạy ngày {formatDateString(normalizedSelectedDate)}
+                            {isAdmin && selectedTeacherId === 'all' && eventsForSelectedDay.length > 0 && (
+                                <span className="text-sm font-normal text-gray-500 ml-2">({eventsForSelectedDay.length} buổi)</span>
+                            )}
                         </h2>
 
                         {eventsForSelectedDay.length > 0 ? (
@@ -158,7 +211,7 @@ export const TeacherCalendarScreen: React.FC = () => {
                                         <Link
                                             to={event.link}
                                             state={{ returnTo: ROUTES.TEACHER_CALENDAR }}
-                                            key={idx}
+                                            key={`${event.classId}-${idx}`}
                                             className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-600/50 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-500/50 transition-colors group"
                                         >
                                             <div className="flex items-center gap-4">
@@ -168,6 +221,12 @@ export const TeacherCalendarScreen: React.FC = () => {
                                                     <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mt-0.5">
                                                         {statusText} • {event.startTime} - {event.endTime} • 👥 {event.studentCount}
                                                     </p>
+                                                    {/* Show teacher name when viewing all teachers */}
+                                                    {isAdmin && selectedTeacherId === 'all' && event.teacherNames && (
+                                                        <p className="text-xs text-indigo-500 dark:text-indigo-400 mt-0.5">
+                                                            👨‍🏫 {event.teacherNames}
+                                                        </p>
+                                                    )}
                                                 </div>
                                             </div>
                                             <div className="text-gray-400 group-hover:text-primary transition-colors">
