@@ -21,7 +21,7 @@ const studentSchema = z.object({
     address: z.string().max(500),
     parentName: z.string().max(200),
     email: z.string().max(200).optional(),
-    status: z.enum(['ACTIVE', 'INACTIVE']),
+    status: z.enum(['ACTIVE', 'INACTIVE', 'ARCHIVED']),
 }).passthrough(); // Allow additional fields
 
 const addStudentSchema = z.object({

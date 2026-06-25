@@ -143,12 +143,19 @@ export function applyOperation(
                 data.transactions.forEach(t => { if (t.studentId === originalId) t.studentId = updatedStudent.id; });
             }
             const newClassIds = new Set(classIds);
-            data.classes.forEach(c => {
-                const studentIds = new Set(c.studentIds);
-                if (studentIds.has(originalId)) studentIds.delete(originalId);
-                if (newClassIds.has(c.id)) studentIds.add(updatedStudent.id);
-                c.studentIds = Array.from(studentIds);
-            });
+            // If status changed to ARCHIVED, remove from ALL classes regardless of classIds param
+            if (updatedStudent.status === PersonStatus.ARCHIVED) {
+                data.classes.forEach(c => {
+                    c.studentIds = c.studentIds.filter(id => id !== updatedStudent.id && id !== originalId);
+                });
+            } else {
+                data.classes.forEach(c => {
+                    const studentIds = new Set(c.studentIds);
+                    if (studentIds.has(originalId)) studentIds.delete(originalId);
+                    if (newClassIds.has(c.id)) studentIds.add(updatedStudent.id);
+                    c.studentIds = Array.from(studentIds);
+                });
+            }
             break;
         }
         case 'deleteStudent': {

@@ -208,7 +208,7 @@ const AttendanceSummaryWidget: React.FC<{
 
 export const StudentDetailScreen: React.FC = () => {
     const { id } = useParams<{ id: string }>();
-    const { state, addAdjustment, updateTransaction, deleteTransaction, updateAttendance, deleteStudent, addStudentNote, deleteStudentNote, updateStudentTags } = useData();
+    const { state, addAdjustment, updateTransaction, deleteTransaction, updateAttendance, deleteStudent, archiveStudent, restoreStudent, addStudentNote, deleteStudentNote, updateStudentTags } = useData();
     const { toast } = useToast();
     const { role } = useAuth();
     const navigate = useNavigate();
@@ -516,6 +516,11 @@ export const StudentDetailScreen: React.FC = () => {
                             <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto flex-wrap">
                                 <CertificateGenerator student={student} classes={classes} settings={state.settings} />
                                 <Button variant="secondary" onClick={handleEdit} className="flex-1 sm:flex-none">{ICONS.edit} Sửa</Button>
+                                {student.status === PersonStatus.ARCHIVED ? (
+                                    <Button variant="secondary" onClick={async () => { try { await restoreStudent(student.id); toast.success(`Đã khôi phục ${student.name}`); } catch (e: any) { toast.error(e.message); } }} className="flex-1 sm:flex-none">↩️ Khôi phục</Button>
+                                ) : (
+                                    <Button variant="secondary" onClick={async () => { try { await archiveStudent(student.id); toast.success(`Đã lưu trữ ${student.name}`); } catch (e: any) { toast.error(e.message); } }} className="flex-1 sm:flex-none">📦 Lưu trữ</Button>
+                                )}
                                 <Button variant="danger" onClick={() => setDeleteStudentConfirmOpen(true)} className="flex-1 sm:flex-none">{ICONS.delete} Xóa</Button>
                             </div>
                         )}
