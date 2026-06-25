@@ -494,8 +494,8 @@ export const StudentDetailScreen: React.FC = () => {
                          <div className="flex-grow">
                             <h1 className="text-3xl font-bold">{student.name}</h1>
                             <div className="flex items-center gap-2 mt-1">
-                                <span className={`px-2 inline-flex text-sm leading-5 font-semibold rounded-full ${student.status === PersonStatus.ACTIVE ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                    {student.status === PersonStatus.ACTIVE ? 'Đang hoạt động' : 'Tạm nghỉ'}
+                                <span className={`px-2 inline-flex text-sm leading-5 font-semibold rounded-full ${student.status === PersonStatus.ACTIVE ? 'bg-green-100 text-green-800' : student.status === PersonStatus.ARCHIVED ? 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400' : 'bg-red-100 text-red-800'}`}>
+                                    {student.status === PersonStatus.ACTIVE ? 'Đang hoạt động' : student.status === PersonStatus.ARCHIVED ? 'Đã lưu trữ' : 'Tạm nghỉ'}
                                 </span>
                                 {student.statusChangedAt && (
                                     <span className="text-xs text-gray-500">
@@ -952,8 +952,8 @@ export const StudentDetailScreen: React.FC = () => {
                                             {formatVietnamDate(history.changedAt)}
                                         </time>
                                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mt-1">
-                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${history.status === PersonStatus.ACTIVE ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                                {history.status === PersonStatus.ACTIVE ? 'Hoạt động' : 'Tạm nghỉ'}
+                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${history.status === PersonStatus.ACTIVE ? 'bg-green-100 text-green-800' : history.status === PersonStatus.ARCHIVED ? 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400' : 'bg-red-100 text-red-800'}`}>
+                                                {history.status === PersonStatus.ACTIVE ? 'Hoạt động' : history.status === PersonStatus.ARCHIVED ? 'Lưu trữ' : 'Tạm nghỉ'}
                                             </span>
                                         </h3>
                                     </div>

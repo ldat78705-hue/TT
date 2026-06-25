@@ -541,6 +541,8 @@ function getAffectedCollections(opName: string): string[] | null {
         addStudent: ['students', 'classes'],
         updateStudent: ['students', 'classes', 'attendance', 'invoices', 'progressReports', 'transactions'],
         deleteStudent: ['students', 'classes', 'transactions', 'attendance', 'progressReports', 'invoices'],
+        archiveStudent: ['students', 'classes'],
+        restoreStudent: ['students'],
         addStudentNote: ['students'],
         deleteStudentNote: ['students'],
         updateStudentTags: ['students'],
@@ -1209,6 +1211,8 @@ function buildAuditEntry(op: string, payload: any, userId: string, userName: str
         addStudent: { targetType: 'student', getDetails: (p) => ({ targetName: p.student?.name || p.name || '', details: `Thêm học viên "${p.student?.name || p.name}"` }) },
         updateStudent: { targetType: 'student', getDetails: (p) => ({ targetName: p.updatedStudent?.name || '', details: `Cập nhật học viên "${p.updatedStudent?.name}"` }) },
         deleteStudent: { targetType: 'student', getDetails: (p) => ({ targetName: p.studentId || '', details: `Xóa học viên ${p.studentId}` }) },
+        archiveStudent: { targetType: 'student', getDetails: (p) => ({ targetName: p.studentId || '', details: `Lưu trữ học viên ${p.studentId}` }) },
+        restoreStudent: { targetType: 'student', getDetails: (p) => ({ targetName: p.studentId || '', details: `Khôi phục học viên ${p.studentId}` }) },
         // === Teachers ===
         addTeacher: { targetType: 'teacher', getDetails: (p) => ({ targetName: p.teacher?.name || '', details: `Thêm giáo viên "${p.teacher?.name}"` }) },
         updateTeacher: { targetType: 'teacher', getDetails: (p) => ({ targetName: p.updatedTeacher?.name || '', details: `Cập nhật giáo viên "${p.updatedTeacher?.name}"` }) },

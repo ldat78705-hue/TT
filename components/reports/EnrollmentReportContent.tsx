@@ -19,7 +19,7 @@ export const EnrollmentReportContent: React.FC<Props> = ({ students }) => {
 
             const newStudents = students.filter(s => s.createdAt && s.createdAt.startsWith(monthStr));
             const leftStudents = students.filter(s =>
-                s.status === PersonStatus.INACTIVE &&
+                (s.status === PersonStatus.INACTIVE || s.status === PersonStatus.ARCHIVED) &&
                 s.statusChangedAt &&
                 s.statusChangedAt.startsWith(monthStr)
             );
@@ -39,6 +39,7 @@ export const EnrollmentReportContent: React.FC<Props> = ({ students }) => {
 
     const totalActive = students.filter(s => s.status === PersonStatus.ACTIVE).length;
     const totalInactive = students.filter(s => s.status === PersonStatus.INACTIVE).length;
+    const totalArchived = students.filter(s => s.status === PersonStatus.ARCHIVED).length;
     const totalNew12m = monthlyData.reduce((sum, m) => sum + m.newCount, 0);
     const totalLeft12m = monthlyData.reduce((sum, m) => sum + m.leftCount, 0);
     const retentionRate = totalNew12m > 0 ? Math.round(((totalNew12m - totalLeft12m) / totalNew12m) * 100) : 100;
@@ -59,6 +60,10 @@ export const EnrollmentReportContent: React.FC<Props> = ({ students }) => {
                 <div className="card-base text-center">
                     <p className="text-sm text-gray-500 dark:text-gray-400">Tạm nghỉ</p>
                     <p className="text-3xl font-bold text-red-600 dark:text-red-400">{totalInactive}</p>
+                </div>
+                <div className="card-base text-center">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Lưu trữ</p>
+                    <p className="text-3xl font-bold text-gray-500 dark:text-gray-400">{totalArchived}</p>
                 </div>
                 <div className="card-base text-center">
                     <p className="text-sm text-gray-500 dark:text-gray-400">HS mới (12 tháng)</p>

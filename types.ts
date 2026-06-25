@@ -11,6 +11,7 @@ export enum UserRole {
 export enum PersonStatus {
   ACTIVE = 'ACTIVE',
   INACTIVE = 'INACTIVE',
+  ARCHIVED = 'ARCHIVED',
 }
 
 export enum AttendanceStatus {

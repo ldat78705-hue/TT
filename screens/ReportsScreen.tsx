@@ -216,7 +216,7 @@ export const ReportsScreen: React.FC = () => {
 
         // Inactive Students within period
         const inactiveStudents = students.filter(s => 
-            s.status === PersonStatus.INACTIVE &&
+            (s.status === PersonStatus.INACTIVE || s.status === PersonStatus.ARCHIVED) &&
             s.statusChangedAt && s.statusChangedAt >= startDate && s.statusChangedAt <= endDate &&
             (filteredStudentIds ? filteredStudentIds.has(s.id) : true)
         ).length;
@@ -406,7 +406,7 @@ export const ReportsScreen: React.FC = () => {
 
     const handleShowInactiveStudentsDetails = () => {
         const items = students
-            .filter(s => s.status === PersonStatus.INACTIVE && s.statusChangedAt && s.statusChangedAt >= startDate && s.statusChangedAt <= endDate && (filteredStudentIds ? filteredStudentIds.has(s.id) : true))
+            .filter(s => (s.status === PersonStatus.INACTIVE || s.status === PersonStatus.ARCHIVED) && s.statusChangedAt && s.statusChangedAt >= startDate && s.statusChangedAt <= endDate && (filteredStudentIds ? filteredStudentIds.has(s.id) : true))
             .sort((a, b) => {
                 const dateA = new Date(a.statusChangedAt!).getTime();
                 const dateB = new Date(b.statusChangedAt!).getTime();

@@ -53,6 +53,8 @@ interface DataContextType {
     addStudent: (payload: { student: Student, classIds: string[] }) => Promise<void>;
     updateStudent: (payload: { originalId: string, updatedStudent: Student, classIds: string[] }) => Promise<void>;
     deleteStudent: (studentId: string) => Promise<void>;
+    archiveStudent: (studentId: string) => Promise<void>;
+    restoreStudent: (studentId: string) => Promise<void>;
     addStudentNote: (payload: { studentId: string; note: { text: string; createdBy: string } }) => Promise<void>;
     deleteStudentNote: (payload: { studentId: string; noteId: string }) => Promise<void>;
     updateStudentTags: (payload: { studentId: string; tags: string[] }) => Promise<void>;
@@ -151,7 +153,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             try {
                 const stateClone = structuredClone(state);
                 let optimisticPayload: any = payload;
-                if (opName === 'deleteStudent') optimisticPayload = { studentId: payload };
+                if (opName === 'deleteStudent' || opName === 'archiveStudent' || opName === 'restoreStudent') optimisticPayload = { studentId: payload };
                 else if (opName === 'deleteTeacher') optimisticPayload = { teacherId: payload };
                 else if (opName === 'deleteStaff') optimisticPayload = { staffId: payload };
                 else if (opName === 'deleteClass') optimisticPayload = { classId: payload };
@@ -191,6 +193,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     addStudent: handleStateUpdateOperation(api.addStudent, 'addStudent'),
     updateStudent: handleStateUpdateOperation(api.updateStudent, 'updateStudent'),
     deleteStudent: handleStateUpdateOperation(api.deleteStudent, 'deleteStudent'),
+    archiveStudent: handleStateUpdateOperation(api.archiveStudent, 'archiveStudent'),
+    restoreStudent: handleStateUpdateOperation(api.restoreStudent, 'restoreStudent'),
     addStudentNote: handleStateUpdateOperation(api.addStudentNote, 'addStudentNote'),
     deleteStudentNote: handleStateUpdateOperation(api.deleteStudentNote, 'deleteStudentNote'),
     updateStudentTags: handleStateUpdateOperation(api.updateStudentTags, 'updateStudentTags'),

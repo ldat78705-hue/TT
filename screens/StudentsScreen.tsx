@@ -203,6 +203,7 @@ const StudentForm: React.FC<{
                         <select name="status" value={formData.status} onChange={handleChange} className="form-select mt-1">
                             <option value={PersonStatus.ACTIVE}>Hoạt động</option>
                             <option value={PersonStatus.INACTIVE}>Tạm nghỉ</option>
+                            <option value={PersonStatus.ARCHIVED}>Lưu trữ</option>
                         </select>
                     </div>
                     <div>
@@ -263,7 +264,7 @@ const StudentForm: React.FC<{
 
 
 export const StudentsScreen: React.FC = () => {
-    const { state, addStudent, updateStudent, deleteStudent } = useData();
+    const { state, addStudent, updateStudent, deleteStudent, archiveStudent, restoreStudent } = useData();
     const { role } = useAuth();
     const { toast } = useToast();
     const location = useLocation();
@@ -275,6 +276,7 @@ export const StudentsScreen: React.FC = () => {
     const [paymentModalState, setPaymentModalState] = useState<{ isOpen: boolean; student: Student | null }>({ isOpen: false, student: null });
     const [searchQuery, setSearchQuery] = useState('');
     const [classFilter, setClassFilter] = useState('all');
+    const [statusFilter, setStatusFilter] = useState<string>('active_inactive');
     const [currentPage, setCurrentPage] = useState(1);
     const [sortConfig, setSortConfig] = useState<SortConfig<Student> | null>({ key: 'name', direction: 'ascending' });
     const ITEMS_PER_PAGE = 10;
@@ -330,6 +332,13 @@ export const StudentsScreen: React.FC = () => {
     const filteredStudents = useMemo(() => {
         let studentsToFilter = state.students;
 
+        // Status filter
+        if (statusFilter === 'active_inactive') {
+            studentsToFilter = studentsToFilter.filter(s => s.status !== PersonStatus.ARCHIVED);
+        } else if (statusFilter !== 'all') {
+            studentsToFilter = studentsToFilter.filter(s => s.status === statusFilter);
+        }
+
         if (classFilter !== 'all') {
             const selectedClass = state.classes.find(c => c.id === classFilter);
             if (selectedClass) {
@@ -369,7 +378,7 @@ export const StudentsScreen: React.FC = () => {
 
             return nameScore > 0 || phoneMatch || idMatch || classMatch || tagMatch;
         });
-    }, [state.students, state.classes, searchQuery, classFilter]);
+    }, [state.students, state.classes, searchQuery, classFilter, statusFilter]);
     
     const sortedStudents = useMemo(() => {
         let sortableItems = [...filteredStudents];
@@ -477,7 +486,7 @@ export const StudentsScreen: React.FC = () => {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchQuery, classFilter, sortConfig]);
+    }, [searchQuery, classFilter, statusFilter, sortConfig]);
 
 
     const columns = [
@@ -549,9 +558,9 @@ export const StudentsScreen: React.FC = () => {
         { header: 'Trạng thái', accessor: (item: Student) => (
             <div className="flex flex-col">
                 <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full w-fit ${
-                    item.status === PersonStatus.ACTIVE ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    item.status === PersonStatus.ACTIVE ? 'bg-green-100 text-green-800' : item.status === PersonStatus.ARCHIVED ? 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400' : 'bg-red-100 text-red-800'
                 }`}>
-                    {item.status === PersonStatus.ACTIVE ? 'Hoạt động' : 'Tạm nghỉ'}
+                    {item.status === PersonStatus.ACTIVE ? 'Hoạt động' : item.status === PersonStatus.ARCHIVED ? 'Lưu trữ' : 'Tạm nghỉ'}
                 </span>
                 {item.statusChangedAt && (
                     <span className="text-[10px] text-gray-500 mt-1">
@@ -621,7 +630,7 @@ export const StudentsScreen: React.FC = () => {
             phone: s.phone || '',
             parentName: s.parentName || '',
             classes: enrolledClasses || 'Chưa xếp lớp',
-            status: s.status === PersonStatus.ACTIVE ? 'Hoạt động' : 'Tạm nghỉ',
+            status: s.status === PersonStatus.ACTIVE ? 'Hoạt động' : s.status === PersonStatus.ARCHIVED ? 'Lưu trữ' : 'Tạm nghỉ',
             balance: s.balance
         };
     }), [sortedStudents, state.classes]);
@@ -724,7 +733,7 @@ export const StudentsScreen: React.FC = () => {
                 )}
             </div>
             <div className="card-base p-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <input 
                         type="text" 
                         placeholder="Tìm kiếm học viên (tên, SĐT, lớp)..." 
@@ -741,6 +750,17 @@ export const StudentsScreen: React.FC = () => {
                         {state.classes.map(c => (
                             <option key={c.id} value={c.id}>{c.name}</option>
                         ))}
+                    </select>
+                    <select
+                        value={statusFilter}
+                        onChange={e => setStatusFilter(e.target.value)}
+                        className="form-select"
+                    >
+                        <option value="active_inactive">Trạng thái: Đang hoạt động</option>
+                        <option value={PersonStatus.ACTIVE}>✅ Hoạt động</option>
+                        <option value={PersonStatus.INACTIVE}>⏸️ Tạm nghỉ</option>
+                        <option value={PersonStatus.ARCHIVED}>📦 Lưu trữ</option>
+                        <option value="all">📋 Tất cả trạng thái</option>
                     </select>
                 </div>
             </div>
@@ -784,6 +804,11 @@ export const StudentsScreen: React.FC = () => {
                             )}
                             <button onClick={() => setResetPasswordModalState({ isOpen: true, student: student })} className="text-gray-500 hover:text-gray-800" title="Đặt lại mật khẩu">{React.cloneElement(ICONS.key as React.ReactElement<{ width?: number | string; height?: number | string }>, {width: 20, height: 20})}</button>
                             <button onClick={() => handleOpenModal(student)} className="text-indigo-600 hover:text-indigo-900">{ICONS.edit}</button>
+                            {student.status === PersonStatus.ARCHIVED ? (
+                                <button onClick={async () => { try { await restoreStudent(student.id); toast.success(`Đã khôi phục ${student.name}`); } catch (e: any) { toast.error(e.message); } }} className="text-emerald-600 hover:text-emerald-900" title="Khôi phục">↩️</button>
+                            ) : (
+                                <button onClick={async () => { try { await archiveStudent(student.id); toast.success(`Đã lưu trữ ${student.name}`); } catch (e: any) { toast.error(e.message); } }} className="text-amber-600 hover:text-amber-900" title="Lưu trữ">📦</button>
+                            )}
                             <button onClick={() => handleDeleteClick(student)} className="text-red-600 hover:text-red-900">{ICONS.delete}</button>
                         </>
                     ) : undefined}
@@ -809,8 +834,8 @@ export const StudentsScreen: React.FC = () => {
                             </div>
 
                             <div className="flex flex-col items-end">
-                                <span className={`px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold rounded-full shadow-sm ${student.status === PersonStatus.ACTIVE ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'} whitespace-nowrap mt-1`}>
-                                    {student.status === PersonStatus.ACTIVE ? 'Hoạt động' : 'Tạm nghỉ'}
+                                <span className={`px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold rounded-full shadow-sm ${student.status === PersonStatus.ACTIVE ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' : student.status === PersonStatus.ARCHIVED ? 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400' : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'} whitespace-nowrap mt-1`}>
+                                    {student.status === PersonStatus.ACTIVE ? 'Hoạt động' : student.status === PersonStatus.ARCHIVED ? 'Lưu trữ' : 'Tạm nghỉ'}
                                 </span>
                                 {student.statusChangedAt && (
                                     <span className="text-[10px] text-gray-500 mt-1">
@@ -897,6 +922,15 @@ export const StudentsScreen: React.FC = () => {
                                         <button onClick={() => handleOpenModal(student)} className="p-2 rounded-full text-indigo-600 hover:bg-indigo-100 dark:hover:bg-indigo-900/50" title="Sửa">
                                             {ICONS.edit}
                                         </button>
+                                        {student.status === PersonStatus.ARCHIVED ? (
+                                            <button onClick={async () => { try { await restoreStudent(student.id); toast.success(`Đã khôi phục ${student.name}`); } catch (e: any) { toast.error(e.message); } }} className="p-2 rounded-full text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/50" title="Khôi phục">
+                                                ↩️
+                                            </button>
+                                        ) : (
+                                            <button onClick={async () => { try { await archiveStudent(student.id); toast.success(`Đã lưu trữ ${student.name}`); } catch (e: any) { toast.error(e.message); } }} className="p-2 rounded-full text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-900/50" title="Lưu trữ">
+                                                📦
+                                            </button>
+                                        )}
                                         <button onClick={() => handleDeleteClick(student)} className="p-2 rounded-full text-red-600 hover:bg-red-100 dark:hover:bg-red-900/50" title="Xóa">
                                             {ICONS.delete}
                                         </button>

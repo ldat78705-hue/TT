@@ -154,14 +154,38 @@ export function applyOperation(
         case 'deleteStudent': {
             const { studentId } = payload;
             if (data.transactions.some(t => t.studentId === studentId) || data.invoices.some(i => i.studentId === studentId)) {
-                throw new Error("Không thể xóa học viên đã có dữ liệu giao dịch hoặc hóa đơn.");
+                throw new Error("Không thể xóa học viên đã có dữ liệu giao dịch hoặc hóa đơn. Hãy sử dụng chức năng Lưu trữ thay vì Xóa.");
             }
             if (data.attendance.some(a => a.studentId === studentId)) {
-                throw new Error("Không thể xóa học viên đã có dữ liệu điểm danh.");
+                throw new Error("Không thể xóa học viên đã có dữ liệu điểm danh. Hãy sử dụng chức năng Lưu trữ thay vì Xóa.");
             }
             data.students = data.students.filter(s => s.id !== studentId);
             data.classes.forEach(c => { c.studentIds = c.studentIds.filter(id => id !== studentId); });
             data.progressReports = data.progressReports.filter(p => p.studentId !== studentId);
+            break;
+        }
+        case 'archiveStudent': {
+            const { studentId } = payload;
+            const student = data.students.find(s => s.id === studentId);
+            if (!student) throw new Error("Không tìm thấy học viên.");
+            const now = getVietnamTime();
+            student.status = PersonStatus.ARCHIVED;
+            student.statusChangedAt = now;
+            if (!student.statusHistory) student.statusHistory = [];
+            student.statusHistory.push({ status: PersonStatus.ARCHIVED, changedAt: now });
+            // Remove from all class enrollments
+            data.classes.forEach(c => { c.studentIds = c.studentIds.filter(id => id !== studentId); });
+            break;
+        }
+        case 'restoreStudent': {
+            const { studentId } = payload;
+            const student = data.students.find(s => s.id === studentId);
+            if (!student) throw new Error("Không tìm thấy học viên.");
+            const now = getVietnamTime();
+            student.status = PersonStatus.INACTIVE;
+            student.statusChangedAt = now;
+            if (!student.statusHistory) student.statusHistory = [];
+            student.statusHistory.push({ status: PersonStatus.INACTIVE, changedAt: now });
             break;
         }
         case 'addStudentNote': {
