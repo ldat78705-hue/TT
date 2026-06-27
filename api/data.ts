@@ -957,7 +957,7 @@ export default async function handler(req: any, res: any) {
                 'addIncome', 'updateIncome', 'deleteIncome', 
                 'addExpense', 'updateExpense', 'deleteExpense', 
                 'updateTransaction', 'deleteTransaction', 'addAdjustment', 'addAdvancePayment', 'cancelInvoice', 
-                'updateInvoiceStatus', 'generatePayrolls', 'updatePayroll', 'updateUserPassword',
+                'updateInvoiceStatus', 'generateInvoices', 'generatePayrolls', 'updatePayroll', 'updateUserPassword',
                 'markAnnouncementRead', 'markAnnouncementsReadBatch'
             ];
             if (!allowedOps.includes(operation.op)) {
@@ -1238,7 +1238,7 @@ function buildAuditEntry(op: string, payload: any, userId: string, userName: str
         addAdjustment: { targetType: 'finance', getDetails: (p) => ({ targetName: p.studentId || '', details: `Thanh toán ${fmt(p.amount)}đ cho HS ${p.studentId}` }) },
         addAdvancePayment: { targetType: 'finance', getDetails: (p) => ({ targetName: p.studentId || '', details: `Thu trước ${p.months || ''}T HP ${fmt(p.amount)}đ cho HS ${p.studentId}` }) },
         // === Finance — Invoices ===
-        generateInvoices: { targetType: 'finance', getDetails: (p) => ({ targetName: '', details: `Tạo hóa đơn tháng ${p.month}/${p.year}` }) },
+        generateInvoices: { targetType: 'finance', getDetails: (p) => ({ targetName: '', details: `Tạo hóa đơn tháng ${p.month}/${p.year}${p.classIds?.length ? ` (${p.classIds.length} lớp)` : ''}` }) },
         cancelInvoice: { targetType: 'finance', getDetails: (p) => ({ targetName: p.invoiceId || '', details: `Hủy hóa đơn ${p.invoiceId}` }) },
         updateInvoiceStatus: { targetType: 'finance', getDetails: (p) => ({ targetName: p.invoiceId || '', details: `Cập nhật HĐ ${p.invoiceId} → ${p.status}` }) },
         // === Finance — Transactions ===

@@ -21,8 +21,9 @@ import { formatVietnamDate, getVietnamTime } from '../../utils/date';
 const GenerateInvoicesModal: React.FC<{
     isOpen: boolean;
     onClose: () => void;
-    onGenerate: (month: number, year: number) => Promise<void>;
-}> = ({ isOpen, onClose, onGenerate }) => {
+    onGenerate: (month: number, year: number, classIds?: string[]) => Promise<void>;
+    classes: { id: string; name: string }[];
+}> = ({ isOpen, onClose, onGenerate, classes }) => {
     // Generate dates dynamically based on Vietnam App Time
     const vnTimeStr = getVietnamTime();
     const today = new Date(vnTimeStr);
@@ -32,15 +33,35 @@ const GenerateInvoicesModal: React.FC<{
     const [year, setYear] = useState(lastMonth.getFullYear());
     const [month, setMonth] = useState(lastMonth.getMonth() + 1);
     const [isLoading, setIsLoading] = useState(false);
+    const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
 
     const currentYear = today.getFullYear();
     const years = Array.from({ length: 10 }, (_, i) => currentYear - i + 2);
     const months = Array.from({ length: 12 }, (_, i) => i + 1);
 
+    const handleToggleClass = (classId: string) => {
+        setSelectedClassIds(prev => 
+            prev.includes(classId) ? prev.filter(id => id !== classId) : [...prev, classId]
+        );
+    };
+
+    const handleToggleAll = () => {
+        if (selectedClassIds.length === classes.length) {
+            setSelectedClassIds([]);
+        } else {
+            setSelectedClassIds(classes.map(c => c.id));
+        }
+    };
+
     const handleGenerate = async () => {
         setIsLoading(true);
-        await onGenerate(month, year);
+        // If all classes or none selected, pass undefined (= all)
+        const classIdsToSend = selectedClassIds.length > 0 && selectedClassIds.length < classes.length
+            ? selectedClassIds
+            : undefined;
+        await onGenerate(month, year, classIdsToSend);
         setIsLoading(false);
+        setSelectedClassIds([]);
         onClose();
     };
 
@@ -65,6 +86,46 @@ const GenerateInvoicesModal: React.FC<{
                         <select value={year} onChange={e => setYear(Number(e.target.value))} className="form-select">
                             {years.map(y => <option key={y} value={y}>{y}</option>)}
                         </select>
+                    </div>
+
+                    {/* Class filter */}
+                    <div className="border rounded-lg dark:border-gray-700 overflow-hidden">
+                        <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 border-b dark:border-gray-700">
+                            <span className="text-sm font-medium">Chọn lớp để chốt:</span>
+                            <button
+                                type="button"
+                                onClick={handleToggleAll}
+                                className="text-xs text-primary hover:underline font-medium"
+                            >
+                                {selectedClassIds.length === classes.length ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
+                            </button>
+                        </div>
+                        {selectedClassIds.length === 0 && (
+                            <div className="px-3 py-2 bg-blue-50 dark:bg-blue-900/20 text-xs text-blue-700 dark:text-blue-300">
+                                💡 Không chọn lớp nào = chốt cho <strong>tất cả các lớp</strong>
+                            </div>
+                        )}
+                        <div className="max-h-40 overflow-y-auto p-2 space-y-1">
+                            {classes.map(cls => (
+                                <label key={cls.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer select-none">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedClassIds.includes(cls.id)}
+                                        onChange={() => handleToggleClass(cls.id)}
+                                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                    />
+                                    <span className="text-sm">{cls.name}</span>
+                                </label>
+                            ))}
+                            {classes.length === 0 && (
+                                <p className="text-xs text-gray-500 text-center py-2">Chưa có lớp học nào.</p>
+                            )}
+                        </div>
+                        {selectedClassIds.length > 0 && selectedClassIds.length < classes.length && (
+                            <div className="px-3 py-2 bg-amber-50 dark:bg-amber-900/20 text-xs text-amber-700 dark:text-amber-300 border-t dark:border-gray-700">
+                                ⚡ Chỉ chốt cho <strong>{selectedClassIds.length}/{classes.length}</strong> lớp đã chọn
+                            </div>
+                        )}
                     </div>
                 </div>
             }
@@ -210,10 +271,11 @@ export const InvoicesTab: React.FC = () => {
         { header: 'Trạng thái', accessor: getStatusBadge, sortable: true, sortKey: 'status' },
     ];
 
-    const handleGenerate = async (month: number, year: number) => {
+    const handleGenerate = async (month: number, year: number, classIds?: string[]) => {
         try {
-            await generateInvoices({ month, year });
-            toast.success(`Đã chốt/cập nhật hóa đơn cho tháng ${month}/${year}.`);
+            await generateInvoices({ month, year, classIds });
+            const classNote = classIds ? ` (${classIds.length} lớp đã chọn)` : '';
+            toast.success(`Đã chốt/cập nhật hóa đơn cho tháng ${month}/${year}${classNote}.`);
         } catch (error) {
             toast.error('Lỗi khi xử lý hóa đơn.');
         }
@@ -424,6 +486,7 @@ export const InvoicesTab: React.FC = () => {
                 isOpen={isGenerateModalOpen}
                 onClose={() => setGenerateModalOpen(false)}
                 onGenerate={handleGenerate}
+                classes={state.classes}
             />
             <TuitionFeeNoticeModal
                 isOpen={!!viewInvoice}

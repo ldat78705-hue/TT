@@ -82,7 +82,7 @@ export const updateAttendance = (payload: AttendanceRecord[]) => patchData({ op:
 export const deleteAttendanceForDate = (payload: { classId: string, date: string }) => patchData({ op: 'deleteAttendanceForDate', payload });
 export const deleteAttendanceByMonth = (payload: { month: number; year: number; }) => patchData({ op: 'deleteAttendanceByMonth', payload });
 
-export const generateInvoices = (payload: { month: number, year: number }) => patchData({ op: 'generateInvoices', payload });
+export const generateInvoices = (payload: { month: number, year: number, classIds?: string[] }) => patchData({ op: 'generateInvoices', payload });
 export const cancelInvoice = (invoiceId: string) => patchData({ op: 'cancelInvoice', payload: { invoiceId } });
 export const updateInvoiceStatus = (payload: { invoiceId: string, status: 'PAID' | 'UNPAID' }) => patchData({ op: 'updateInvoiceStatus', payload });
 

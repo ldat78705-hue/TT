@@ -463,11 +463,21 @@ export function applyOperation(
 
         // FINANCE / INVOICES
         case 'generateInvoices': {
-            const { month, year } = payload;
+            const { month, year, classIds } = payload;
             const monthStr = `${year}-${String(month).padStart(2, '0')}`;
             
+            // Optional: filter to specific classes only
+            const selectedClassIds = (classIds && Array.isArray(classIds) && classIds.length > 0)
+                ? new Set<string>(classIds)
+                : null; // null = all classes
+            
             // PRE-CALCULATE ATTENDANCE DATA FOR THIS MONTH ONCE TO AVOID O(N^3) COMPLEXITY
-            const monthAttendance = data.attendance.filter(a => a.date.startsWith(monthStr));
+            let monthAttendance = data.attendance.filter(a => a.date.startsWith(monthStr));
+            
+            // If specific classes selected, filter attendance to only those classes
+            if (selectedClassIds) {
+                monthAttendance = monthAttendance.filter(a => selectedClassIds.has(a.classId));
+            }
             
             const studentsWithAttendanceIds = new Set<string>();
             const classDates = new Map<string, Set<string>>(); // classId -> Set<date> for total sessions
@@ -492,8 +502,26 @@ export function applyOperation(
                 else if (a.status === AttendanceStatus.UNEXCUSED_ABSENT) stats.unexcused++;
             });
             
-            const activeStudentIds = new Set(data.students.filter(s => s.status === PersonStatus.ACTIVE).map(s => s.id));
-            const studentsToInvoiceIds = new Set([...activeStudentIds, ...studentsWithAttendanceIds]);
+            // Determine which students to invoice
+            let studentsToInvoiceIds: Set<string>;
+            if (selectedClassIds) {
+                // Only students enrolled in selected classes + students with attendance in selected classes
+                const enrolledInSelected = new Set<string>();
+                data.classes.forEach(c => {
+                    if (selectedClassIds.has(c.id)) {
+                        c.studentIds.forEach(sid => {
+                            const student = data.students.find(s => s.id === sid);
+                            if (student && student.status === PersonStatus.ACTIVE) {
+                                enrolledInSelected.add(sid);
+                            }
+                        });
+                    }
+                });
+                studentsToInvoiceIds = new Set([...enrolledInSelected, ...studentsWithAttendanceIds]);
+            } else {
+                const activeStudentIds = new Set(data.students.filter(s => s.status === PersonStatus.ACTIVE).map(s => s.id));
+                studentsToInvoiceIds = new Set([...activeStudentIds, ...studentsWithAttendanceIds]);
+            }
 
             for (const studentId of studentsToInvoiceIds) {
                 const student = data.students.find(s => s.id === studentId);
@@ -504,12 +532,16 @@ export function applyOperation(
                 
                 const relevantClassIds = new Set<string>();
                 
-                // Enrolled classes
+                // Enrolled classes (filtered by selectedClassIds if provided)
                 data.classes.forEach(c => {
-                    if (c.studentIds.includes(student.id)) relevantClassIds.add(c.id);
+                    if (c.studentIds.includes(student.id)) {
+                        if (!selectedClassIds || selectedClassIds.has(c.id)) {
+                            relevantClassIds.add(c.id);
+                        }
+                    }
                 });
                 
-                // Classes with attendance in this month
+                // Classes with attendance in this month (already filtered above)
                 monthAttendance.forEach(a => {
                     if (a.studentId === student.id) relevantClassIds.add(a.classId);
                 });
