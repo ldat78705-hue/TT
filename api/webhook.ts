@@ -100,6 +100,10 @@ export default async function webhookHandler(req: any, res: any) {
         try {
             await executeOperationInternal(operation, centerId);
 
+            // Find student name for display
+            const studentObj = currentData.students.find((s: any) => s.id === studentId);
+            const studentName = studentObj?.name || studentId;
+
             // Ghi audit log cho giao dịch tự động
             try {
                 const auditEntry = {
@@ -113,6 +117,39 @@ export default async function webhookHandler(req: any, res: any) {
                 };
                 await executeOperationInternal({ op: 'addAuditLog', payload: auditEntry }, centerId);
             } catch { /* silent — don't fail payment if audit log fails */ }
+
+            // Tạo thông báo cho Admin/Manager/Kế toán
+            try {
+                await executeOperationInternal({
+                    op: 'addAnnouncement',
+                    payload: {
+                        title: `💰 Nhận thanh toán ${amount.toLocaleString('vi-VN')}đ`,
+                        content: `Học viên ${studentName} (${studentId}) đã thanh toán ${amount.toLocaleString('vi-VN')}đ qua ${bankKeyword}.\n\nNội dung CK: ${content.substring(0, 80)}`,
+                        targetAudience: 'MANAGEMENT',
+                        createdAt: getVietnamTime(),
+                        createdBy: 'Hệ thống Webhook',
+                    }
+                }, centerId);
+            } catch { /* silent */ }
+
+            // Gửi xác nhận thanh toán qua Zalo OA (nếu đã bật)
+            if (settings.zaloOaEnabled && studentObj?.zaloUserId) {
+                try {
+                    const { getValidAccessToken, processTemplate, sendZaloMessage } = await import('./zalo.js');
+                    const { accessToken } = await getValidAccessToken(centerId, settings);
+                    const template = settings.messageTemplates?.paymentConfirm || 
+                        'Kính gửi PH {parentName},\n\nTrung tâm {centerName} xác nhận đã nhận thanh toán {amount} cho học viên {studentName}.\n\nCảm ơn quý phụ huynh!\nTrân trọng!';
+                    const message = processTemplate(template, {
+                        parentName: studentObj.parentName || 'Phụ huynh',
+                        studentName: studentName,
+                        amount: `${amount.toLocaleString('vi-VN')}đ`,
+                        centerName: settings.name || 'Trung tâm',
+                    });
+                    await sendZaloMessage(accessToken, studentObj.zaloUserId, message);
+                } catch (zaloErr) {
+                    console.error('Zalo payment confirm failed (silent):', zaloErr);
+                }
+            }
 
             return res.status(200).json({ success: true, message: `Ghi nhận thanh toán ${amount} cho ${studentId} thành công.` });
         } catch (opError) {

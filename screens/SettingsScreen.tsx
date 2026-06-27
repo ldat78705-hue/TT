@@ -614,6 +614,34 @@ export const SettingsScreen: React.FC = () => {
                                             }}>🔗 Test kết nối OA</Button>
                                         </div>
 
+                                        {/* Auto Tuition Reminder via Zalo */}
+                                        <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg space-y-3">
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <h4 className="font-semibold text-sm">⏰ Nhắc nhở HP quá hạn qua Zalo</h4>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400">Gửi nhắc nhở cho PHHS có HĐ chưa thanh toán quá số ngày quy định</p>
+                                                </div>
+                                                <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                                                    <input type="checkbox" className="sr-only peer"
+                                                        checked={settings.zaloAutoTuitionReminder ?? false}
+                                                        onChange={(e) => setSettings(prev => ({ ...prev, zaloAutoTuitionReminder: e.target.checked }))}
+                                                    />
+                                                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:bg-emerald-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                                                </label>
+                                            </div>
+                                            {settings.zaloAutoTuitionReminder && (
+                                                <div>
+                                                    <label className="block text-sm font-medium">Số ngày quá hạn để gửi nhắc</label>
+                                                    <input type="number" min="1" max="90"
+                                                        value={settings.zaloTuitionReminderDays ?? 7}
+                                                        onChange={(e) => setSettings(prev => ({ ...prev, zaloTuitionReminderDays: parseInt(e.target.value) || 7 }))}
+                                                        className="form-input mt-1 w-32"
+                                                    />
+                                                    <p className="text-xs text-gray-500 mt-1">HĐ UNPAID quá {settings.zaloTuitionReminderDays || 7} ngày sẽ được gửi nhắc nhở khi nhấn nút trong tab Công nợ</p>
+                                                </div>
+                                            )}
+                                        </div>
+
                                         <hr className="dark:border-gray-700" />
 
                                         <h4 className="font-semibold text-sm">Mẫu tin nhắn (có thể chỉnh sửa)</h4>

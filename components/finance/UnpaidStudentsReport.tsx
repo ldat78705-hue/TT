@@ -2,6 +2,7 @@
 import React, { useMemo, useState } from 'react';
 import { useData } from '../../hooks/useDataContext';
 import { useAuth } from '../../hooks/useAuth';
+import { useToast } from '../../hooks/useToast';
 import { Table, SortConfig, Column } from '../common/Table';
 import { Button } from '../common/Button';
 import { Student, UserRole, PersonStatus } from '../../types';
@@ -11,11 +12,13 @@ import { ListItemCard } from '../common/ListItemCard';
 import { BulkDebtPrintModal } from './BulkDebtPrintModal';
 import { PaymentModal } from './PaymentModal';
 import { ClassDebtReportModal } from './ClassDebtReportModal';
+import { zaloSendOverdueReminders } from '../../services/api';
 
 export const UnpaidStudentsReport: React.FC = () => {
     const { state } = useData();
     const { role } = useAuth();
-    const { students, classes } = state;
+    const { toast } = useToast();
+    const { students, classes, settings } = state;
     const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
     const [sortConfig, setSortConfig] = useState<SortConfig<Student & { classNames: string }> | null>({ key: 'balance', direction: 'ascending' });
     const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
@@ -24,6 +27,7 @@ export const UnpaidStudentsReport: React.FC = () => {
     const [classFilter, setClassFilter] = useState('all');
     const [paymentModalState, setPaymentModalState] = useState<{ isOpen: boolean; student: Student | null }>({ isOpen: false, student: null });
     const [showStats, setShowStats] = useState(false);
+    const [isSendingZalo, setIsSendingZalo] = useState(false);
 
     const isViewer = role === UserRole.VIEWER;
 
@@ -258,6 +262,43 @@ export const UnpaidStudentsReport: React.FC = () => {
                             {ICONS.download} In Báo Cáo Lớp
                         </Button>
                         <ExportButton data={exportData} columns={exportColumns} filenameBase="BaoCaoCongNo" />
+                        {settings?.zaloOaEnabled && (
+                            <Button 
+                                onClick={async () => {
+                                    const studentsToSend = sortedUnpaidStudents
+                                        .filter(s => selectedStudentIds.includes(s.id))
+                                        .map(s => ({
+                                            name: s.name,
+                                            parentName: s.parentName || '',
+                                            zaloUserId: s.zaloUserId || '',
+                                            amount: Math.abs(s.balance),
+                                        }));
+                                    if (studentsToSend.length === 0) {
+                                        toast.info('Vui lòng chọn ít nhất 1 học viên để gửi nhắc nhở.');
+                                        return;
+                                    }
+                                    setIsSendingZalo(true);
+                                    try {
+                                        const result = await zaloSendOverdueReminders(studentsToSend);
+                                        if (result.success) {
+                                            const { sent, failed, skipped } = result.summary;
+                                            toast.success(`Gửi nhắc nhở: ${sent} thành công, ${failed} thất bại, ${skipped} bỏ qua (chưa liên kết Zalo)`);
+                                        } else {
+                                            toast.error(result.error || 'Lỗi gửi nhắc nhở Zalo');
+                                        }
+                                    } catch (err: any) {
+                                        toast.error(err.message || 'Lỗi kết nối');
+                                    } finally {
+                                        setIsSendingZalo(false);
+                                    }
+                                }}
+                                disabled={selectedStudentIds.length === 0 || isSendingZalo}
+                                variant="secondary"
+                                isLoading={isSendingZalo}
+                            >
+                                📱 Nhắc Zalo ({selectedStudentIds.length})
+                            </Button>
+                        )}
                     </div>
                 </div>
 

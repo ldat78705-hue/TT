@@ -236,6 +236,9 @@ export interface CenterSettings {
   webhookBankKeyword?: string; // Keyword nhận diện nguồn (default: 'MBBank')
   webhookAutoDescription?: string; // Template mô tả GD (default: 'Thanh toán HP tự động')
   webhookSecretKey?: string; // Secret key for webhook authentication
+  // Zalo Auto Tuition Reminder
+  zaloAutoTuitionReminder?: boolean;  // Bật/tắt nhắc nhở HP tự động qua Zalo
+  zaloTuitionReminderDays?: number;   // Số ngày HĐ UNPAID để gửi nhắc (default: 7)
 }
 
 export interface PayrollClassDetail {
@@ -261,7 +264,7 @@ export interface Payroll {
   classDetails: PayrollClassDetail[];
 }
 
-export type AnnouncementTarget = 'ALL' | 'TEACHERS' | 'STUDENTS' | 'CLASS' | 'SPECIFIC_STUDENTS';
+export type AnnouncementTarget = 'ALL' | 'TEACHERS' | 'STUDENTS' | 'CLASS' | 'SPECIFIC_STUDENTS' | 'MANAGEMENT';
 
 export interface Announcement {
     id: string;

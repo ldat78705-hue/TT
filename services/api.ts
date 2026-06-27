@@ -317,3 +317,12 @@ export async function zaloGetFollowersList() {
     });
     return response.json();
 }
+
+export async function zaloSendOverdueReminders(students: { name: string; parentName: string; zaloUserId?: string; amount: number }[]) {
+    const response = await fetch('/api/zalo', {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ action: 'send_overdue_reminders', students }),
+    });
+    return response.json();
+}

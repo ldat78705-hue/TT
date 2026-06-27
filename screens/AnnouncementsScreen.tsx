@@ -413,6 +413,8 @@ export const AnnouncementsScreen: React.FC = () => {
                     );
                     filteredAnnouncements = filteredAnnouncements.filter(ann => {
                         if (!ann.targetAudience || ann.targetAudience === 'ALL' || ann.targetAudience === 'TEACHERS') return true;
+                        // Hide MANAGEMENT announcements from teachers
+                        if (ann.targetAudience === 'MANAGEMENT') return false;
                         if ((ann.targetAudience === 'CLASS' || ann.targetAudience === 'SPECIFIC_STUDENTS') && ann.classId) {
                             return teacherClassIds.has(ann.classId);
                         }
@@ -421,7 +423,7 @@ export const AnnouncementsScreen: React.FC = () => {
                     });
                 } else if (role === UserRole.ACCOUNTANT) {
                     filteredAnnouncements = filteredAnnouncements.filter(ann => {
-                        if (!ann.targetAudience || ann.targetAudience === 'ALL') return true;
+                        if (!ann.targetAudience || ann.targetAudience === 'ALL' || ann.targetAudience === 'MANAGEMENT') return true;
                         // Accountant can see student-targeted (may contain financial info)
                         if (ann.targetAudience === 'STUDENTS' || ann.targetAudience === 'CLASS' || ann.targetAudience === 'SPECIFIC_STUDENTS') return true;
                         // TEACHERS-only: accountant doesn't need
@@ -439,7 +441,8 @@ export const AnnouncementsScreen: React.FC = () => {
                     <div className="space-y-4">
                         {filteredAnnouncements.map(ann => {
                             let targetLabel = 'Tất cả';
-                            if (ann.targetAudience === 'TEACHERS') targetLabel = 'Giáo viên';
+                            if (ann.targetAudience === 'MANAGEMENT') targetLabel = 'Ban quản lý';
+                            else if (ann.targetAudience === 'TEACHERS') targetLabel = 'Giáo viên';
                             else if (ann.targetAudience === 'STUDENTS') targetLabel = 'Học viên';
                             else if (ann.targetAudience === 'CLASS' && ann.classId) {
                                 targetLabel = `Lớp: ${state.classes.find(c => c.id === ann.classId)?.name || 'N/A'}`;

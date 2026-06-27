@@ -517,6 +517,8 @@ const TeacherDashboard: React.FC = () => {
 
         return visibleAnnouncements
             .filter(ann => {
+                // Hide MANAGEMENT announcements from teachers
+                if (ann.targetAudience === 'MANAGEMENT') return false;
                 // Show if targeted to ALL or TEACHERS
                 if (!ann.targetAudience || ann.targetAudience === 'ALL' || ann.targetAudience === 'TEACHERS') return true;
                 

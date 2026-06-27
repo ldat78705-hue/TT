@@ -28,7 +28,7 @@ try {
 const fbApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(fbApp, firebaseConfig?.firestoreDatabaseId);
 
-function getCollectionName(centerId?: string): string {
+export function getCollectionName(centerId?: string): string {
     if (!centerId || centerId === '_legacy') return 'db_core_v2_secure_9a8b7c6d5e4f3g2h1';
     return `center_${centerId}`;
 }
@@ -61,7 +61,7 @@ async function refreshZaloToken(appId: string, secretKey: string, refreshToken: 
     return await res.json();
 }
 
-async function sendZaloMessage(accessToken: string, userId: string, message: string) {
+export async function sendZaloMessage(accessToken: string, userId: string, message: string) {
     const res = await fetch(`${ZALO_OA_API}/message/cs`, {
         method: 'POST',
         headers: {
@@ -100,7 +100,7 @@ async function getZaloUserProfile(accessToken: string, userId: string) {
 }
 
 // ===== Helper: Get valid access token, auto-refresh if needed =====
-async function getValidAccessToken(centerId: string, settings: any): Promise<{ accessToken: string; newRefreshToken?: string }> {
+export async function getValidAccessToken(centerId: string, settings: any): Promise<{ accessToken: string; newRefreshToken?: string }> {
     const now = Date.now();
     
     // If token still valid (with 5 min buffer)
@@ -142,7 +142,7 @@ async function getValidAccessToken(centerId: string, settings: any): Promise<{ a
 }
 
 // ===== Template processor =====
-function processTemplate(template: string, vars: Record<string, string>): string {
+export function processTemplate(template: string, vars: Record<string, string>): string {
     let result = template;
     for (const [key, value] of Object.entries(vars)) {
         result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), value);
@@ -415,6 +415,80 @@ export default async function handler(req: any, res: any) {
                 return res.status(200).json({ 
                     success: true, 
                     totalFollowers: countResult.data?.total || 0 
+                });
+            }
+            
+            // ===== SEND OVERDUE TUITION REMINDERS (BULK) =====
+            case 'send_overdue_reminders': {
+                if (!settings.zaloOaEnabled) {
+                    return res.status(400).json({ error: 'Zalo OA chưa được kích hoạt' });
+                }
+                
+                const { students: overdueStudents } = payload;
+                // overdueStudents: [{ name, parentName, zaloUserId, amount (debt, positive number) }]
+                
+                if (!overdueStudents || !Array.isArray(overdueStudents) || overdueStudents.length === 0) {
+                    return res.status(400).json({ error: 'Không có học viên để gửi nhắc nhở' });
+                }
+                
+                const { accessToken } = await getValidAccessToken(centerId, settings);
+                
+                const template = settings.messageTemplates?.tuitionReminder || settings.zaloTuitionTemplate || 
+                    'Kính gửi PH {parentName},\n\nTrung tâm {centerName} xin thông báo: Học viên {studentName} hiện có học phí chưa thanh toán: {amount}.\n\nVui lòng thanh toán để đảm bảo quyền lợi học tập.\nTrân trọng!';
+                
+                const results: any[] = [];
+                
+                for (const student of overdueStudents) {
+                    if (!student.zaloUserId) {
+                        results.push({ 
+                            studentName: student.name, 
+                            status: 'skipped', 
+                            reason: 'Chưa liên kết Zalo' 
+                        });
+                        continue;
+                    }
+                    
+                    try {
+                        const message = processTemplate(template, {
+                            parentName: student.parentName || 'Phụ huynh',
+                            studentName: student.name || '',
+                            amount: typeof student.amount === 'number' ? Math.abs(student.amount).toLocaleString('vi-VN') + 'đ' : (student.amount || ''),
+                            centerName: settings.name || 'Trung tâm',
+                        });
+                        
+                        const sendResult = await sendZaloMessage(accessToken, student.zaloUserId, message);
+                        
+                        if (sendResult.error) {
+                            results.push({ 
+                                studentName: student.name, 
+                                status: 'failed', 
+                                reason: sendResult.message || `Lỗi gửi tin (code: ${sendResult.error})` 
+                            });
+                        } else {
+                            results.push({ 
+                                studentName: student.name, 
+                                status: 'sent', 
+                                reason: 'Đã gửi thành công' 
+                            });
+                        }
+                    } catch (err: any) {
+                        results.push({ 
+                            studentName: student.name, 
+                            status: 'failed', 
+                            reason: err.message || 'Lỗi không xác định' 
+                        });
+                    }
+                }
+                
+                const sent = results.filter(r => r.status === 'sent').length;
+                const failed = results.filter(r => r.status === 'failed').length;
+                const skipped = results.filter(r => r.status === 'skipped').length;
+                
+                return res.status(200).json({ 
+                    success: true, 
+                    results,
+                    summary: { sent, failed, skipped, total: overdueStudents.length },
+                    message: `Đã gửi nhắc nhở: ${sent}/${overdueStudents.length} | Thất bại: ${failed} | Bỏ qua: ${skipped}`
                 });
             }
             

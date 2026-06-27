@@ -514,6 +514,8 @@ function applyTeacherFilter(data: any, teacherId: string): any {
     if (filtered.announcements) {
         filtered.announcements = filtered.announcements.filter((ann: any) => {
             if (!ann.targetAudience || ann.targetAudience === 'ALL' || ann.targetAudience === 'TEACHERS') return true;
+            // Hide MANAGEMENT announcements from teachers
+            if (ann.targetAudience === 'MANAGEMENT') return false;
             if ((ann.targetAudience === 'CLASS' || ann.targetAudience === 'SPECIFIC_STUDENTS') && ann.classId) {
                 return teacherClassIds.has(ann.classId);
             }
