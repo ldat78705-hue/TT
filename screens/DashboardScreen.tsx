@@ -412,12 +412,12 @@ const AdminDashboard: React.FC = () => {
                 </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-                <Card title="Học viên đang học" value={totalStudents} icon={ICONS.students} color="text-blue-600 dark:text-blue-400" />
-                <Card title="Lớp học hoạt động" value={activeClasses} icon={ICONS.classes} color="text-green-600 dark:text-green-400" />
+                <Card title="Học viên đang học" value={totalStudents} icon={ICONS.students} color="text-blue-600 dark:text-blue-400" linkTo={ROUTES.STUDENTS} />
+                <Card title="Lớp học hoạt động" value={activeClasses} icon={ICONS.classes} color="text-green-600 dark:text-green-400" linkTo={ROUTES.CLASSES} />
                 {canViewFinancials && (
                     <>
-                        <Card title="Doanh thu tháng này" value={`${monthlyRevenue.toLocaleString('vi-VN')} ₫`} icon={ICONS.finance} color="text-yellow-600 dark:text-yellow-400" />
-                        <Card title="Tổng nợ phải thu" value={`${Math.abs(totalReceivables).toLocaleString('vi-VN')} ₫`} icon={ICONS.dashboard} color="text-red-600 dark:text-red-400" />
+                        <Card title="Doanh thu tháng này" value={`${monthlyRevenue.toLocaleString('vi-VN')} ₫`} icon={ICONS.finance} color="text-yellow-600 dark:text-yellow-400" linkTo={ROUTES.FINANCE} linkState={{ defaultTab: 'overview' }} />
+                        <Card title="Tổng nợ phải thu" value={`${Math.abs(totalReceivables).toLocaleString('vi-VN')} ₫`} icon={ICONS.dashboard} color="text-red-600 dark:text-red-400" linkTo={ROUTES.FINANCE} linkState={{ defaultTab: 'debt_report' }} />
                     </>
                 )}
                 <Card
@@ -425,6 +425,7 @@ const AdminDashboard: React.FC = () => {
                     value={todayAttendanceInfo.total > 0 ? `${todayAttendanceInfo.done}/${todayAttendanceInfo.total} lớp` : 'Không có lớp'}
                     icon={ICONS.calendar}
                     color={todayAttendanceInfo.done === todayAttendanceInfo.total && todayAttendanceInfo.total > 0 ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'}
+                    linkTo={ROUTES.ATTENDANCE_HUB}
                 />
             </div>
 
