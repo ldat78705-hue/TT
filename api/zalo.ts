@@ -165,9 +165,9 @@ export default async function handler(req: any, res: any) {
     const centerId = (authPayload as any).centerId || '_legacy';
     const userRole = (authPayload as any).role;
     
-    // Only ADMIN can use Zalo features
-    if (userRole !== UserRole.ADMIN && userRole !== UserRole.MANAGER) {
-        return res.status(403).json({ error: 'Chỉ quản trị viên mới có thể sử dụng tính năng Zalo' });
+    // Only ADMIN, MANAGER, ACCOUNTANT can use Zalo features
+    if (userRole !== UserRole.ADMIN && userRole !== UserRole.MANAGER && userRole !== UserRole.ACCOUNTANT) {
+        return res.status(403).json({ error: 'Chỉ quản trị viên hoặc kế toán mới có thể sử dụng tính năng Zalo' });
     }
     
     const { action, ...payload } = req.body;

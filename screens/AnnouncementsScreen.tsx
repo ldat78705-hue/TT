@@ -77,6 +77,7 @@ const AnnouncementForm: React.FC<{
                     className="form-select mt-1"
                 >
                     <option value="ALL">Tất cả mọi người</option>
+                    <option value="MANAGEMENT">Ban quản lý (Admin, QL, KT)</option>
                     <option value="TEACHERS">Tất cả Giáo viên</option>
                     <option value="STUDENTS">Tất cả Học viên</option>
                     <option value="CLASS">Một lớp học cụ thể</option>
