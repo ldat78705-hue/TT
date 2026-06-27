@@ -62,7 +62,6 @@ const GenerateInvoicesModal: React.FC<{
         await onGenerate(month, year, classIdsToSend);
         setIsLoading(false);
         setSelectedClassIds([]);
-        onClose();
     };
 
     return (
@@ -123,7 +122,7 @@ const GenerateInvoicesModal: React.FC<{
                         </div>
                         {selectedClassIds.length > 0 && selectedClassIds.length < classes.length && (
                             <div className="px-3 py-2 bg-amber-50 dark:bg-amber-900/20 text-xs text-amber-700 dark:text-amber-300 border-t dark:border-gray-700">
-                                ⚡ Chỉ chốt cho <strong>{selectedClassIds.length}/{classes.length}</strong> lớp đã chọn
+                                ⚡ Chỉ chốt cho học viên thuộc <strong>{selectedClassIds.length}/{classes.length}</strong> lớp đã chọn. Hóa đơn vẫn tính đầy đủ tất cả lớp của mỗi HV.
                             </div>
                         )}
                     </div>

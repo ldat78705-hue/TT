@@ -467,17 +467,15 @@ export function applyOperation(
             const monthStr = `${year}-${String(month).padStart(2, '0')}`;
             
             // Optional: filter to specific classes only
+            // This determines WHICH STUDENTS to process, NOT which classes to bill
+            // Each student's invoice always includes ALL their classes to produce correct totals
             const selectedClassIds = (classIds && Array.isArray(classIds) && classIds.length > 0)
                 ? new Set<string>(classIds)
                 : null; // null = all classes
             
             // PRE-CALCULATE ATTENDANCE DATA FOR THIS MONTH ONCE TO AVOID O(N^3) COMPLEXITY
-            let monthAttendance = data.attendance.filter(a => a.date.startsWith(monthStr));
-            
-            // If specific classes selected, filter attendance to only those classes
-            if (selectedClassIds) {
-                monthAttendance = monthAttendance.filter(a => selectedClassIds.has(a.classId));
-            }
+            // Always use ALL attendance (not filtered by classIds) for correct fee calculation
+            const monthAttendance = data.attendance.filter(a => a.date.startsWith(monthStr));
             
             const studentsWithAttendanceIds = new Set<string>();
             const classDates = new Map<string, Set<string>>(); // classId -> Set<date> for total sessions
@@ -505,7 +503,7 @@ export function applyOperation(
             // Determine which students to invoice
             let studentsToInvoiceIds: Set<string>;
             if (selectedClassIds) {
-                // Only students enrolled in selected classes + students with attendance in selected classes
+                // Only students enrolled in selected classes OR with attendance in selected classes
                 const enrolledInSelected = new Set<string>();
                 data.classes.forEach(c => {
                     if (selectedClassIds.has(c.id)) {
@@ -517,7 +515,13 @@ export function applyOperation(
                         });
                     }
                 });
-                studentsToInvoiceIds = new Set([...enrolledInSelected, ...studentsWithAttendanceIds]);
+                // Also include students who have attendance in selected classes (e.g., PER_SESSION)
+                monthAttendance.forEach(a => {
+                    if (selectedClassIds.has(a.classId)) {
+                        enrolledInSelected.add(a.studentId);
+                    }
+                });
+                studentsToInvoiceIds = enrolledInSelected;
             } else {
                 const activeStudentIds = new Set(data.students.filter(s => s.status === PersonStatus.ACTIVE).map(s => s.id));
                 studentsToInvoiceIds = new Set([...activeStudentIds, ...studentsWithAttendanceIds]);
@@ -532,16 +536,13 @@ export function applyOperation(
                 
                 const relevantClassIds = new Set<string>();
                 
-                // Enrolled classes (filtered by selectedClassIds if provided)
+                // IMPORTANT: Always include ALL enrolled classes for correct invoice total
+                // (not filtered by selectedClassIds — that only controls which students to process)
                 data.classes.forEach(c => {
-                    if (c.studentIds.includes(student.id)) {
-                        if (!selectedClassIds || selectedClassIds.has(c.id)) {
-                            relevantClassIds.add(c.id);
-                        }
-                    }
+                    if (c.studentIds.includes(student.id)) relevantClassIds.add(c.id);
                 });
                 
-                // Classes with attendance in this month (already filtered above)
+                // Classes with attendance in this month (all classes, not filtered)
                 monthAttendance.forEach(a => {
                     if (a.studentId === student.id) relevantClassIds.add(a.classId);
                 });
