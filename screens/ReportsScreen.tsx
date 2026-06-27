@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useData } from '../hooks/useDataContext';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
@@ -45,6 +46,13 @@ export const ReportsScreen: React.FC = () => {
     
     const [classFilter, setClassFilter] = useState('all');
     const [activeTab, setActiveTab] = useState<ReportTab>('overview');
+    const location = useLocation();
+
+    useEffect(() => {
+        if (location.state?.defaultReport) {
+            setActiveTab(location.state.defaultReport as ReportTab);
+        }
+    }, [location.state]);
     const [detailModal, setDetailModal] = useState<{
         isOpen: boolean;
         title: string;

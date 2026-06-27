@@ -134,8 +134,31 @@ export const NotificationBell: React.FC = () => {
             });
         }
 
+        // 4. Recent webhook payments (from announcements created by webhook in last 24h)
+        if (canViewFinancials) {
+            const twentyFourHoursAgo = new Date(vnDate.getTime() - 24 * 60 * 60 * 1000);
+            const cutoffStr = `${twentyFourHoursAgo.getFullYear()}-${String(twentyFourHoursAgo.getMonth()+1).padStart(2,'0')}-${String(twentyFourHoursAgo.getDate()).padStart(2,'0')}T${String(twentyFourHoursAgo.getHours()).padStart(2,'0')}:${String(twentyFourHoursAgo.getMinutes()).padStart(2,'0')}:${String(twentyFourHoursAgo.getSeconds()).padStart(2,'0')}`;
+
+            const webhookPayments = (state.announcements || [])
+                .filter(a => a.createdBy === 'Hệ thống Webhook' && a.createdAt >= cutoffStr)
+                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+            webhookPayments.forEach(payment => {
+                items.push({
+                    id: `webhook-${payment.id}`,
+                    type: 'info',
+                    title: payment.title,
+                    message: payment.content.split('\n')[0],
+                    link: ROUTES.REPORTS,
+                    linkState: { defaultReport: 'webhook' },
+                    icon: '💳',
+                    color: 'text-green-500'
+                });
+            });
+        }
+
         return items;
-    }, [state.students, state.classes, state.attendance]);
+    }, [state.students, state.classes, state.attendance, state.announcements]);
 
     const activeNotifications = notifications.filter(n => !dismissed.has(n.id));
 
