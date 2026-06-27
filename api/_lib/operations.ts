@@ -149,6 +149,9 @@ export function applyOperation(
                 data.invoices.forEach(i => { if (i.studentId === originalId) { i.studentId = updatedStudent.id; i.studentName = updatedStudent.name; } });
                 data.progressReports.forEach(p => { if (p.studentId === originalId) p.studentId = updatedStudent.id; });
                 data.transactions.forEach(t => { if (t.studentId === originalId) t.studentId = updatedStudent.id; });
+            } else if (originalStudent && originalStudent.name !== updatedStudent.name) {
+                // Sync studentName on invoices when only name changes (not ID)
+                data.invoices.forEach(i => { if (i.studentId === updatedStudent.id) i.studentName = updatedStudent.name; });
             }
             const newClassIds = new Set(classIds);
             // If status changed to ARCHIVED, remove from ALL classes regardless of classIds param

@@ -599,6 +599,8 @@ function getAffectedCollections(opName: string): string[] | null {
         addRoom: ['rooms'],
         updateRoom: ['rooms'],
         deleteRoom: ['rooms', 'classes'],
+        // Maintenance
+        recalculateAllInvoices: ['invoices'],
         // Audit
         addAuditLog: ['auditLogs'],
     };
