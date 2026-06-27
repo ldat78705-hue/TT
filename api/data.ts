@@ -564,10 +564,10 @@ function getAffectedCollections(opName: string): string[] | null {
         deleteAttendanceForDate: ['attendance'],
         deleteAttendanceByMonth: ['attendance'],
         // Finance
-        addAdjustment: ['transactions', 'students'],
+        addAdjustment: ['transactions', 'students', 'invoices'],
         addAdvancePayment: ['transactions', 'students', 'invoices'],
-        updateTransaction: ['transactions', 'students'],
-        deleteTransaction: ['transactions', 'students'],
+        updateTransaction: ['transactions', 'students', 'invoices'],
+        deleteTransaction: ['transactions', 'students', 'invoices'],
         clearAllTransactions: ['transactions', 'students', 'invoices'],
         generateInvoices: ['invoices', 'transactions', 'students'],
         cancelInvoice: ['invoices', 'transactions', 'students'],

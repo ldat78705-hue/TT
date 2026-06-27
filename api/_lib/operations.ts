@@ -87,6 +87,14 @@ export function applyOperation(
             // because getShardKey has been updated to use monthly chunks.
             break;
         }
+        case 'recalculateAllInvoices': {
+            // Recalculate invoice statuses for ALL students that have invoices
+            const studentIdsWithInvoices = new Set(data.invoices.map(inv => inv.studentId));
+            for (const studentId of studentIdsWithInvoices) {
+                recalculateStudentInvoices(studentId, getVietnamTime());
+            }
+            break;
+        }
         
         // STUDENT OPERATIONS
         case 'addStudent': {

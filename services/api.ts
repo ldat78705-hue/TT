@@ -227,6 +227,7 @@ export const deleteRoom = (roomId: string) => patchData({ op: 'deleteRoom', payl
 
 export const clearCollections = (collectionKeys: ('students' | 'teachers' | 'staff' | 'classes')[]) => patchData({ op: 'clearCollections', payload: collectionKeys });
 export const compactData = () => patchData({ op: 'compactData', payload: {} });
+export const recalculateAllInvoices = () => patchData({ op: 'recalculateAllInvoices', payload: {} });
 
 export async function backupData(): Promise<Omit<AppData, 'loading'>> {
     return loadInitialData();

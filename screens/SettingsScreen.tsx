@@ -7,7 +7,8 @@ import { ICONS } from '../constants';
 import { ConfirmationModal } from '../components/common/ConfirmationModal';
 import { useAuth } from '../hooks/useAuth';
 
-import { zaloTestConnection } from '../services/api';
+import { zaloTestConnection, recalculateAllInvoices as _recalcInvoices } from '../services/api';
+const api = { recalculateAllInvoices: _recalcInvoices };
 
 
 
@@ -787,9 +788,26 @@ export const SettingsScreen: React.FC = () => {
                         <p className="text-sm text-green-700 dark:text-green-300 mt-1 mb-3">
                            Gộp các dữ liệu cũ lẻ tẻ (Điểm danh, Thu chi) thành từng khối lớn theo tháng. Điều này giúp hệ thống giảm 80% rác dữ liệu, chạy cực kỳ nhanh và không bao giờ bị quá tải (Vượt Quota Firebase). Nên thực hiện 2-3 tháng 1 lần. Toàn bộ dữ liệu vẫn được giữ nguyên vẹn.
                         </p>
-                        <Button onClick={handleCompactData} isLoading={isCompacting} disabled={isViewer} className="bg-green-600 hover:bg-green-700 text-white">
-                            {ICONS.check} Gộp Dữ Liệu Tối Ưu
-                        </Button>
+                        <div className="flex flex-wrap gap-3">
+                            <Button onClick={handleCompactData} isLoading={isCompacting} disabled={isViewer} className="bg-green-600 hover:bg-green-700 text-white">
+                                {ICONS.check} Gộp Dữ Liệu Tối Ưu
+                            </Button>
+                            <Button onClick={async () => {
+                                if (!window.confirm("Cập nhật lại trạng thái (Đã trả / Chưa trả) cho tất cả hóa đơn dựa trên số dư hiện tại. Tiếp tục?")) return;
+                                setIsCompacting(true);
+                                try {
+                                    await api.recalculateAllInvoices();
+                                    toast.success("Đã cập nhật trạng thái tất cả hóa đơn thành công!");
+                                    window.location.reload();
+                                } catch (error) {
+                                    toast.error("Lỗi khi cập nhật trạng thái hóa đơn.");
+                                } finally {
+                                    setIsCompacting(false);
+                                }
+                            }} isLoading={isCompacting} disabled={isViewer} className="bg-blue-600 hover:bg-blue-700 text-white">
+                                🔄 Cập nhật trạng thái Hóa đơn
+                            </Button>
+                        </div>
                     </div>
 
                     <div className="p-4 border border-red-200 dark:border-red-800 bg-red-50 dark:bg-gray-700 rounded-lg">
