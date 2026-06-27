@@ -39,6 +39,14 @@ const GenerateInvoicesModal: React.FC<{
     const years = Array.from({ length: 10 }, (_, i) => currentYear - i + 2);
     const months = Array.from({ length: 12 }, (_, i) => i + 1);
 
+    // Reset state when modal opens/closes
+    useEffect(() => {
+        if (isOpen) {
+            setSelectedClassIds([]);
+            setIsLoading(false);
+        }
+    }, [isOpen]);
+
     const handleToggleClass = (classId: string) => {
         setSelectedClassIds(prev => 
             prev.includes(classId) ? prev.filter(id => id !== classId) : [...prev, classId]
