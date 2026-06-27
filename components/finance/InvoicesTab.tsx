@@ -99,13 +99,15 @@ const GenerateInvoicesModal: React.FC<{
                     <div className="border rounded-lg dark:border-gray-700 overflow-hidden">
                         <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 border-b dark:border-gray-700">
                             <span className="text-sm font-medium">Chọn lớp để chốt:</span>
-                            <button
-                                type="button"
-                                onClick={handleToggleAll}
-                                className="text-xs text-primary hover:underline font-medium"
-                            >
-                                {selectedClassIds.length === classes.length ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
-                            </button>
+                            {classes.length > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={handleToggleAll}
+                                    className="text-xs text-primary hover:underline font-medium"
+                                >
+                                    {selectedClassIds.length === classes.length ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
+                                </button>
+                            )}
                         </div>
                         {selectedClassIds.length === 0 && (
                             <div className="px-3 py-2 bg-blue-50 dark:bg-blue-900/20 text-xs text-blue-700 dark:text-blue-300">
