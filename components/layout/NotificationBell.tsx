@@ -5,7 +5,7 @@ import { PersonStatus, AttendanceStatus, UserRole } from '../../types';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '../../constants';
 import { getVietnamTime } from '../../utils/date';
-import { Bell } from 'lucide-react';
+import { Bell, RefreshCw } from 'lucide-react';
 
 interface Notification {
     id: string;
@@ -19,7 +19,8 @@ interface Notification {
 }
 
 export const NotificationBell: React.FC = () => {
-    const { state } = useData();
+    const { state, refreshData } = useData();
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const { role, user } = useAuth();
     const canViewFinancials = role === UserRole.ADMIN || role === UserRole.MANAGER || role === UserRole.ACCOUNTANT;
     const [isOpen, setIsOpen] = useState(false);
@@ -190,7 +191,21 @@ export const NotificationBell: React.FC = () => {
                 <div className="absolute right-0 mt-3 w-80 md:w-96 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl rounded-2xl shadow-xl shadow-slate-200/20 dark:shadow-none border border-slate-100 dark:border-slate-700 z-50 overflow-hidden">
                     <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
                         <h3 className="font-bold text-sm">Thông báo</h3>
-                        <span className="text-xs text-slate-400">{activeNotifications.length} mới</span>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={async () => {
+                                    setIsRefreshing(true);
+                                    try { await refreshData(); } catch {}
+                                    setIsRefreshing(false);
+                                }}
+                                className="p-1 rounded-full text-slate-400 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                                title="Cập nhật"
+                                disabled={isRefreshing}
+                            >
+                                <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
+                            </button>
+                            <span className="text-xs text-slate-400">{activeNotifications.length} mới</span>
+                        </div>
                     </div>
                     <div className="max-h-80 overflow-y-auto">
                         {activeNotifications.length > 0 ? (

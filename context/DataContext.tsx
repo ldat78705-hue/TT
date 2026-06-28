@@ -139,6 +139,57 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     refreshData();
   }, [refreshData]);
 
+  // Auto-polling: refresh data every 60s when tab is visible
+  // This ensures webhook-created announcements and external changes appear automatically
+  useEffect(() => {
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+
+    const startPolling = () => {
+      if (intervalId) return;
+      intervalId = setInterval(() => {
+        if (!isSubmitting) {
+          // Silent refresh — don't set loading to true to avoid UI flicker
+          api.loadInitialData()
+            .then(data => setState({ ...data, loading: false }))
+            .catch(() => { /* silent — don't disrupt UI on background poll failure */ });
+        }
+      }, 60000); // 60 seconds
+    };
+
+    const stopPolling = () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Immediately refresh when tab becomes visible again
+        if (!isSubmitting) {
+          api.loadInitialData()
+            .then(data => setState({ ...data, loading: false }))
+            .catch(() => {});
+        }
+        startPolling();
+      } else {
+        stopPolling();
+      }
+    };
+
+    // Start polling if tab is currently visible
+    if (document.visibilityState === 'visible') {
+      startPolling();
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      stopPolling();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isSubmitting]);
+
   // Helper function to handle API operations that return the full updated state
   // This replaces the manual state updates which were causing type errors
   const handleStateUpdateOperation = <T,>(apiFunc: (payload: T) => Promise<Omit<AppData, 'loading'>>, opName?: string) => async (payload: T) => {
