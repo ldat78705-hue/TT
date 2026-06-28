@@ -265,19 +265,30 @@ export const StudentDetailScreen: React.FC = () => {
     const [transactionSortConfig, setTransactionSortConfig] = useState<SortConfig<Transaction & { endingBalance: number }> | null>({ key: 'date', direction: 'descending' });
     
     const transactionsWithEndingBalance = useMemo(() => {
-        if (!studentTransactions) return [];
-        let runningBalance = 0;
-        return [...studentTransactions]
-            .sort((a, b) => {
-                const dateComparison = new Date(a.date).getTime() - new Date(b.date).getTime();
-                if (dateComparison !== 0) return dateComparison;
-                return a.id.localeCompare(b.id);
-            })
-            .map(t => {
-                runningBalance += t.amount;
-                return { ...t, endingBalance: runningBalance };
-            });
-    }, [studentTransactions]);
+        if (!studentTransactions || !student) return [];
+        // Sort by date ascending (oldest first), tie-break by ID
+        const sorted = [...studentTransactions].sort((a, b) => {
+            const dateComparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+            if (dateComparison !== 0) return dateComparison;
+            return a.id.localeCompare(b.id);
+        });
+        
+        // Calculate ending balance anchored to student.balance:
+        // The newest transaction's ending balance MUST equal student.balance.
+        // Work backwards from current balance to derive each row's ending balance.
+        const currentBalance = student.balance;
+        // Sum of all transaction amounts after each transaction
+        // We need: endingBalance[last] = currentBalance
+        // endingBalance[i] = endingBalance[i+1] - amount[i+1]
+        // So: endingBalance[i] = currentBalance - sum(amounts from i+1 to last)
+        let suffixSum = 0;
+        const result = new Array(sorted.length);
+        for (let i = sorted.length - 1; i >= 0; i--) {
+            result[i] = { ...sorted[i], endingBalance: currentBalance - suffixSum };
+            suffixSum += sorted[i].amount;
+        }
+        return result;
+    }, [studentTransactions, student]);
 
     const sortedTransactionsWithEndingBalance = useMemo(() => {
         let sortableItems = [...transactionsWithEndingBalance];
