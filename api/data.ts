@@ -1058,13 +1058,17 @@ export default async function handler(req: any, res: any) {
         const isAlreadyHashed = (s: string) => s.startsWith('$2a$') || s.startsWith('$2b$') || /^[0-9a-f]{64}$/i.test(s);
         
         if (operation.op === 'addTeacher' || operation.op === 'updateTeacher') {
-            const t = operation.payload.teacher || operation.payload.updatedTeacher;
+            // addTeacher sends flat payload { id, name, password, ... }
+            // updateTeacher sends { originalId, updatedTeacher: { ... } }
+            const t = operation.op === 'addTeacher' ? operation.payload : operation.payload.updatedTeacher;
             if (t && t.password && !isAlreadyHashed(t.password)) {
                 t.password = hashPassword(t.password);
             }
         }
         if (operation.op === 'addStaff' || operation.op === 'updateStaff') {
-            const s = operation.payload.staff || operation.payload.updatedStaff;
+            // addStaff sends flat payload { id, name, password, ... }
+            // updateStaff sends { originalId, updatedStaff: { ... } }
+            const s = operation.op === 'addStaff' ? operation.payload : operation.payload.updatedStaff;
             if (s && s.password && !isAlreadyHashed(s.password)) {
                 s.password = hashPassword(s.password);
             }
@@ -1227,7 +1231,7 @@ function buildAuditEntry(op: string, payload: any, userId: string, userName: str
         deleteStudentNote: { targetType: 'student', getDetails: (p) => ({ targetName: p.studentId || '', details: `Xóa ghi chú của HS ${p.studentId}` }) },
         updateStudentTags: { targetType: 'student', getDetails: (p) => ({ targetName: p.studentId || '', details: `Cập nhật nhãn HS ${p.studentId}` }) },
         // === Teachers ===
-        addTeacher: { targetType: 'teacher', getDetails: (p) => ({ targetName: p.teacher?.name || '', details: `Thêm giáo viên "${p.teacher?.name}"` }) },
+        addTeacher: { targetType: 'teacher', getDetails: (p) => ({ targetName: p.name || '', details: `Thêm giáo viên "${p.name}"` }) },
         updateTeacher: { targetType: 'teacher', getDetails: (p) => ({ targetName: p.updatedTeacher?.name || '', details: `Cập nhật giáo viên "${p.updatedTeacher?.name}"` }) },
         deleteTeacher: { targetType: 'teacher', getDetails: (p) => ({ targetName: p.teacherId || '', details: `Xóa giáo viên ${p.teacherId}` }) },
         // === Staff ===
@@ -1271,7 +1275,7 @@ function buildAuditEntry(op: string, payload: any, userId: string, userName: str
         deleteAnnouncement: { targetType: 'announcement', getDetails: (p) => ({ targetName: p.id || '', details: `Xóa thông báo ${p.id}` }) },
         // === Progress Reports ===
         addProgressReport: { targetType: 'student', getDetails: (p) => ({ targetName: p.studentId || '', details: `Thêm báo cáo tiến độ HS ${p.studentId}` }) },
-        addBulkProgressReports: { targetType: 'student', getDetails: (p) => ({ targetName: '', details: `Thêm ${Array.isArray(p) ? p.length : '?'} báo cáo tiến độ hàng loạt` }) },
+        addBulkProgressReports: { targetType: 'student', getDetails: (p) => ({ targetName: '', details: `Thêm ${Array.isArray(p?.records) ? p.records.length : (Array.isArray(p) ? p.length : '?')} báo cáo tiến độ hàng loạt` }) },
         updateProgressReport: { targetType: 'student', getDetails: (p) => ({ targetName: p.studentId || p.id || '', details: `Sửa báo cáo tiến độ ${p.id || ''}` }) },
         deleteProgressReport: { targetType: 'student', getDetails: (p) => ({ targetName: p.reportId || '', details: `Xóa báo cáo tiến độ ${p.reportId}` }) },
         // === Rooms ===
