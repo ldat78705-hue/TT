@@ -2,13 +2,14 @@ import React, { useState, useMemo } from 'react';
 import { useData } from '../hooks/useDataContext';
 
 const ACTION_ICONS: Record<string, string> = {
-    student: '👨‍🎓', teacher: '👨‍🏫', class: '📚', attendance: '📋',
+    student: '👨‍🎓', teacher: '👨‍🏫', staff: '👤', class: '📚', attendance: '📋',
     finance: '💰', announcement: '📢', room: '🏫', settings: '⚙️', system: '🔧'
 };
 
 const ACTION_COLORS: Record<string, string> = {
     student: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
     teacher: 'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
+    staff: 'bg-cyan-50 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300',
     class: 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300',
     attendance: 'bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
     finance: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
@@ -47,7 +48,7 @@ export const AuditLogScreen: React.FC = () => {
     };
 
     const typeLabel = (type: string) => {
-        const map: Record<string, string> = { student: 'Học viên', teacher: 'Giáo viên', class: 'Lớp học', attendance: 'Điểm danh', finance: 'Tài chính', announcement: 'Thông báo', room: 'Phòng học', settings: 'Cài đặt', system: 'Hệ thống' };
+        const map: Record<string, string> = { student: 'Học viên', teacher: 'Giáo viên', staff: 'Nhân viên', class: 'Lớp học', attendance: 'Điểm danh', finance: 'Tài chính', announcement: 'Thông báo', room: 'Phòng học', settings: 'Cài đặt', system: 'Hệ thống' };
         return map[type] || type;
     };
 

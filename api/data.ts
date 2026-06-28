@@ -1212,6 +1212,9 @@ function buildAuditEntry(op: string, payload: any, userId: string, userName: str
         deleteStudent: { targetType: 'student', getDetails: (p) => ({ targetName: p.studentId || '', details: `Xóa học viên ${p.studentId}` }) },
         archiveStudent: { targetType: 'student', getDetails: (p) => ({ targetName: p.studentId || '', details: `Lưu trữ học viên ${p.studentId}` }) },
         restoreStudent: { targetType: 'student', getDetails: (p) => ({ targetName: p.studentId || '', details: `Khôi phục học viên ${p.studentId}` }) },
+        addStudentNote: { targetType: 'student', getDetails: (p) => ({ targetName: p.studentId || '', details: `Thêm ghi chú cho HS ${p.studentId}` }) },
+        deleteStudentNote: { targetType: 'student', getDetails: (p) => ({ targetName: p.studentId || '', details: `Xóa ghi chú của HS ${p.studentId}` }) },
+        updateStudentTags: { targetType: 'student', getDetails: (p) => ({ targetName: p.studentId || '', details: `Cập nhật nhãn HS ${p.studentId}` }) },
         // === Teachers ===
         addTeacher: { targetType: 'teacher', getDetails: (p) => ({ targetName: p.teacher?.name || '', details: `Thêm giáo viên "${p.teacher?.name}"` }) },
         updateTeacher: { targetType: 'teacher', getDetails: (p) => ({ targetName: p.updatedTeacher?.name || '', details: `Cập nhật giáo viên "${p.updatedTeacher?.name}"` }) },
@@ -1229,6 +1232,7 @@ function buildAuditEntry(op: string, payload: any, userId: string, userName: str
         }},
         deleteAttendanceForDate: { targetType: 'attendance', getDetails: (p) => ({ targetName: p.classId || '', details: `Xóa điểm danh lớp ${p.classId} ngày ${p.date}` }) },
         deleteAttendanceByMonth: { targetType: 'attendance', getDetails: (p) => ({ targetName: '', details: `Xóa điểm danh tháng ${p.month}/${p.year}` }) },
+        updateSingleAttendance: { targetType: 'attendance', getDetails: (p) => ({ targetName: p.classId || '', details: `Cập nhật điểm danh HS ${p.studentId} lớp ${p.classId} ngày ${p.date} → ${p.status}` }) },
         // === Finance — Payments & Adjustments ===
         addAdjustment: { targetType: 'finance', getDetails: (p) => ({ targetName: p.studentId || '', details: `Thanh toán ${fmt(p.amount)}đ cho HS ${p.studentId}` }) },
         addAdvancePayment: { targetType: 'finance', getDetails: (p) => ({ targetName: p.studentId || '', details: `Thu trước ${p.months || ''}T HP ${fmt(p.amount)}đ cho HS ${p.studentId}` }) },
@@ -1265,6 +1269,8 @@ function buildAuditEntry(op: string, payload: any, userId: string, userName: str
         deleteRoom: { targetType: 'room', getDetails: (p) => ({ targetName: p.roomId || p.id || '', details: `Xóa phòng ${p.roomId || p.id}` }) },
         // === Settings & System ===
         updateSettings: { targetType: 'settings', getDetails: () => ({ targetName: 'Cài đặt', details: 'Cập nhật cài đặt hệ thống' }) },
+        updateUserPassword: { targetType: 'settings', getDetails: (p) => ({ targetName: p.userId || '', details: `Đổi mật khẩu ${p.role || 'user'} ${p.userId || ''}` }) },
+        recalculateAllInvoices: { targetType: 'finance', getDetails: () => ({ targetName: '', details: 'Tính lại toàn bộ hóa đơn' }) },
         restoreData: { targetType: 'system', getDetails: () => ({ targetName: 'Hệ thống', details: 'Khôi phục dữ liệu từ bản sao lưu' }) },
         clearCollections: { targetType: 'system', getDetails: (p) => ({ targetName: '', details: `Xóa dữ liệu: ${Array.isArray(p) ? p.join(', ') : p}` }) },
     };
