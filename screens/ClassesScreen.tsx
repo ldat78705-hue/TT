@@ -136,12 +136,26 @@ const ClassForm: React.FC<{
     teachers: Teacher[];
     students: Student[];
     rooms: Room[];
-}> = ({ cls, onSubmit, onCancel, teachers, students, rooms }) => {
+    existingClasses: Class[];
+}> = ({ cls, onSubmit, onCancel, teachers, students, rooms, existingClasses }) => {
 
     const initialSchedule: ClassSchedule = { dayOfWeek: 'Monday', startTime: '18:00', endTime: '19:30' };
+
+    // Auto-generate next class ID: L01, L02, ..., L11, L12, ...
+    const generateNextClassId = (): string => {
+        const existingNumbers = existingClasses
+            .map(c => c.id)
+            .filter(id => /^L\d+$/i.test(id))
+            .map(id => parseInt(id.substring(1), 10))
+            .filter(n => !isNaN(n));
+        const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0;
+        const nextNumber = maxNumber + 1;
+        return `L${nextNumber.toString().padStart(2, '0')}`;
+    };
+
     const [formData, setFormData] = useState<Class>(() => {
         const defaults: Class = {
-            id: '',
+            id: cls ? '' : generateNextClassId(),
             name: '',
             subject: '',
             teacherIds: [],
@@ -157,9 +171,16 @@ const ClassForm: React.FC<{
     });
      const [errors, setErrors] = useState<Partial<Record<keyof Class, string | string[]>>>({});
     const idInputRef = useRef<HTMLInputElement>(null);
+    const nameInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        idInputRef.current?.focus();
+        // When adding new class, ID is auto-generated → focus on name field
+        // When editing, focus on ID field
+        if (cls) {
+            idInputRef.current?.focus();
+        } else {
+            nameInputRef.current?.focus();
+        }
     }, []);
 
     const validate = () => {
@@ -229,12 +250,13 @@ const ClassForm: React.FC<{
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
                     <div>
                         <label className="block text-sm font-medium">Mã Lớp học <span className="text-red-500">*</span></label>
-                        <input ref={idInputRef} type="text" name="id" value={formData.id} onChange={handleChange} className="form-input mt-1" />
+                        <input ref={idInputRef} type="text" name="id" value={formData.id} onChange={handleChange} className={`form-input mt-1 ${!cls ? 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed' : ''}`} readOnly={!cls} />
+                        {!cls && <p className="text-xs text-gray-500 mt-1">Mã tự động sinh theo thứ tự</p>}
                         {errors.id && <p className="text-red-500 text-xs mt-1">{errors.id}</p>}
                     </div>
                     <div>
                         <label className="block text-sm font-medium">Tên lớp học <span className="text-red-500">*</span></label>
-                        <input type="text" name="name" value={formData.name} onChange={handleChange} className="form-input mt-1" />
+                        <input ref={nameInputRef} type="text" name="name" value={formData.name} onChange={handleChange} className="form-input mt-1" />
                         {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
                     </div>
                     <div>
@@ -607,7 +629,7 @@ export const ClassesScreen: React.FC = () => {
             )}
 
             <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingClass ? 'Chỉnh sửa Lớp học' : 'Thêm Lớp học mới'}>
-                <ClassForm cls={editingClass} onSubmit={handleSubmit} onCancel={handleCloseModal} teachers={teachers} students={students} rooms={state.rooms || []} />
+                <ClassForm cls={editingClass} onSubmit={handleSubmit} onCancel={handleCloseModal} teachers={teachers} students={students} rooms={state.rooms || []} existingClasses={classes} />
             </Modal>
             <ConfirmationModal
                 isOpen={confirmModalState.isOpen}
