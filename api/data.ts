@@ -973,7 +973,7 @@ export default async function handler(req: any, res: any) {
                 'updateAttendance',
                 'addProgressReport', 'updateProgressReport', 'deleteProgressReport', 'addBulkProgressReports',
                 'addAnnouncement', 'updateAnnouncement', 'deleteAnnouncement',
-                'updateUserPassword', 'addAuditLog', 'markAnnouncementRead', 'markAnnouncementsReadBatch',
+                'updateUserPassword', 'markAnnouncementRead', 'markAnnouncementsReadBatch',
                 'addStudentNote', 'deleteStudentNote', 'updateStudentTags'
             ];
             if (!allowedTeacherOps.includes(operation.op)) {
