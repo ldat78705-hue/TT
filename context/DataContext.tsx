@@ -93,6 +93,7 @@ interface DataContextType {
     restoreData: (data: Omit<AppState, 'loading'>) => Promise<void>;
     resetToMockData: () => Promise<void>;
     addAnnouncement: (data: Omit<Announcement, 'id'>) => Promise<void>;
+    updateAnnouncement: (data: Announcement) => Promise<void>;
     deleteAnnouncement: (id: string) => Promise<void>;
     markAnnouncementRead: (payload: { announcementId: string; userId: string }) => Promise<void>;
     markAnnouncementsReadBatch: (payload: { announcementIds: string[]; userId: string }) => Promise<void>;
@@ -311,6 +312,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     deleteExpense: handleStateUpdateOperation(api.deleteExpense, 'deleteExpense'),
     
     addAnnouncement: handleStateUpdateOperation(api.addAnnouncement, 'addAnnouncement'),
+    updateAnnouncement: handleStateUpdateOperation(api.updateAnnouncement, 'updateAnnouncement'),
     deleteAnnouncement: handleStateUpdateOperation(api.deleteAnnouncement, 'deleteAnnouncement'),
     markAnnouncementRead: handleStateUpdateOperation(api.markAnnouncementRead, 'markAnnouncementRead'),
     markAnnouncementsReadBatch: handleStateUpdateOperation(api.markAnnouncementsReadBatch, 'markAnnouncementsReadBatch'),

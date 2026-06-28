@@ -217,6 +217,7 @@ export const updateExpense = (payload: Expense) => patchData({ op: 'updateExpens
 export const deleteExpense = (itemId: string) => patchData({ op: 'deleteExpense', payload: { itemId } });
 
 export const addAnnouncement = (payload: Omit<Announcement, 'id'>) => patchData({ op: 'addAnnouncement', payload });
+export const updateAnnouncement = (payload: Announcement) => patchData({ op: 'updateAnnouncement', payload });
 export const deleteAnnouncement = (id: string) => patchData({ op: 'deleteAnnouncement', payload: { id } });
 export const markAnnouncementRead = (payload: { announcementId: string; userId: string }) => patchData({ op: 'markAnnouncementRead', payload });
 export const markAnnouncementsReadBatch = (payload: { announcementIds: string[]; userId: string }) => patchData({ op: 'markAnnouncementsReadBatch', payload });

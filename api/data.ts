@@ -591,6 +591,7 @@ function getAffectedCollections(opName: string): string[] | null {
         deleteExpense: ['expenses'],
         // Announcements
         addAnnouncement: ['announcements'],
+        updateAnnouncement: ['announcements'],
         deleteAnnouncement: ['announcements'],
         markAnnouncementRead: ['announcements'],
         markAnnouncementsReadBatch: ['announcements'],
@@ -764,6 +765,8 @@ export async function executeAttendanceTransaction(payload: any, centerId: strin
             const syncRef = doc(db, colName, '_sync');
             const newSyncId = Date.now().toString() + '_' + Math.random().toString(36).substring(2);
             transaction.set(syncRef, { syncId: newSyncId, lastUpdatedAt: Date.now() });
+            // Expose syncId for cache update outside transaction
+            (cache as any)._pendingSyncId = newSyncId;
         });
         
         // Performance: Update attendance in-place in cache instead of full re-read
@@ -776,8 +779,8 @@ export async function executeAttendanceTransaction(payload: any, centerId: strin
             // Add the committed new records (which have generated IDs and teacherIds)
             updatedData.attendance = [...filteredAttendance, ...committedNewRecords];
             cache.cachedData = updatedData as any;
-            const newSyncFromTx = Date.now().toString() + '_' + Math.random().toString(36).substring(2);
-            cache.localSyncId = newSyncFromTx;
+            // Reuse the same syncId written to Firestore for cache consistency
+            cache.localSyncId = (cache as any)._pendingSyncId || Date.now().toString();
             
             // Also update rawShardStrings for affected attendance shards
             // to prevent false-positive dirty writes on subsequent operations
@@ -976,6 +979,63 @@ export default async function handler(req: any, res: any) {
             if (!allowedTeacherOps.includes(operation.op)) {
                 return res.status(403).send('Từ chối: Giáo viên không có quyền thực hiện thao tác này');
             }
+
+            // --- Teacher Ownership Checks: only operate on own classes/students ---
+            const teacherUserId = (authPayload as any).userId;
+            const ownershipData = await getSplitData(centerId);
+            const teacherClassIds = new Set<string>();
+            const teacherStudentIds = new Set<string>();
+            (ownershipData.classes || []).forEach((cls: any) => {
+                if ((cls.teacherIds || []).includes(teacherUserId)) {
+                    teacherClassIds.add(cls.id);
+                    (cls.studentIds || []).forEach((sid: string) => teacherStudentIds.add(sid));
+                }
+            });
+
+            // Attendance: teacher can only mark attendance for their own classes
+            if (operation.op === 'updateAttendance') {
+                const records = Array.isArray(operation.payload) ? operation.payload : [];
+                const foreignClass = records.find((r: any) => r.classId && !teacherClassIds.has(r.classId));
+                if (foreignClass) {
+                    return res.status(403).send(`Từ chối: Bạn không phụ trách lớp ${foreignClass.classId}`);
+                }
+            }
+
+            // Student notes/tags: only for students in teacher's classes
+            if (['addStudentNote', 'deleteStudentNote', 'updateStudentTags'].includes(operation.op)) {
+                const sid = operation.payload?.studentId;
+                if (sid && !teacherStudentIds.has(sid)) {
+                    return res.status(403).send('Từ chối: Học viên này không thuộc lớp bạn phụ trách');
+                }
+            }
+
+            // Progress reports: only for teacher's classes
+            if (['addProgressReport', 'updateProgressReport', 'deleteProgressReport'].includes(operation.op)) {
+                const cid = operation.payload?.classId;
+                if (cid && !teacherClassIds.has(cid)) {
+                    return res.status(403).send('Từ chối: Bạn không phụ trách lớp này');
+                }
+            }
+            if (operation.op === 'addBulkProgressReports') {
+                const records = operation.payload?.records || (Array.isArray(operation.payload) ? operation.payload : []);
+                const foreignReport = records.find((r: any) => r.classId && !teacherClassIds.has(r.classId));
+                if (foreignReport) {
+                    return res.status(403).send(`Từ chối: Bạn không phụ trách lớp ${foreignReport.classId}`);
+                }
+            }
+
+            // Announcements: teacher can only edit/delete their own
+            if (operation.op === 'deleteAnnouncement' || operation.op === 'updateAnnouncement') {
+                const annId = operation.payload?.id;
+                const ann = (ownershipData.announcements || []).find((a: any) => a.id === annId);
+                if (ann && ann.createdBy !== teacherUserId) {
+                    // Also allow if createdBy matches teacher's name (some systems store name instead of ID)
+                    const teacher = (ownershipData.teachers || []).find((t: any) => t.id === teacherUserId);
+                    if (!teacher || ann.createdBy !== teacher.name) {
+                        return res.status(403).send('Từ chối: Bạn chỉ có thể sửa/xóa thông báo do mình tạo');
+                    }
+                }
+            }
         }
         if (role === UserRole.PARENT) {
             const allowedParentOps = ['updateUserPassword', 'updateSingleAttendance', 'markAnnouncementRead', 'markAnnouncementsReadBatch'];
@@ -1169,12 +1229,16 @@ export default async function handler(req: any, res: any) {
                     if (auditEntry) {
                         const colName = getCollectionName(centerId);
                         const auditRef = doc(db, colName, 'auditLogs');
-                        const snap = await getDoc(auditRef);
-                        const existing = snap.exists() ? snap.data().data || [] : [];
-                        // Keep only last 500 entries to prevent bloat
-                        const trimmed = existing.length >= 500 ? existing.slice(-499) : existing;
-                        trimmed.push(auditEntry);
-                        await setDoc(auditRef, { data: trimmed });
+                        // Use Firestore transaction to prevent concurrent write race conditions
+                        let trimmed: any[] = [];
+                        await runTransaction(db, async (tx) => {
+                            const snap = await tx.get(auditRef);
+                            const existing = snap.exists() ? snap.data().data || [] : [];
+                            // Keep only last 500 entries to prevent bloat
+                            trimmed = existing.length >= 500 ? existing.slice(-499) : [...existing];
+                            trimmed.push(auditEntry);
+                            tx.set(auditRef, { data: trimmed });
+                        });
                         // Update in-memory cache
                         const c = getCenterCache(centerId);
                         if (c.cachedData) {

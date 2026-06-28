@@ -1031,6 +1031,19 @@ export function applyOperation(
             data.announcements = data.announcements.filter(a => a.id !== payload.id);
             break;
         }
+        case 'updateAnnouncement': {
+            const annIdx = data.announcements.findIndex(a => a.id === payload.id);
+            if (annIdx === -1) throw new Error('Thông báo không tồn tại');
+            data.announcements[annIdx] = { 
+                ...data.announcements[annIdx], 
+                ...payload,
+                // Preserve system fields
+                id: data.announcements[annIdx].id,
+                createdAt: data.announcements[annIdx].createdAt,
+                createdBy: data.announcements[annIdx].createdBy,
+            };
+            break;
+        }
         case 'markAnnouncementRead': {
             const { announcementId, userId } = payload;
             const announcement = data.announcements.find(a => a.id === announcementId);
