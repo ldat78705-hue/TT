@@ -139,21 +139,31 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     refreshData();
   }, [refreshData]);
 
-  // Auto-polling: refresh data every 60s when tab is visible
-  // This ensures webhook-created announcements and external changes appear automatically
+  // Auto-polling: refresh data every 5 minutes when tab is visible
+  // 5-minute interval is optimized for free-tier hosting (Vercel/Firebase Spark):
+  // - 1 user × 288 calls/day = ~8,640/month (vs 43,200 at 60s)
+  // - Safe for 5+ concurrent users within 100k free invocations/month
+  // - Tab visibility change triggers immediate refresh (covers most real-time needs)
   useEffect(() => {
     let intervalId: ReturnType<typeof setInterval> | null = null;
+    let lastRefreshTime = 0;
+
+    const silentRefresh = () => {
+      const now = Date.now();
+      // Debounce: skip if last refresh was less than 30 seconds ago
+      if (now - lastRefreshTime < 30000) return;
+      lastRefreshTime = now;
+      
+      if (!isSubmitting) {
+        api.loadInitialData()
+          .then(data => setState({ ...data, loading: false }))
+          .catch(() => { /* silent — don't disrupt UI on background poll failure */ });
+      }
+    };
 
     const startPolling = () => {
       if (intervalId) return;
-      intervalId = setInterval(() => {
-        if (!isSubmitting) {
-          // Silent refresh — don't set loading to true to avoid UI flicker
-          api.loadInitialData()
-            .then(data => setState({ ...data, loading: false }))
-            .catch(() => { /* silent — don't disrupt UI on background poll failure */ });
-        }
-      }, 60000); // 60 seconds
+      intervalId = setInterval(silentRefresh, 300000); // 5 minutes
     };
 
     const stopPolling = () => {
@@ -166,11 +176,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         // Immediately refresh when tab becomes visible again
-        if (!isSubmitting) {
-          api.loadInitialData()
-            .then(data => setState({ ...data, loading: false }))
-            .catch(() => {});
-        }
+        silentRefresh();
         startPolling();
       } else {
         stopPolling();
