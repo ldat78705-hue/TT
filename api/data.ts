@@ -950,7 +950,7 @@ export default async function handler(req: any, res: any) {
         }
         // MANAGER: block dangerous admin-only operations
         if (role === UserRole.MANAGER) {
-            const blockedManagerOps = ['clearCollections', 'updateSettings'];
+            const blockedManagerOps = ['clearCollections', 'updateSettings', 'addAuditLog'];
             if (blockedManagerOps.includes(operation.op)) {
                 return res.status(403).send('Từ chối: Chỉ quản trị viên mới được thực hiện thao tác này');
             }
