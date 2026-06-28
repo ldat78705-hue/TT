@@ -1124,6 +1124,17 @@ export default async function handler(req: any, res: any) {
                     throw err;
                 }
 
+                // Write audit log for restore operation
+                try {
+                    const userName = (authPayload as any).name || (authPayload as any).email || 'Unknown';
+                    const rUserId = (authPayload as any).userId || (authPayload as any).sub || '';
+                    const auditEntry = buildAuditEntry('restoreData', operation.payload, rUserId, userName);
+                    if (auditEntry) {
+                        const auditRef = doc(db, colName, 'auditLogs');
+                        await setDoc(auditRef, { data: [auditEntry] });
+                    }
+                } catch (logErr) { /* ignore */ }
+
                 return res.status(200).json(restoredDataFromFile);
             } catch (error) {
                 console.error('Operation Error:', error);

@@ -31,12 +31,14 @@ export const AuditLogScreen: React.FC = () => {
     }, [logs]);
 
     const filteredLogs = useMemo(() => {
-        let result = logs;
+        let result = [...logs];
         if (filterType !== 'all') result = result.filter(l => l.targetType === filterType);
         if (searchQuery.trim()) {
             const q = searchQuery.toLowerCase();
             result = result.filter(l => l.details.toLowerCase().includes(q) || l.userName.toLowerCase().includes(q) || l.targetName.toLowerCase().includes(q));
         }
+        // Always sort newest first by timestamp
+        result.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
         return result;
     }, [logs, filterType, searchQuery]);
 
