@@ -1011,7 +1011,12 @@ export default async function handler(req: any, res: any) {
 
             // Progress reports: only for teacher's classes
             if (['addProgressReport', 'updateProgressReport', 'deleteProgressReport'].includes(operation.op)) {
-                const cid = operation.payload?.classId;
+                let cid = operation.payload?.classId;
+                // deleteProgressReport sends { reportId } without classId — look it up
+                if (!cid && operation.op === 'deleteProgressReport' && operation.payload?.reportId) {
+                    const report = (ownershipData.progressReports || []).find((r: any) => r.id === operation.payload.reportId);
+                    cid = report?.classId;
+                }
                 if (cid && !teacherClassIds.has(cid)) {
                     return res.status(403).send('Từ chối: Bạn không phụ trách lớp này');
                 }

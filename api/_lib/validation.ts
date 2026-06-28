@@ -131,6 +131,7 @@ const operationSchemas: Record<string, z.ZodSchema> = {
     addRoom: roomSchema,
     updateRoom: roomSchema.extend({ id: idField }),
     addAnnouncement: announcementSchema,
+    updateAnnouncement: announcementSchema.extend({ id: idField }),
 };
 
 /**
