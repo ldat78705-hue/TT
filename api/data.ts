@@ -4,7 +4,7 @@ import { applyOperation } from './_lib/operations.js';
 import { verifyToken } from './_lib/jwt.js';
 import { UserRole } from '../types.js';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, doc, getDoc, getDocs, collection, writeBatch, onSnapshot, runTransaction } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, getDocs, setDoc, collection, writeBatch, onSnapshot, runTransaction } from 'firebase/firestore';
 import { hashPassword, verifyPassword } from './_lib/crypto.js';
 import { authenticateServer } from './_lib/serverAuth.js';
 import { validateOperation } from './_lib/validation.js';
@@ -1146,33 +1146,28 @@ export default async function handler(req: any, res: any) {
                     responseData = await executeOperationInternal(operation, centerId);
                 }
 
-                // === AUDIT LOG (lightweight direct write — no lock/full-data overhead) ===
+                // === AUDIT LOG (must complete before response on serverless) ===
                 try {
                     const userName = (authPayload as any).name || (authPayload as any).email || 'Unknown';
                     const userId = (authPayload as any).userId || (authPayload as any).sub || '';
                     const auditEntry = buildAuditEntry(operation.op, operation.payload, userId, userName);
                     if (auditEntry) {
-                        // Fire-and-forget: directly append to auditLogs doc without full executeOperationInternal
                         const colName = getCollectionName(centerId);
                         const auditRef = doc(db, colName, 'auditLogs');
-                        getDoc(auditRef).then(snap => {
-                            const existing = snap.exists() ? snap.data().data || [] : [];
-                            // Keep only last 500 entries to prevent bloat
-                            const trimmed = existing.length >= 500 ? existing.slice(-499) : existing;
-                            trimmed.push(auditEntry);
-                            const batch = writeBatch(db);
-                            batch.set(auditRef, { data: trimmed });
-                            batch.commit().then(() => {
-                                // Update in-memory cache if present
-                                const c = getCenterCache(centerId);
-                                if (c.cachedData) {
-                                    (c.cachedData as any).auditLogs = trimmed;
-                                    c.rawShardStrings['auditLogs'] = JSON.stringify(trimmed);
-                                }
-                            }).catch(() => {});
-                        }).catch(() => {});
+                        const snap = await getDoc(auditRef);
+                        const existing = snap.exists() ? snap.data().data || [] : [];
+                        // Keep only last 500 entries to prevent bloat
+                        const trimmed = existing.length >= 500 ? existing.slice(-499) : existing;
+                        trimmed.push(auditEntry);
+                        await setDoc(auditRef, { data: trimmed });
+                        // Update in-memory cache
+                        const c = getCenterCache(centerId);
+                        if (c.cachedData) {
+                            (c.cachedData as any).auditLogs = trimmed;
+                            c.rawShardStrings['auditLogs'] = JSON.stringify(trimmed);
+                        }
                     }
-                } catch (logErr) { /* silently ignore audit failures */ }
+                } catch (logErr) { /* silently ignore audit failures — don't block main operation */ }
 
                 // Set ETag in response for client cache sync
                 const cacheAfterWrite = getCenterCache(centerId);
