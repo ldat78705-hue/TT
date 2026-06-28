@@ -1181,6 +1181,8 @@ export default async function handler(req: any, res: any) {
                             (c.cachedData as any).auditLogs = trimmed;
                             c.rawShardStrings['auditLogs'] = JSON.stringify(trimmed);
                         }
+                        // Sync response so client sees the new entry immediately
+                        if (responseData) responseData.auditLogs = trimmed;
                     }
                 } catch (logErr) { /* silently ignore audit failures — don't block main operation */ }
 
