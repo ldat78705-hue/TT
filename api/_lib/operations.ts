@@ -463,7 +463,7 @@ export function applyOperation(
 
         // FINANCE / INVOICES
         case 'generateInvoices': {
-            const { month, year, classIds } = payload;
+            const { month, year, classIds, hideUnexcused } = payload;
             const monthStr = `${year}-${String(month).padStart(2, '0')}`;
             
             // Optional: filter to specific classes only
@@ -563,9 +563,14 @@ export function applyOperation(
                     
                     const totalSessionsInMonth = classDates.get(classId)?.size || 0;
                     
-                    let attendanceText = `(Đi học: ${physicallyAttended}/${totalSessionsInMonth} buổi`;
-                    if (unexcused > 0) attendanceText += `, Nghỉ không phép: ${unexcused} buổi`;
-                    attendanceText += ')';
+                    let attendanceText: string;
+                    if (hideUnexcused) {
+                        attendanceText = `(${billableSessions}/${totalSessionsInMonth} buổi)`;
+                    } else {
+                        attendanceText = `(Đi học: ${physicallyAttended}/${totalSessionsInMonth} buổi`;
+                        if (unexcused > 0) attendanceText += `, Nghỉ không phép: ${unexcused} buổi`;
+                        attendanceText += ')';
+                    }
 
                     if (cls.fee.type === FeeType.MONTHLY) {
                         if (student.status === PersonStatus.ACTIVE && isEnrolled) {

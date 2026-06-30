@@ -73,7 +73,7 @@ interface DataContextType {
     addBulkProgressReports: (records: Omit<ProgressReport, 'id'>[]) => Promise<void>;
     updateProgressReport: (data: ProgressReport) => Promise<void>;
     deleteProgressReport: (reportId: string) => Promise<void>;
-    generateInvoices: (payload: { month: number, year: number, classIds?: string[] }) => Promise<void>;
+    generateInvoices: (payload: { month: number, year: number, classIds?: string[], hideUnexcused?: boolean }) => Promise<void>;
     cancelInvoice: (invoiceId: string) => Promise<void>;
     updateInvoiceStatus: (payload: { invoiceId: string, status: 'PAID' | 'UNPAID' }) => Promise<void>;
     addAdjustment: (payload: { studentId: string; amount: number; date: string; description: string; type: 'CREDIT' | 'DEBIT'; paymentMethod?: 'transfer' | 'cash' }) => Promise<void>;

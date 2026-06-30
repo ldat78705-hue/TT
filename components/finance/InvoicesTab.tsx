@@ -21,7 +21,7 @@ import { formatVietnamDate, getVietnamTime } from '../../utils/date';
 const GenerateInvoicesModal: React.FC<{
     isOpen: boolean;
     onClose: () => void;
-    onGenerate: (month: number, year: number, classIds?: string[]) => Promise<void>;
+    onGenerate: (month: number, year: number, classIds?: string[], hideUnexcused?: boolean) => Promise<void>;
     classes: { id: string; name: string }[];
 }> = ({ isOpen, onClose, onGenerate, classes }) => {
     // Generate dates dynamically based on Vietnam App Time
@@ -34,6 +34,7 @@ const GenerateInvoicesModal: React.FC<{
     const [month, setMonth] = useState(lastMonth.getMonth() + 1);
     const [isLoading, setIsLoading] = useState(false);
     const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
+    const [hideUnexcused, setHideUnexcused] = useState(false);
 
     const currentYear = today.getFullYear();
     const years = Array.from({ length: 10 }, (_, i) => currentYear - i + 2);
@@ -67,7 +68,7 @@ const GenerateInvoicesModal: React.FC<{
         const classIdsToSend = selectedClassIds.length > 0 && selectedClassIds.length < classes.length
             ? selectedClassIds
             : undefined;
-        await onGenerate(month, year, classIdsToSend);
+        await onGenerate(month, year, classIdsToSend, hideUnexcused || undefined);
         setIsLoading(false);
         setSelectedClassIds([]);
     };
@@ -94,6 +95,17 @@ const GenerateInvoicesModal: React.FC<{
                             {years.map(y => <option key={y} value={y}>{y}</option>)}
                         </select>
                     </div>
+
+                    {/* Hide unexcused absence option */}
+                    <label className="flex items-center gap-2 pt-1 cursor-pointer select-none">
+                        <input
+                            type="checkbox"
+                            checked={hideUnexcused}
+                            onChange={e => setHideUnexcused(e.target.checked)}
+                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                        <span className="text-sm">Ẩn thống kê buổi nghỉ không phép trên hóa đơn</span>
+                    </label>
 
                     {/* Class filter */}
                     <div className="border rounded-lg dark:border-gray-700 overflow-hidden">
@@ -280,9 +292,9 @@ export const InvoicesTab: React.FC = () => {
         { header: 'Trạng thái', accessor: getStatusBadge, sortable: true, sortKey: 'status' },
     ];
 
-    const handleGenerate = async (month: number, year: number, classIds?: string[]) => {
+    const handleGenerate = async (month: number, year: number, classIds?: string[], hideUnexcused?: boolean) => {
         try {
-            await generateInvoices({ month, year, classIds });
+            await generateInvoices({ month, year, classIds, hideUnexcused });
             const classNote = classIds ? ` (${classIds.length} lớp đã chọn)` : '';
             toast.success(`Đã chốt/cập nhật hóa đơn cho tháng ${month}/${year}${classNote}.`);
         } catch (error) {
