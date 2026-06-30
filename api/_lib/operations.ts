@@ -571,7 +571,7 @@ export function applyOperation(
                         if (student.status === PersonStatus.ACTIVE && isEnrolled) {
                             classFee = cls.fee.amount;
                             if (classFee > 0) {
-                                details += `- Lớp ${cls.name} ${attendanceText}: ${Math.round(classFee).toLocaleString('vi-VN')} ₫\n`;
+                                details += `- Lớp ${cls.name} (Học phí tháng) ${attendanceText}: ${Math.round(classFee).toLocaleString('vi-VN')} ₫\n`;
                             }
                         }
                     } else if (cls.fee.type === FeeType.PER_COURSE) {
