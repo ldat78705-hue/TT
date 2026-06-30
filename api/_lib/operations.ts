@@ -565,7 +565,10 @@ export function applyOperation(
                     
                     let attendanceText: string;
                     if (hideUnexcused) {
-                        attendanceText = `(${billableSessions}/${totalSessionsInMonth} buổi)`;
+                        // PER_SESSION: show billable sessions (present + late + unexcused) as "fee sessions"
+                        // MONTHLY/PER_COURSE: show physically attended (present + late) since fee is fixed
+                        const displaySessions = cls.fee.type === FeeType.PER_SESSION ? billableSessions : physicallyAttended;
+                        attendanceText = `(${displaySessions}/${totalSessionsInMonth} buổi)`;
                     } else {
                         attendanceText = `(Đi học: ${physicallyAttended}/${totalSessionsInMonth} buổi`;
                         if (unexcused > 0) attendanceText += `, Nghỉ không phép: ${unexcused} buổi`;
