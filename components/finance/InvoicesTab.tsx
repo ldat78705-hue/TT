@@ -45,6 +45,7 @@ const GenerateInvoicesModal: React.FC<{
         if (isOpen) {
             setSelectedClassIds([]);
             setIsLoading(false);
+            setHideUnexcused(false);
         }
     }, [isOpen]);
 

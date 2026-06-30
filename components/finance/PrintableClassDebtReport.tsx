@@ -72,7 +72,8 @@ export const PrintableClassDebtReport = forwardRef<HTMLDivElement, PrintableClas
                                                                 for (const line of lines) {
                                                                     if (!line.trim()) continue;
                                                                     // Thử tìm chuỗi bắt đầu bằng "(Đi học:" tới ")"
-                                                                    const match = line.match(/(.*?)(\(Đi học:.*?\))(.*)/);
+                                                                    const match = line.match(/(.*?)(\((?:Đi học:\s*)?.*?buổi.*?\))(.*)/);
+
                                                                     if (match) {
                                                                         // Giữ lại tên lớp và phần đi học
                                                                         detailsCompact.push(`- ${match[1].replace(/-\s*/, '').trim()} ${match[2]}`);

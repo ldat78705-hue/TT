@@ -215,7 +215,8 @@ ${qrUrl ? `<img src="${qrUrl}" style="width:180px;height:180px;margin:8px auto;d
                          <div className="text-xs text-slate-500 dark:text-slate-400 font-sans mt-1 pl-4 space-y-1">
                              {invoice.details.split('\n').map((line, idx) => {
                                  if (!line.trim()) return null;
-                                 const match = line.match(/(.*?)(\(Đi học:\s+\d+\/\d+\s+buổi[^\)]*\))(.*)/);
+                                 const match = line.match(/(.*?)(\((?:Đi học:\s+)?\d+\/\d+\s+buổi[^\)]*\))(.*)/);
+
                                  if (match) {
                                      return <div key={idx}>{match[1]}<strong className="text-indigo-600 dark:text-indigo-400 font-semibold">{match[2]}</strong>{match[3]}</div>;
                                  }
