@@ -37,6 +37,7 @@ export const GlobalSearch: React.FC = () => {
     const { state } = useData();
     const navigate = useNavigate();
     const searchRef = useRef<HTMLDivElement>(null);
+    const mobileOverlayRef = useRef<HTMLDivElement>(null);
 
     const handleResultClick = React.useCallback((path: string) => {
         setQuery('');
@@ -47,7 +48,11 @@ export const GlobalSearch: React.FC = () => {
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+            const target = event.target as Node;
+            if (
+                searchRef.current && !searchRef.current.contains(target) &&
+                (!mobileOverlayRef.current || !mobileOverlayRef.current.contains(target))
+            ) {
                 setIsOpen(false);
             }
         };
@@ -238,7 +243,7 @@ export const GlobalSearch: React.FC = () => {
 
             {/* Mobile overlay */}
             {isOpen && (
-                <div className="md:hidden fixed inset-0 z-50 bg-white dark:bg-slate-900 flex flex-col">
+                <div ref={mobileOverlayRef} className="md:hidden fixed inset-0 z-50 bg-white dark:bg-slate-900 flex flex-col">
                     <div className="flex items-center gap-2 p-3 border-b dark:border-slate-700">
                         <span className="text-gray-400 flex-shrink-0">{ICONS.search}</span>
                         <input
