@@ -47,7 +47,7 @@ export const GlobalSearch: React.FC = () => {
     }, [navigate]);
 
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
+        const handleClickOutside = (event: MouseEvent | TouchEvent) => {
             const target = event.target as Node;
             if (
                 searchRef.current && !searchRef.current.contains(target) &&
@@ -57,8 +57,10 @@ export const GlobalSearch: React.FC = () => {
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('touchstart', handleClickOutside);
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('touchstart', handleClickOutside);
         };
     }, []);
 
