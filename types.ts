@@ -211,6 +211,7 @@ export interface CenterSettings {
   loginHeaderContent?: string;
   taxId?: string;
   taxSignatureUrl?: string;
+  taxSignerName?: string; // Tên người ký báo cáo thuế (mặc định dùng tên trung tâm)
   // Zalo OA Integration
   zaloOaEnabled?: boolean;
   zaloAppId?: string;

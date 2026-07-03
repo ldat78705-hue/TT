@@ -112,17 +112,8 @@ export const TaxReportTab: React.FC = () => {
     const totalAmount = reportData.reduce((sum, item) => sum + item.amount, 0);
 
     const handlePrint = () => {
-        const formatAmount = (n: number) => n.toLocaleString('vi-VN');
-        
-        const rows = reportData.map((row, i) => `
-            <tr>
-                <td class="stt">${i + 1}</td>
-                <td class="date">${formatDate(row.date)}</td>
-                <td class="desc">${row.description}</td>
-                <td class="amount">${formatAmount(row.amount)}</td>
-            </tr>
-        `).join('');
-
+        if (!previewRef.current) return;
+        const content = previewRef.current.innerHTML;
         const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
 <title>Sổ doanh thu - ${settings.name}</title>
 <style>
@@ -134,96 +125,49 @@ export const TaxReportTab: React.FC = () => {
         font-size: 13px; line-height: 1.4;
         -webkit-print-color-adjust: exact; print-color-adjust: exact;
     }
-    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
-    .header-left { width: 55%; padding-right: 12px; }
-    .header-right { width: 45%; text-align: center; padding-left: 12px; }
-    .header-right .form-code { font-weight: bold; font-size: 14px; margin-bottom: 4px; }
-    .header-right .form-note { font-style: italic; font-size: 11px; line-height: 1.5; }
-    .header-left p { margin-bottom: 3px; }
-    .header-left .label { font-weight: bold; text-transform: uppercase; }
 
-    .title-section { text-align: center; margin-bottom: 18px; }
-    .title-section h1 { font-size: 17px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; }
-    .title-section .meta { text-align: left; max-width: 480px; margin: 0 auto; font-size: 13px; }
-    .title-section .meta p { margin-bottom: 3px; }
+    /* Header */
+    .tax-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+    .tax-header-left { width: 55%; padding-right: 12px; }
+    .tax-header-right { width: 45%; text-align: center; padding-left: 12px; }
+    .tax-header-right .form-code { font-weight: bold; font-size: 14px; margin-bottom: 4px; }
+    .tax-header-right .form-note { font-style: italic; font-size: 11px; line-height: 1.5; }
+    .tax-header-left p { margin-bottom: 3px; }
+    .tax-label-bold { font-weight: bold; text-transform: uppercase; }
 
-    .unit { font-style: italic; margin-bottom: 6px; font-size: 13px; }
+    /* Title */
+    .tax-title { text-align: center; margin-bottom: 18px; }
+    .tax-title h1 { font-size: 17px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; }
+    .tax-title .meta { text-align: left; max-width: 480px; margin: 0 auto; font-size: 13px; }
+    .tax-title .meta p { margin-bottom: 3px; }
 
+    .tax-unit { font-style: italic; margin-bottom: 6px; font-size: 13px; }
+
+    /* Table */
     table { border-collapse: collapse; width: 100%; font-size: 13px; page-break-inside: auto; }
     thead { display: table-header-group; }
     tr { page-break-inside: avoid; page-break-after: auto; }
     th, td { border: 1px solid #000; padding: 5px 8px; vertical-align: top; }
     th { text-align: center; font-weight: bold; background: #f8f8f8; padding: 8px; }
-    
-    .stt { text-align: center; width: 35px; }
-    .date { text-align: center; width: 90px; white-space: nowrap; }
-    .desc { text-align: left; word-break: break-word; }
-    .amount { text-align: right; width: 110px; white-space: nowrap; }
 
-    .total-row td { font-weight: bold; }
-    .total-label { text-align: center; }
+    .col-stt { text-align: center; width: 35px; }
+    .col-date { text-align: center; width: 90px; white-space: nowrap; }
+    .col-desc { text-align: left; word-break: break-word; }
+    .col-amount { text-align: right; width: 110px; white-space: nowrap; }
+    .row-total td { font-weight: bold; }
+    .row-total .col-total-label { text-align: center; }
 
-    .footer { display: flex; justify-content: flex-end; margin-top: 24px; page-break-inside: avoid; }
-    .footer-sign { text-align: center; width: 260px; }
-    .footer-sign .date-text { font-style: italic; margin-bottom: 4px; font-size: 13px; }
-    .footer-sign .role { font-weight: bold; text-transform: uppercase; font-size: 13px; line-height: 1.4; }
-    .footer-sign .note { font-style: italic; font-size: 11px; margin-bottom: 4px; }
-    .footer-sign .sig-area { height: 60px; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; }
-    .footer-sign .sig-area img { max-height: 56px; object-fit: contain; }
-    .footer-sign .name { font-weight: bold; font-size: 14px; }
+    /* Footer */
+    .tax-footer { display: flex; justify-content: flex-end; margin-top: 24px; page-break-inside: avoid; }
+    .tax-footer-sign { text-align: center; width: 260px; }
+    .tax-footer-sign .date-text { font-style: italic; margin-bottom: 4px; font-size: 13px; }
+    .tax-footer-sign .role { font-weight: bold; text-transform: uppercase; font-size: 13px; line-height: 1.4; }
+    .tax-footer-sign .note { font-style: italic; font-size: 11px; margin-bottom: 4px; }
+    .tax-footer-sign .sig-area { height: 60px; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; }
+    .tax-footer-sign .sig-area img { max-height: 56px; object-fit: contain; }
+    .tax-footer-sign .signer-name { font-weight: bold; font-size: 14px; }
 </style>
-</head><body>
-
-<div class="header">
-    <div class="header-left">
-        <p><span class="label">Hộ, cá nhân kinh doanh:</span> ${settings.name || ''}</p>
-        <p>Địa chỉ: ${settings.address || ''}</p>
-        <p>Mã số thuế: ${settings.taxId || ''}</p>
-    </div>
-    <div class="header-right">
-        <p class="form-code">Mẫu số S1a-HKD</p>
-        <p class="form-note">(Kèm theo Thông tư số 152/2025/TT-BTC<br>ngày 31 tháng 12 năm 2025 của Bộ trưởng<br>Bộ Tài chính)</p>
-    </div>
-</div>
-
-<div class="title-section">
-    <h1>SỔ DOANH THU BÁN HÀNG HÓA,<br>DỊCH VỤ</h1>
-    <div class="meta">
-        <p>Địa điểm kinh doanh: ${settings.address || ''}</p>
-        <p>Kỳ kê khai: ${periodText}</p>
-    </div>
-</div>
-
-<p class="unit">Đơn vị tính: VNĐ</p>
-<table>
-    <thead>
-        <tr>
-            <th class="stt">STT</th>
-            <th class="date">Ngày tháng</th>
-            <th class="desc">Diễn giải</th>
-            <th class="amount">Số tiền</th>
-        </tr>
-    </thead>
-    <tbody>
-        ${rows || '<tr><td class="stt"></td><td class="date"></td><td class="desc"></td><td class="amount"></td></tr>'}
-        <tr class="total-row">
-            <td colspan="3" class="total-label">Tổng cộng</td>
-            <td class="amount">${formatAmount(totalAmount)}</td>
-        </tr>
-    </tbody>
-</table>
-
-<div class="footer">
-    <div class="footer-sign">
-        <p class="date-text">Ngày ${vnDate.getDate()} tháng ${vnDate.getMonth() + 1} năm ${vnDate.getFullYear()}</p>
-        <p class="role">NGƯỜI ĐẠI DIỆN HỘ KINH DOANH/<br>CÁ NHÂN KINH DOANH</p>
-        <p class="note">(Ký, ghi rõ họ tên, đóng dấu (nếu có))</p>
-        <div class="sig-area">${settings.taxSignatureUrl ? `<img src="${settings.taxSignatureUrl}" alt="Signature">` : ''}</div>
-        <p class="name">${settings.name || ''}</p>
-    </div>
-</div>
-
-</body></html>`;
+</head><body>${content}</body></html>`;
         printHtml(html);
     };
 
@@ -336,84 +280,84 @@ export const TaxReportTab: React.FC = () => {
             <div className="bg-white p-8 rounded-lg shadow-sm border border-slate-200 overflow-x-auto text-black">
                 <div 
                     ref={previewRef}
-                    className="w-full max-w-[800px] mx-auto" 
+                    contentEditable
+                    suppressContentEditableWarning
+                    className="w-full max-w-[800px] mx-auto outline-none" 
                     style={{ fontFamily: '"Times New Roman", Times, serif', backgroundColor: 'white', color: 'black', padding: '20px' }}
                 >
                     
                     {/* Header */}
-                    <div className="flex justify-between items-start mb-8 text-[15px]">
-                        <div className="w-1/2 pr-4">
-                            <p className="font-bold uppercase mb-1">HỘ, CÁ NHÂN KINH DOANH: <span className="font-normal">{settings.name || ''}</span></p>
-                            <p className="mb-1">Địa chỉ: <span className="whitespace-normal break-words">{settings.address || ''}</span></p>
-                            <p>Mã số thuế: <span>{settings.taxId || ''}</span></p>
+                    <div className="tax-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', fontSize: '13px' }}>
+                        <div className="tax-header-left" style={{ width: '55%', paddingRight: '12px' }}>
+                            <p style={{ marginBottom: '3px' }}><span className="tax-label-bold" style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>HỘ, CÁ NHÂN KINH DOANH:</span> {settings.name || ''}</p>
+                            <p style={{ marginBottom: '3px' }}>Địa chỉ: {settings.address || ''}</p>
+                            <p>Mã số thuế: {settings.taxId || ''}</p>
                         </div>
-                        <div className="w-1/2 text-center pl-4">
-                            <p className="font-bold mb-1">Mẫu số S1a-HKD</p>
-                            <p className="italic text-sm">(Kèm theo Thông tư số 152/2025/TT-BTC<br/>ngày 31 tháng 12 năm 2025 của Bộ trưởng<br/>Bộ Tài chính)</p>
+                        <div className="tax-header-right" style={{ width: '45%', textAlign: 'center', paddingLeft: '12px' }}>
+                            <p className="form-code" style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '4px' }}>Mẫu số S1a-HKD</p>
+                            <p className="form-note" style={{ fontStyle: 'italic', fontSize: '11px', lineHeight: '1.5' }}>(Kèm theo Thông tư số 152/2025/TT-BTC<br/>ngày 31 tháng 12 năm 2025 của Bộ trưởng<br/>Bộ Tài chính)</p>
                         </div>
                     </div>
 
                     {/* Title */}
-                    <div className="text-center mb-8">
-                        <h1 className="text-xl font-bold uppercase mb-4">SỔ DOANH THU BÁN HÀNG HÓA, DỊCH VỤ</h1>
-                        <div className="text-left max-w-[500px] mx-auto text-[15px]">
-                            <p className="mb-1">Địa điểm kinh doanh: <span className="whitespace-normal break-words">{settings.address || ''}</span></p>
-                            <p>Kỳ kê khai: <span>{periodText}</span></p>
+                    <div className="tax-title" style={{ textAlign: 'center', marginBottom: '18px' }}>
+                        <h1 style={{ fontSize: '17px', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '10px' }}>SỔ DOANH THU BÁN HÀNG HÓA,<br/>DỊCH VỤ</h1>
+                        <div className="meta" style={{ textAlign: 'left', maxWidth: '480px', margin: '0 auto', fontSize: '13px' }}>
+                            <p style={{ marginBottom: '3px' }}>Địa điểm kinh doanh: {settings.address || ''}</p>
+                            <p>Kỳ kê khai: {periodText}</p>
                         </div>
                     </div>
 
                     {/* Table */}
-                    <div className="mb-2 italic text-[15px]">Đơn vị tính: VNĐ</div>
-                    <table className="w-full border-collapse border border-black mb-8 text-[15px]">
+                    <div className="tax-unit" style={{ fontStyle: 'italic', marginBottom: '6px', fontSize: '13px' }}>Đơn vị tính: VNĐ</div>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', marginBottom: '16px' }}>
                         <thead>
                             <tr>
-                                <th className="border border-black p-2 text-center w-[45px]">STT</th>
-                                <th className="border border-black p-2 text-center w-[100px]">Ngày tháng</th>
-                                <th className="border border-black p-2 text-center">Diễn giải</th>
-                                <th className="border border-black p-2 text-center w-[130px]">Số tiền</th>
+                                <th className="col-stt" style={{ border: '1px solid black', padding: '8px', textAlign: 'center', width: '35px', fontWeight: 'bold' }}>STT</th>
+                                <th className="col-date" style={{ border: '1px solid black', padding: '8px', textAlign: 'center', width: '90px', fontWeight: 'bold' }}>Ngày tháng</th>
+                                <th className="col-desc" style={{ border: '1px solid black', padding: '8px', textAlign: 'center', fontWeight: 'bold' }}>Diễn giải</th>
+                                <th className="col-amount" style={{ border: '1px solid black', padding: '8px', textAlign: 'center', width: '110px', fontWeight: 'bold' }}>Số tiền</th>
                             </tr>
                         </thead>
                         <tbody>
                             {reportData.length > 0 ? (
                                 reportData.map((row, index) => (
                                     <tr key={index}>
-                                        <td className="border border-black p-2 text-center align-top">{index + 1}</td>
-                                        <td className="border border-black p-2 text-center align-top whitespace-nowrap">{formatDate(row.date)}</td>
-                                        <td className="border border-black p-2 align-top break-words">{row.description}</td>
-                                        <td className="border border-black p-2 text-right align-top whitespace-nowrap">{row.amount.toLocaleString('vi-VN')}</td>
+                                        <td className="col-stt" style={{ border: '1px solid black', padding: '5px 8px', textAlign: 'center', verticalAlign: 'top' }}>{index + 1}</td>
+                                        <td className="col-date" style={{ border: '1px solid black', padding: '5px 8px', textAlign: 'center', verticalAlign: 'top', whiteSpace: 'nowrap' }}>{formatDate(row.date)}</td>
+                                        <td className="col-desc" style={{ border: '1px solid black', padding: '5px 8px', textAlign: 'left', verticalAlign: 'top', wordBreak: 'break-word' }}>{row.description}</td>
+                                        <td className="col-amount" style={{ border: '1px solid black', padding: '5px 8px', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>{row.amount.toLocaleString('vi-VN')}</td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td className="border border-black p-2 text-center h-8"></td>
-                                    <td className="border border-black p-2 text-center h-8"></td>
-                                    <td className="border border-black p-2 h-8"></td>
-                                    <td className="border border-black p-2 h-8"></td>
+                                    <td className="col-stt" style={{ border: '1px solid black', padding: '5px 8px', textAlign: 'center', height: '32px' }}></td>
+                                    <td className="col-date" style={{ border: '1px solid black', padding: '5px 8px', textAlign: 'center', height: '32px' }}></td>
+                                    <td className="col-desc" style={{ border: '1px solid black', padding: '5px 8px', height: '32px' }}></td>
+                                    <td className="col-amount" style={{ border: '1px solid black', padding: '5px 8px', height: '32px' }}></td>
                                 </tr>
                             )}
-                            <tr>
-                                <td colSpan={3} className="border border-black p-2 font-bold text-center">Tổng cộng</td>
-                                <td className="border border-black p-2 font-bold text-right">{totalAmount.toLocaleString('vi-VN')}</td>
+                            <tr className="row-total">
+                                <td colSpan={3} className="col-total-label" style={{ border: '1px solid black', padding: '5px 8px', fontWeight: 'bold', textAlign: 'center' }}>Tổng cộng</td>
+                                <td className="col-amount" style={{ border: '1px solid black', padding: '5px 8px', fontWeight: 'bold', textAlign: 'right' }}>{totalAmount.toLocaleString('vi-VN')}</td>
                             </tr>
                         </tbody>
                     </table>
 
                     {/* Footer */}
-                    <div className="flex justify-end mt-8 text-[15px]">
-                        <div className="text-center w-[300px]">
-                            <p className="italic mb-1">
-                                Ngày <span>{vnDate.getDate()}</span> 
-                                {' '}tháng <span>{vnDate.getMonth() + 1}</span> 
-                                {' '}năm <span>{vnDate.getFullYear()}</span>
+                    <div className="tax-footer" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
+                        <div className="tax-footer-sign" style={{ textAlign: 'center', width: '260px' }}>
+                            <p className="date-text" style={{ fontStyle: 'italic', marginBottom: '4px', fontSize: '13px' }}>
+                                Ngày {vnDate.getDate()} tháng {vnDate.getMonth() + 1} năm {vnDate.getFullYear()}
                             </p>
-                            <p className="font-bold uppercase">NGƯỜI ĐẠI DIỆN HỘ KINH DOANH/<br/>CÁ NHÂN KINH DOANH</p>
-                            <p className="italic text-sm mb-2">(Ký, ghi rõ họ tên, đóng dấu (nếu có))</p>
-                            <div className="h-16 flex items-center justify-center mb-1">
+                            <p className="role" style={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: '13px', lineHeight: '1.4' }}>NGƯỜI ĐẠI DIỆN HỘ KINH DOANH/<br/>CÁ NHÂN KINH DOANH</p>
+                            <p className="note" style={{ fontStyle: 'italic', fontSize: '11px', marginBottom: '4px' }}>(Ký, ghi rõ họ tên, đóng dấu (nếu có))</p>
+                            <div className="sig-area" style={{ height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '4px' }}>
                                 {settings.taxSignatureUrl && (
-                                    <img src={settings.taxSignatureUrl} alt="Signature" className="max-h-full object-contain" />
+                                    <img src={settings.taxSignatureUrl} alt="Signature" style={{ maxHeight: '56px', objectFit: 'contain' }} />
                                 )}
                             </div>
-                            <p className="font-bold"><span>{settings.name}</span></p>
+                            <p className="signer-name" style={{ fontWeight: 'bold', fontSize: '14px' }}>{settings.taxSignerName || settings.name}</p>
                         </div>
                     </div>
                 </div>

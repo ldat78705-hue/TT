@@ -450,6 +450,11 @@ export const SettingsScreen: React.FC = () => {
                                     )}
                                 </div>
                             </div>
+                            <div className="mt-4">
+                                <label className="block text-sm font-medium">Tên người ký báo cáo thuế</label>
+                                <input type="text" name="taxSignerName" value={settings.taxSignerName || ''} onChange={handleChange} className="form-input mt-1" placeholder={settings.name || 'VD: HỘ KINH DOANH THÀNH ĐẠT'} />
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Tên hiển thị dưới chữ ký trong báo cáo thuế. Để trống sẽ dùng tên trung tâm.</p>
+                            </div>
                         </fieldset>
 
                         {/* Thanh toán tự động (Webhook) */}
