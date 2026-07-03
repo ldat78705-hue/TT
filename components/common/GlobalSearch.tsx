@@ -37,7 +37,7 @@ export const GlobalSearch: React.FC = () => {
     const { state } = useData();
     const navigate = useNavigate();
     const searchRef = useRef<HTMLDivElement>(null);
-    const mobileOverlayRef = useRef<HTMLDivElement>(null);
+
 
     const handleResultClick = React.useCallback((path: string) => {
         setQuery('');
@@ -47,20 +47,22 @@ export const GlobalSearch: React.FC = () => {
     }, [navigate]);
 
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+        const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as Node;
+            // Only handle click-outside for desktop dropdown (searchRef).
+            // Mobile overlay is fullscreen with its own "Đóng" button — 
+            // click-outside is not needed and causes race conditions on touch devices.
             if (
-                searchRef.current && !searchRef.current.contains(target) &&
-                (!mobileOverlayRef.current || !mobileOverlayRef.current.contains(target))
+                searchRef.current &&
+                searchRef.current.offsetParent !== null && // Only if desktop search is visible
+                !searchRef.current.contains(target)
             ) {
                 setIsOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
-        document.addEventListener('touchstart', handleClickOutside);
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
-            document.removeEventListener('touchstart', handleClickOutside);
         };
     }, []);
 
@@ -245,7 +247,7 @@ export const GlobalSearch: React.FC = () => {
 
             {/* Mobile overlay */}
             {isOpen && (
-                <div ref={mobileOverlayRef} className="md:hidden fixed inset-0 z-50 bg-white dark:bg-slate-900 flex flex-col">
+                <div className="md:hidden fixed inset-0 z-50 bg-white dark:bg-slate-900 flex flex-col">
                     <div className="flex items-center gap-2 p-3 border-b dark:border-slate-700">
                         <span className="text-gray-400 flex-shrink-0">{ICONS.search}</span>
                         <input
