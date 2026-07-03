@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useData } from '../../hooks/useDataContext';
 import { useDebounce } from '../../hooks/useDebounce';
@@ -245,8 +246,8 @@ export const GlobalSearch: React.FC = () => {
                 {React.cloneElement(ICONS.search, { className: 'w-5 h-5' })}
             </button>
 
-            {/* Mobile overlay */}
-            {isOpen && (
+            {/* Mobile overlay — use portal to escape header's backdrop-blur containing block */}
+            {isOpen && ReactDOM.createPortal(
                 <div className="md:hidden fixed inset-0 z-50 bg-white dark:bg-slate-900 flex flex-col">
                     <div className="flex items-center gap-2 p-3 border-b dark:border-slate-700">
                         <span className="text-gray-400 flex-shrink-0">{ICONS.search}</span>
@@ -287,7 +288,8 @@ export const GlobalSearch: React.FC = () => {
                             </div>
                         )}
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </>
     );
