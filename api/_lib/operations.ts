@@ -375,11 +375,25 @@ export function applyOperation(
         case 'deleteClass': {
             const { classId } = payload;
             if (data.attendance.some(a => a.classId === classId)) {
-                throw new Error("Không thể xóa lớp học đã có dữ liệu điểm danh.");
+                throw new Error("Không thể xóa lớp học đã có dữ liệu điểm danh. Hãy sử dụng chức năng Lưu trữ thay vì Xóa.");
             }
             data.classes = data.classes.filter(c => c.id !== classId);
             data.progressReports = data.progressReports.filter(pr => pr.classId !== classId);
             data.announcements = data.announcements.filter(ann => ann.classId !== classId);
+            break;
+        }
+        case 'archiveClass': {
+            const { classId } = payload;
+            const cls = data.classes.find(c => c.id === classId);
+            if (!cls) throw new Error("Không tìm thấy lớp học.");
+            (cls as any).classStatus = 'ARCHIVED';
+            break;
+        }
+        case 'restoreClass': {
+            const { classId } = payload;
+            const cls = data.classes.find(c => c.id === classId);
+            if (!cls) throw new Error("Không tìm thấy lớp học.");
+            (cls as any).classStatus = 'ENDED';
             break;
         }
 

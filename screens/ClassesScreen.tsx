@@ -269,6 +269,7 @@ const ClassForm: React.FC<{
                             <option value={ClassStatus.ACTIVE}>🟢 Đang mở</option>
                             <option value={ClassStatus.PAUSED}>🟡 Tạm dừng</option>
                             <option value={ClassStatus.ENDED}>🔴 Đã kết thúc</option>
+                            <option value={ClassStatus.ARCHIVED}>📦 Lưu trữ</option>
                         </select>
                     </div>
                     <div>
@@ -366,7 +367,7 @@ const ClassForm: React.FC<{
 }
 
 export const ClassesScreen: React.FC = () => {
-    const { state, addClass, updateClass, deleteClass } = useData();
+    const { state, addClass, updateClass, deleteClass, archiveClass, restoreClass } = useData();
     const { toast } = useToast();
     const location = useLocation();
     const navigate = useNavigate();
@@ -427,8 +428,10 @@ export const ClassesScreen: React.FC = () => {
 
     const filteredClasses = useMemo(() => {
         let result = userClasses;
-        // Filter by status
-        if (statusFilter !== 'ALL') {
+        // Filter by status — hide ARCHIVED by default (similar to students)
+        if (statusFilter === 'ALL') {
+            result = result.filter(c => (c.classStatus || ClassStatus.ACTIVE) !== ClassStatus.ARCHIVED);
+        } else {
             result = result.filter(c => (c.classStatus || ClassStatus.ACTIVE) === statusFilter);
         }
         // Filter by search query
@@ -448,6 +451,7 @@ export const ClassesScreen: React.FC = () => {
             case ClassStatus.ACTIVE: return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">🟢 Đang mở</span>;
             case ClassStatus.PAUSED: return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">🟡 Tạm dừng</span>;
             case ClassStatus.ENDED: return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">🔴 Đã kết thúc</span>;
+            case ClassStatus.ARCHIVED: return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400">📦 Lưu trữ</span>;
         }
     };
     
@@ -539,6 +543,7 @@ export const ClassesScreen: React.FC = () => {
                     <option value={ClassStatus.ACTIVE}>🟢 Đang mở</option>
                     <option value={ClassStatus.PAUSED}>🟡 Tạm dừng</option>
                     <option value={ClassStatus.ENDED}>🔴 Đã kết thúc</option>
+                    <option value={ClassStatus.ARCHIVED}>📦 Lưu trữ</option>
                 </select>
             </div>
             
@@ -574,6 +579,11 @@ export const ClassesScreen: React.FC = () => {
                                    {canManage && (
                                        <>
                                         <button onClick={() => handleOpenModal(cls)} className="text-indigo-600 hover:text-indigo-900 p-2 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50" title="Sửa">{ICONS.edit}</button>
+                                        {(cls.classStatus || ClassStatus.ACTIVE) === ClassStatus.ARCHIVED ? (
+                                            <button onClick={async () => { try { await restoreClass(cls.id); toast.success(`Đã khôi phục lớp ${cls.name}`); } catch (e: any) { toast.error(e.message); } }} className="text-emerald-600 hover:text-emerald-900 p-2 rounded-full hover:bg-emerald-100 dark:hover:bg-emerald-900/50" title="Khôi phục">↩️</button>
+                                        ) : (
+                                            <button onClick={async () => { try { await archiveClass(cls.id); toast.success(`Đã lưu trữ lớp ${cls.name}`); } catch (e: any) { toast.error(e.message); } }} className="text-amber-600 hover:text-amber-900 p-2 rounded-full hover:bg-amber-100 dark:hover:bg-amber-900/50" title="Lưu trữ">📦</button>
+                                        )}
                                         <button onClick={() => handleDeleteClick(cls)} className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-900/50" title="Xóa">{ICONS.delete}</button>
                                        </>
                                    )}
@@ -617,6 +627,11 @@ export const ClassesScreen: React.FC = () => {
                                         {canManage && (
                                            <>
                                                 <button onClick={() => handleOpenModal(cls)} className="p-2 rounded-full text-indigo-600 hover:bg-indigo-100 dark:hover:bg-indigo-900/50" title="Sửa">{ICONS.edit}</button>
+                                                {(cls.classStatus || ClassStatus.ACTIVE) === ClassStatus.ARCHIVED ? (
+                                                    <button onClick={async () => { try { await restoreClass(cls.id); toast.success(`Đã khôi phục lớp ${cls.name}`); } catch (e: any) { toast.error(e.message); } }} className="p-2 rounded-full text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/50" title="Khôi phục">↩️</button>
+                                                ) : (
+                                                    <button onClick={async () => { try { await archiveClass(cls.id); toast.success(`Đã lưu trữ lớp ${cls.name}`); } catch (e: any) { toast.error(e.message); } }} className="p-2 rounded-full text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-900/50" title="Lưu trữ">📦</button>
+                                                )}
                                                 <button onClick={() => handleDeleteClick(cls)} className="p-2 rounded-full text-red-600 hover:bg-red-100 dark:hover:bg-red-900/50" title="Xóa">{ICONS.delete}</button>
                                            </>
                                         )}

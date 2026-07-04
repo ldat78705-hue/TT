@@ -67,6 +67,8 @@ interface DataContextType {
     addClass: (data: Class) => Promise<void>;
     updateClass: (payload: { originalId: string, updatedClass: Class }) => Promise<void>;
     deleteClass: (classId: string) => Promise<void>;
+    archiveClass: (classId: string) => Promise<void>;
+    restoreClass: (classId: string) => Promise<void>;
     updateAttendance: (records: AttendanceRecord[]) => Promise<void>;
     updateSingleAttendance: (payload: { classId: string; studentId: string; date: string; status: string; note?: string }) => Promise<void>;
     addProgressReport: (data: Omit<ProgressReport, 'id'>) => Promise<void>;
@@ -214,7 +216,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 if (opName === 'deleteStudent' || opName === 'archiveStudent' || opName === 'restoreStudent') optimisticPayload = { studentId: payload };
                 else if (opName === 'deleteTeacher') optimisticPayload = { teacherId: payload };
                 else if (opName === 'deleteStaff') optimisticPayload = { staffId: payload };
-                else if (opName === 'deleteClass') optimisticPayload = { classId: payload };
+                else if (opName === 'deleteClass' || opName === 'archiveClass' || opName === 'restoreClass') optimisticPayload = { classId: payload };
                 else if (opName === 'deleteProgressReport') optimisticPayload = { reportId: payload };
                 else if (opName === 'deleteIncome' || opName === 'deleteExpense') optimisticPayload = { itemId: payload };
                 else if (opName === 'deleteAnnouncement') optimisticPayload = { id: payload };
@@ -268,6 +270,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     addClass: handleStateUpdateOperation(api.addClass, 'addClass'),
     updateClass: handleStateUpdateOperation(api.updateClass, 'updateClass'),
     deleteClass: handleStateUpdateOperation(api.deleteClass, 'deleteClass'),
+    archiveClass: handleStateUpdateOperation(api.archiveClass, 'archiveClass'),
+    restoreClass: handleStateUpdateOperation(api.restoreClass, 'restoreClass'),
     
     updateAttendance: handleStateUpdateOperation(api.updateAttendance, 'updateAttendance'),
     updateSingleAttendance: handleStateUpdateOperation(api.updateSingleAttendance, 'updateSingleAttendance'),

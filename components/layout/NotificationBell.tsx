@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useData } from '../../hooks/useDataContext';
 import { useAuth } from '../../hooks/useAuth';
-import { PersonStatus, AttendanceStatus, UserRole } from '../../types';
+import { PersonStatus, AttendanceStatus, UserRole, ClassStatus } from '../../types';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '../../constants';
 import { getVietnamTime } from '../../utils/date';
@@ -67,6 +67,7 @@ export const NotificationBell: React.FC = () => {
 
         // 2. Classes today that haven't been marked
         let classesToday = state.classes.filter(cls => 
+            (cls.classStatus || ClassStatus.ACTIVE) !== ClassStatus.ARCHIVED &&
             (cls.schedule || []).some(s => s.dayOfWeek === dayOfWeekEn)
         );
         // Teachers only see their own classes

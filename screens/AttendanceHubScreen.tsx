@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from 'react';
 import { useData } from '../hooks/useDataContext';
 import { Calendar } from '../components/common/Calendar';
-import { ClassSchedule, Class as ClassModel } from '../types';
+import { ClassSchedule, Class as ClassModel, ClassStatus } from '../types';
 import { ROUTES, ICONS } from '../constants';
 import { Link } from 'react-router-dom';
 import { AbsentStudentsModal } from '../components/attendance/AbsentStudentsModal';
@@ -51,14 +51,15 @@ export const AttendanceHubScreen: React.FC = () => {
     const [showAbsentModal, setShowAbsentModal] = useState(false);
     const [showQRModal, setShowQRModal] = useState(false);
 
-    // Filter classes for teacher role
+    // Filter classes for teacher role, and always exclude ARCHIVED classes
     const relevantClasses = useMemo(() => {
+        let filtered = state.classes.filter(cls => (cls.classStatus || ClassStatus.ACTIVE) !== ClassStatus.ARCHIVED);
         if (role === UserRole.TEACHER) {
             const teacherId = (user as Teacher)?.id;
             if (!teacherId) return [];
-            return state.classes.filter(cls => (cls.teacherIds || []).includes(teacherId));
+            filtered = filtered.filter(cls => (cls.teacherIds || []).includes(teacherId));
         }
-        return state.classes;
+        return filtered;
     }, [state.classes, user, role]);
 
     const normalizedSelectedDate = useMemo(() => {

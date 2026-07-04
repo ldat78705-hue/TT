@@ -560,6 +560,8 @@ function getAffectedCollections(opName: string): string[] | null {
         addClass: ['classes'],
         updateClass: ['classes', 'attendance', 'progressReports', 'announcements', 'payrolls'],
         deleteClass: ['classes', 'progressReports', 'announcements'],
+        archiveClass: ['classes'],
+        restoreClass: ['classes'],
         // Attendance — updateSingleAttendance can also create announcements
         updateAttendance: ['attendance'],
         updateSingleAttendance: ['attendance', 'announcements'],
@@ -1292,6 +1294,8 @@ function buildAuditEntry(op: string, payload: any, userId: string, userName: str
         addClass: { targetType: 'class', getDetails: (p) => ({ targetName: p.name || '', details: `Thêm lớp "${p.name}"` }) },
         updateClass: { targetType: 'class', getDetails: (p) => ({ targetName: p.updatedClass?.name || p.originalId || '', details: `Cập nhật lớp "${p.updatedClass?.name || p.originalId}"` }) },
         deleteClass: { targetType: 'class', getDetails: (p) => ({ targetName: p.classId || '', details: `Xóa lớp ${p.classId}` }) },
+        archiveClass: { targetType: 'class', getDetails: (p) => ({ targetName: p.classId || '', details: `Lưu trữ lớp ${p.classId}` }) },
+        restoreClass: { targetType: 'class', getDetails: (p) => ({ targetName: p.classId || '', details: `Khôi phục lớp ${p.classId}` }) },
         // === Students ===
         addStudent: { targetType: 'student', getDetails: (p) => ({ targetName: p.student?.name || p.name || '', details: `Thêm học viên "${p.student?.name || p.name}"` }) },
         updateStudent: { targetType: 'student', getDetails: (p) => ({ targetName: p.updatedStudent?.name || '', details: `Cập nhật học viên "${p.updatedStudent?.name}"` }) },

@@ -4,7 +4,7 @@ import { Card } from '../components/common/Card';
 import { ICONS, ROUTES } from '../constants';
 import { useData } from '../hooks/useDataContext';
 import { useAuth } from '../hooks/useAuth';
-import { PersonStatus, UserRole, Teacher, Announcement, Class, Student, AttendanceRecord, AttendanceStatus, TransactionType } from '../types';
+import { PersonStatus, UserRole, Teacher, Announcement, Class, Student, AttendanceRecord, AttendanceStatus, TransactionType, ClassStatus } from '../types';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/common/Button';
 import { getVietnamTime } from '../utils/date';
@@ -221,7 +221,7 @@ const AdminDashboard: React.FC = () => {
     const { students, classes, announcements, income, expenses, teachers, attendance, transactions } = state;
 
     const totalStudents = students.filter(s => s.status === PersonStatus.ACTIVE).length;
-    const activeClasses = classes.length;
+    const activeClasses = classes.filter(c => (c.classStatus || ClassStatus.ACTIVE) !== ClassStatus.ARCHIVED).length;
     
     const canViewFinancials = role === UserRole.ADMIN || role === UserRole.MANAGER || role === UserRole.ACCOUNTANT;
 
@@ -264,6 +264,7 @@ const AdminDashboard: React.FC = () => {
         const dayOfWeekEn = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][vnDateObj.getDay()];
 
         const classesToday = classes.filter(cls =>
+            (cls.classStatus || ClassStatus.ACTIVE) !== ClassStatus.ARCHIVED &&
             (cls.schedule || []).some(s => s.dayOfWeek === dayOfWeekEn)
         );
 
@@ -441,13 +442,13 @@ const AdminDashboard: React.FC = () => {
 
             {/* Weekly Calendar */}
             {widgetVisibility.calendar !== false && (
-                <WeeklyCalendarWidget classes={classes} teachers={teachers} />
+                <WeeklyCalendarWidget classes={classes.filter(c => (c.classStatus || ClassStatus.ACTIVE) !== ClassStatus.ARCHIVED)} teachers={teachers} />
             )}
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {widgetVisibility.schedule !== false && (
                     <div className="lg:col-span-1">
-                         <TodaysScheduleWidget classes={classes} teachers={teachers} isViewer={role === UserRole.VIEWER} />
+                         <TodaysScheduleWidget classes={classes.filter(c => (c.classStatus || ClassStatus.ACTIVE) !== ClassStatus.ARCHIVED)} teachers={teachers} isViewer={role === UserRole.VIEWER} />
                     </div>
                 )}
                 {widgetVisibility.alerts !== false && (
@@ -492,8 +493,10 @@ const TeacherDashboard: React.FC = () => {
     const assignedClasses = useMemo(() => {
         const teacherId = (user as Teacher)?.id;
         if (!teacherId) return [];
-        return classes.filter(cls => (cls.teacherIds || []).includes(teacherId))
-            .sort((a, b) => a.name.localeCompare(b.name));
+        return classes.filter(cls => 
+            (cls.teacherIds || []).includes(teacherId) &&
+            (cls.classStatus || ClassStatus.ACTIVE) !== ClassStatus.ARCHIVED
+        ).sort((a, b) => a.name.localeCompare(b.name));
     }, [classes, user]);
     
     const relevantAnnouncements = useMemo(() => {

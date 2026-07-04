@@ -92,6 +92,7 @@ export enum ClassStatus {
   ACTIVE = 'ACTIVE',
   PAUSED = 'PAUSED',
   ENDED = 'ENDED',
+  ARCHIVED = 'ARCHIVED',
 }
 
 export interface Class {

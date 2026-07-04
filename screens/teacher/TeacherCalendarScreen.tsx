@@ -2,7 +2,7 @@ import React, { useMemo, useState, useCallback } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useData } from '../../hooks/useDataContext';
 import { Calendar } from '../../components/common/Calendar';
-import { ClassSchedule, Teacher, UserRole, PersonStatus } from '../../types';
+import { ClassSchedule, Teacher, UserRole, PersonStatus, ClassStatus } from '../../types';
 import { ROUTES, ICONS } from '../../constants';
 import { Link } from 'react-router-dom';
 import { getVietnamTime } from '../../utils/date';
@@ -75,10 +75,13 @@ export const TeacherCalendarScreen: React.FC = () => {
         return activeTeachers.find(t => t.id === selectedTeacherId)?.name || '';
     }, [isAdmin, ownTeacherId, selectedTeacherId, activeTeachers, state.teachers, user]);
 
-    // Filter classes for target teachers
+    // Filter classes for target teachers (excluding ARCHIVED)
     const myClasses = useMemo(() => {
         const idSet = new Set(targetTeacherIds);
-        return state.classes.filter(c => (c.teacherIds || []).some(tid => idSet.has(tid)));
+        return state.classes.filter(c => 
+            (c.classStatus || ClassStatus.ACTIVE) !== ClassStatus.ARCHIVED &&
+            (c.teacherIds || []).some(tid => idSet.has(tid))
+        );
     }, [state.classes, targetTeacherIds]);
 
     // Stats

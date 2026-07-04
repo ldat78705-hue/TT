@@ -7,7 +7,7 @@ import { useToast } from '../hooks/useToast';
 import { Table, SortConfig } from '../components/common/Table';
 import { Button } from '../components/common/Button';
 import { Modal } from '../components/common/Modal';
-import { Student, ProgressReport, AttendanceRecord, PersonStatus, UserRole, AttendanceStatus } from '../types';
+import { Student, ProgressReport, AttendanceRecord, PersonStatus, UserRole, AttendanceStatus, ClassStatus } from '../types';
 import { ICONS, ROUTES } from '../constants';
 import { ListItemCard } from '../components/common/ListItemCard';
 import { ConfirmationModal } from '../components/common/ConfirmationModal';
@@ -332,7 +332,7 @@ export const ClassDetailScreen: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const location = useLocation();
     const navigate = useNavigate();
-    const { state, addProgressReport, updateProgressReport, deleteProgressReport, deleteClass, addBulkProgressReports } = useData();
+    const { state, addProgressReport, updateProgressReport, deleteProgressReport, deleteClass, archiveClass, restoreClass, addBulkProgressReports } = useData();
     const { user, role } = useAuth();
     const { toast } = useToast();
     const { classes, students, teachers, progressReports, attendance } = state;
@@ -547,6 +547,15 @@ export const ClassDetailScreen: React.FC = () => {
                             <span className="bg-slate-100 dark:bg-slate-700 px-3 py-1 rounded-full font-mono font-semibold">ID: {cls.id}</span>
                             <span className="bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 px-3 py-1 rounded-full font-semibold">Môn: {cls.subject}</span>
                             <span className="bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300 px-3 py-1 rounded-full font-semibold">GV: {teacherNames}</span>
+                            {(() => {
+                                const status = cls.classStatus || ClassStatus.ACTIVE;
+                                switch (status) {
+                                    case ClassStatus.ACTIVE: return <span className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 px-3 py-1 rounded-full font-semibold">🟢 Đang mở</span>;
+                                    case ClassStatus.PAUSED: return <span className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 px-3 py-1 rounded-full font-semibold">🟡 Tạm dừng</span>;
+                                    case ClassStatus.ENDED: return <span className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 px-3 py-1 rounded-full font-semibold">🔴 Đã kết thúc</span>;
+                                    case ClassStatus.ARCHIVED: return <span className="bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400 px-3 py-1 rounded-full font-semibold">📦 Lưu trữ</span>;
+                                }
+                            })()}
                         </div>
                         <div className="mt-4 text-sm text-gray-600 dark:text-gray-300 flex flex-wrap gap-x-4 gap-y-1">
                             {(cls.schedule || []).map((s, i) => {
@@ -558,8 +567,13 @@ export const ClassDetailScreen: React.FC = () => {
                         </div>
                     </div>
                     {canManage && (
-                        <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">
+                        <div className="flex items-center gap-2 flex-shrink-0 flex-wrap w-full sm:w-auto">
                             <Button variant="secondary" onClick={handleEdit} className="flex-1 sm:flex-none">{ICONS.edit} Sửa</Button>
+                            {(cls.classStatus || ClassStatus.ACTIVE) === ClassStatus.ARCHIVED ? (
+                                <Button variant="secondary" onClick={async () => { try { await restoreClass(cls.id); toast.success(`Đã khôi phục lớp ${cls.name}`); } catch (e: any) { toast.error(e.message); } }} className="flex-1 sm:flex-none">↩️ Khôi phục</Button>
+                            ) : (
+                                <Button variant="secondary" onClick={async () => { try { await archiveClass(cls.id); toast.success(`Đã lưu trữ lớp ${cls.name}`); } catch (e: any) { toast.error(e.message); } }} className="flex-1 sm:flex-none">📦 Lưu trữ</Button>
+                            )}
                             <Button variant="danger" onClick={() => setDeleteConfirmOpen(true)} className="flex-1 sm:flex-none">{ICONS.delete} Xóa</Button>
                         </div>
                     )}

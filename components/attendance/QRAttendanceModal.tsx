@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { Button } from '../common/Button';
 import { useData } from '../../hooks/useDataContext';
 import { useToast } from '../../hooks/useToast';
-import { AttendanceRecord, AttendanceStatus, PersonStatus } from '../../types';
+import { AttendanceRecord, AttendanceStatus, PersonStatus, ClassStatus } from '../../types';
 import { getVietnamTime } from '../../utils/date';
 
 interface QRAttendanceModalProps {
@@ -84,11 +84,12 @@ export const QRAttendanceModal: React.FC<QRAttendanceModalProps> = ({ isOpen, on
     const selectedClassRef = useRef(selectedClass);
     useEffect(() => { selectedClassRef.current = selectedClass; }, [selectedClass]);
 
-    // Today's classes
+    // Today's classes (excluding ARCHIVED)
     const todayClasses = useMemo(() => {
         const dateObj = new Date(selectedDate + 'T00:00:00');
         const dayIdx = dateObj.getDay();
         return classes.filter(cls => 
+            (cls.classStatus || ClassStatus.ACTIVE) !== ClassStatus.ARCHIVED &&
             (cls.schedule || []).some(s => dayOfWeekToNumber[s.dayOfWeek] === dayIdx)
         );
     }, [classes, selectedDate]);
@@ -370,8 +371,9 @@ export const QRAttendanceModal: React.FC<QRAttendanceModalProps> = ({ isOpen, on
 
                                 {/* All classes - for unscheduled sessions */}
                                 {(() => {
-                                    const otherClasses = classes.filter(c => !todayClasses.some(tc => tc.id === c.id));
-                                    const allClasses = todayClasses.length === 0 ? classes : otherClasses;
+                                    const activeClasses = classes.filter(c => (c.classStatus || ClassStatus.ACTIVE) !== ClassStatus.ARCHIVED);
+                                    const otherClasses = activeClasses.filter(c => !todayClasses.some(tc => tc.id === c.id));
+                                    const allClasses = todayClasses.length === 0 ? activeClasses : otherClasses;
                                     if (allClasses.length === 0) return null;
                                     return (
                                         <div className="mt-3">

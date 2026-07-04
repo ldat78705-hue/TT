@@ -181,6 +181,8 @@ export const deleteStaff = (staffId: string) => patchData({ op: 'deleteStaff', p
 export const addClass = (payload: Class) => patchData({ op: 'addClass', payload });
 export const updateClass = (payload: { originalId: string, updatedClass: Class }) => patchData({ op: 'updateClass', payload });
 export const deleteClass = (classId: string) => patchData({ op: 'deleteClass', payload: { classId } });
+export const archiveClass = (classId: string) => patchData({ op: 'archiveClass', payload: { classId } });
+export const restoreClass = (classId: string) => patchData({ op: 'restoreClass', payload: { classId } });
 
 export const updateAttendance = (payload: AttendanceRecord[]) => patchData({ op: 'updateAttendance', payload });
 export const updateSingleAttendance = (payload: { classId: string; studentId: string; date: string; status: string; note?: string }) => patchData({ op: 'updateSingleAttendance', payload });
