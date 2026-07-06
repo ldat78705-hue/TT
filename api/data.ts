@@ -1222,8 +1222,6 @@ export default async function handler(req: any, res: any) {
                 let responseData: any;
                 if (operation.op === 'updateAttendance') {
                     responseData = await executeAttendanceTransaction(operation.payload, centerId);
-                } else if (operation.op === 'addAdjustment') {
-                    responseData = await executeTuitionTransaction(operation.payload, centerId);
                 } else {
                     responseData = await executeOperationInternal(operation, centerId);
                 }

@@ -13,6 +13,7 @@ import { TuitionFeeNoticeModal } from './TuitionFeeNoticeModal';
 import { BulkInvoiceExportModal } from './BulkInvoiceExportModal';
 import { AdvancePaymentModal } from './AdvancePaymentModal';
 import { BalanceStatementModal } from './BalanceStatementModal';
+import { recalculateAllInvoices } from '../../services/api';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -179,6 +180,7 @@ export const InvoicesTab: React.FC = () => {
     const [isBulkExportModalOpen, setIsBulkExportModalOpen] = useState(false);
     const [isAdvancePaymentOpen, setIsAdvancePaymentOpen] = useState(false);
     const [isBalanceStatementOpen, setIsBalanceStatementOpen] = useState(false);
+    const [isRecalculating, setIsRecalculating] = useState(false);
 
 
     const canManage = role === UserRole.ADMIN || role === UserRole.ACCOUNTANT;
@@ -363,6 +365,24 @@ export const InvoicesTab: React.FC = () => {
                         </Button>
                         <Button onClick={() => setIsAdvancePaymentOpen(true)} variant="secondary">
                             💰 Thu trước
+                        </Button>
+                        <Button 
+                            onClick={async () => {
+                                setIsRecalculating(true);
+                                try {
+                                    await recalculateAllInvoices();
+                                    toast.success('Đã cập nhật lại trạng thái tất cả hóa đơn.');
+                                } catch (e: any) {
+                                    toast.error(e.message || 'Lỗi khi tính lại.');
+                                } finally {
+                                    setIsRecalculating(false);
+                                }
+                            }}
+                            variant="secondary"
+                            isLoading={isRecalculating}
+                            disabled={isRecalculating}
+                        >
+                            🔄 Tính lại trạng thái
                         </Button>
                         <Button onClick={() => setGenerateModalOpen(true)}>
                             {ICONS.calendar} Chốt & Cập nhật Học phí
