@@ -5,7 +5,7 @@ import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
 import { LineChart } from '../components/common/LineChart';
 import { PieChart } from '../components/common/PieChart';
-import { AttendanceStatus, FeeType, TransactionType, PersonStatus } from '../types';
+import { AttendanceStatus, FeeType, TransactionType, PersonStatus, UserRole } from '../types';
 import { ReportDetailModal } from '../components/reports/ReportDetailModal';
 import { AttendanceReportTab } from '../components/reports/AttendanceReportTab';
 import { WebhookReportTab } from '../components/reports/WebhookReportTab';
@@ -28,10 +28,12 @@ type ReportTab = 'overview' | 'comparison' | 'attendance' | 'absent' | 'transact
 import { formatVietnamDate, getVietnamTime } from '../utils/date';
 import { exportFullData } from '../services/api';
 import { useToast } from '../context/ToastContext';
+import { useAuth } from '../hooks/useAuth';
 
 export const ReportsScreen: React.FC = () => {
     const { state } = useData();
     const { showToast } = useToast();
+    const { role } = useAuth();
     const { students, teachers, classes, invoices, income, expenses, attendance, transactions } = state;
     
     // State cho khoảng thời gian tùy chỉnh
@@ -463,6 +465,7 @@ export const ReportsScreen: React.FC = () => {
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <h1 className="text-3xl font-bold">Báo cáo & Phân tích</h1>
+                {role !== UserRole.VIEWER && (
                 <button 
                     onClick={async () => {
                         try {
@@ -478,6 +481,7 @@ export const ReportsScreen: React.FC = () => {
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                     Xuất Excel Toàn thời gian
                 </button>
+                )}
             </div>
             
             {/* Filter Section */}

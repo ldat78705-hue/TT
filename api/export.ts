@@ -21,8 +21,8 @@ export default async function handler(req: any, res: any) {
         return res.status(401).send('Unauthorized');
     }
 
-    if (authPayload.role !== UserRole.ADMIN && authPayload.role !== UserRole.MANAGER) {
-        return res.status(403).send('Forbidden: Only Admin/Manager can export data');
+    if (authPayload.role !== UserRole.ADMIN && authPayload.role !== UserRole.MANAGER && authPayload.role !== UserRole.ACCOUNTANT) {
+        return res.status(403).send('Forbidden: Only Admin/Manager/Accountant can export data');
     }
 
     // Extract centerId from JWT — same as data.ts handler
