@@ -149,7 +149,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // - Tab visibility change triggers immediate refresh (covers most real-time needs)
   useEffect(() => {
     let intervalId: ReturnType<typeof setInterval> | null = null;
-    let lastRefreshTime = 0;
+    let lastRefreshTime = Date.now(); // Bắt đầu = now để debounce lần đầu (refreshData đã load rồi)
 
     const silentRefresh = () => {
       const now = Date.now();
