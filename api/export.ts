@@ -96,15 +96,15 @@ export default async function handler(req: any, res: any) {
             ...data.transactions.filter((t: any) => t.type === 'PAYMENT' || t.type === 'ADJUSTMENT_CREDIT').map((t: any) => ({
                 date: t.date ? t.date.substring(0, 10) : '',
                 type: 'Học phí',
-                description: t.description,
-                amount: t.amount,
+                description: t.description || '',
+                amount: t.amount || 0,
                 student: studentsMap.get(t.studentId) || t.studentId || 'Không rõ'
             })),
             ...data.income.map((i: any) => ({
                 date: i.date ? i.date.substring(0, 10) : '',
                 type: 'Thu khác',
-                description: i.description,
-                amount: i.amount,
+                description: i.description || '',
+                amount: i.amount || 0,
                 student: '-'
             }))
         ].sort((a, b) => a.date.localeCompare(b.date));
@@ -122,8 +122,8 @@ export default async function handler(req: any, res: any) {
         const expenseData = data.expenses.map((e: any) => ({
             date: e.date ? e.date.substring(0, 10) : '',
             category: e.category || '',
-            description: e.description,
-            amount: e.amount
+            description: e.description || '',
+            amount: e.amount || 0
         })).sort((a: any, b: any) => a.date.localeCompare(b.date));
         expenseSheet.addRows(expenseData);
 
@@ -173,8 +173,8 @@ export default async function handler(req: any, res: any) {
                 date: t.date ? t.date.substring(0, 10) : '',
                 type: typeMap[t.type] || t.type,
                 student: studentsMap.get(t.studentId) || t.studentId || '',
-                description: t.description,
-                amount: t.amount,
+                description: t.description || '',
+                amount: t.amount || 0,
             };
         }).sort((a: any, b: any) => a.date.localeCompare(b.date));
         txSheet.addRows(txData);

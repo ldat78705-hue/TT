@@ -159,7 +159,7 @@ const GenerateInvoicesModal: React.FC<{
 };
 
 export const InvoicesTab: React.FC = () => {
-    const { state, generateInvoices, cancelInvoice, updateInvoiceStatus } = useData();
+    const { state, generateInvoices, cancelInvoice, updateInvoiceStatus, refreshData } = useData();
     const { role } = useAuth();
     const { toast } = useToast();
     const [isGenerateModalOpen, setGenerateModalOpen] = useState(false);
@@ -371,6 +371,7 @@ export const InvoicesTab: React.FC = () => {
                                 setIsRecalculating(true);
                                 try {
                                     await recalculateAllInvoices();
+                                    await refreshData();
                                     toast.success('Đã cập nhật lại trạng thái tất cả hóa đơn.');
                                 } catch (e: any) {
                                     toast.error(e.message || 'Lỗi khi tính lại.');
