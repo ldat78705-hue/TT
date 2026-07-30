@@ -15,7 +15,8 @@ import { PaymentModal } from '../components/finance/PaymentModal';
 import { ExportButton } from '../components/common/ExportButton';
 import { zaloSendTuition, zaloGetFollowersList } from '../services/api';
 import { printHtml } from '../utils/html';
-import { copyAndOpenZalo, buildDebtMessage, getStudentZaloPhone } from '../utils/zaloDeepLink';
+import { getStudentZaloPhone } from '../utils/zaloDeepLink';
+import { ZaloSendModal } from '../components/finance/ZaloSendModal';
 
 const removeAccents = (str: string) => {
   if (!str) return '';
@@ -275,6 +276,7 @@ export const StudentsScreen: React.FC = () => {
     const [confirmModalState, setConfirmModalState] = useState<{ isOpen: boolean; student: Student | null }>({ isOpen: false, student: null });
     const [resetPasswordModalState, setResetPasswordModalState] = useState<{ isOpen: boolean; student: Student | null }>({ isOpen: false, student: null });
     const [paymentModalState, setPaymentModalState] = useState<{ isOpen: boolean; student: Student | null }>({ isOpen: false, student: null });
+    const [zaloModalState, setZaloModalState] = useState<{ isOpen: boolean; student: Student | null }>({ isOpen: false, student: null });
     const [searchQuery, setSearchQuery] = useState('');
     const [classFilter, setClassFilter] = useState('all');
     const [statusFilter, setStatusFilter] = useState<string>('active_inactive');
@@ -900,32 +902,7 @@ export const StudentsScreen: React.FC = () => {
                                         </button>
                                         {getStudentZaloPhone(student) && (
                                             <button 
-                                                onClick={async () => {
-                                                    const unpaidInvoices = state.invoices
-                                                        .filter(inv => inv.studentId === student.id && inv.status === 'UNPAID')
-                                                        .sort((a, b) => a.month.localeCompare(b.month));
-                                                    const totalDebt = unpaidInvoices.length > 0 
-                                                        ? unpaidInvoices.reduce((sum, inv) => sum + inv.amount, 0)
-                                                        : Math.abs(student.balance);
-                                                    const message = buildDebtMessage({
-                                                        centerName: state.settings.name || 'Trung tâm',
-                                                        centerPhone: state.settings.phone,
-                                                        bankName: state.settings.bankName,
-                                                        bankAccountNumber: state.settings.bankAccountNumber,
-                                                        bankAccountHolder: state.settings.bankAccountHolder,
-                                                        parentName: student.parentName || 'Phụ huynh',
-                                                        studentName: student.name,
-                                                        invoices: unpaidInvoices.map(inv => ({ month: inv.month, amount: inv.amount })),
-                                                        totalDebt,
-                                                        customTemplate: state.settings.messageTemplates?.tuitionReminder,
-                                                    });
-                                                    const result = await copyAndOpenZalo(getStudentZaloPhone(student)!, message);
-                                                    if (result.success) {
-                                                        toast.success('Đã chép nội dung tin nhắn. Zalo đang mở — hãy dán (Ctrl+V) và gửi!');
-                                                    } else {
-                                                        toast.error(result.error || 'Lỗi khi mở Zalo.');
-                                                    }
-                                                }}
+                                                onClick={() => setZaloModalState({ isOpen: true, student })}
                                                 className="p-2 rounded-full text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/50" 
                                                 title="Nhắn Zalo nhắc HP (qua SĐT)"
                                             >
@@ -1022,6 +999,11 @@ export const StudentsScreen: React.FC = () => {
                 isOpen={paymentModalState.isOpen}
                 onClose={() => setPaymentModalState({ isOpen: false, student: null })}
                 student={paymentModalState.student}
+            />
+            <ZaloSendModal
+                isOpen={zaloModalState.isOpen}
+                onClose={() => setZaloModalState({ isOpen: false, student: null })}
+                student={zaloModalState.student}
             />
 
             {/* QR Print Modal */}

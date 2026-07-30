@@ -5,7 +5,7 @@ import { useToast } from '../../hooks/useToast';
 import { Table, SortConfig, Column } from '../common/Table';
 import { Button } from '../common/Button';
 import { ICONS } from '../../constants';
-import { Invoice, UserRole } from '../../types';
+import { Invoice, UserRole, Student } from '../../types';
 import { Pagination } from '../common/Pagination';
 import { ListItemCard } from '../common/ListItemCard';
 import { ConfirmationModal } from '../common/ConfirmationModal';
@@ -14,7 +14,7 @@ import { BulkInvoiceExportModal } from './BulkInvoiceExportModal';
 import { AdvancePaymentModal } from './AdvancePaymentModal';
 import { BalanceStatementModal } from './BalanceStatementModal';
 import { recalculateAllInvoices } from '../../services/api';
-import { copyAndOpenZalo, buildDebtMessage, getStudentZaloPhone } from '../../utils/zaloDeepLink';
+import { ZaloSendModal } from './ZaloSendModal';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -182,47 +182,18 @@ export const InvoicesTab: React.FC = () => {
     const [isAdvancePaymentOpen, setIsAdvancePaymentOpen] = useState(false);
     const [isBalanceStatementOpen, setIsBalanceStatementOpen] = useState(false);
     const [isRecalculating, setIsRecalculating] = useState(false);
-
+    const [zaloModalState, setZaloModalState] = useState<{ isOpen: boolean; student: Student | null; invoice: Invoice | null }>({ isOpen: false, student: null, invoice: null });
 
     const canManage = role === UserRole.ADMIN || role === UserRole.ACCOUNTANT;
 
-    const handleSendZaloDebt = useCallback(async (invoice: Invoice) => {
+    const handleSendZaloDebt = useCallback((invoice: Invoice) => {
         const student = state.students.find(s => s.id === invoice.studentId);
         if (!student) {
             toast.error('Không tìm thấy thông tin học viên.');
             return;
         }
-        const zaloPhone = getStudentZaloPhone(student);
-        if (!zaloPhone) {
-            toast.error(`Học viên ${student.name} chưa có SĐT. Vui lòng cập nhật trong mục Học viên.`);
-            return;
-        }
-
-        // Tìm tất cả hóa đơn UNPAID của học viên này
-        const unpaidInvoices = state.invoices
-            .filter(inv => inv.studentId === student.id && inv.status === 'UNPAID')
-            .sort((a, b) => a.month.localeCompare(b.month));
-
-        const message = buildDebtMessage({
-            centerName: state.settings.name || 'Trung tâm',
-            centerPhone: state.settings.phone,
-            bankName: state.settings.bankName,
-            bankAccountNumber: state.settings.bankAccountNumber,
-            bankAccountHolder: state.settings.bankAccountHolder,
-            parentName: student.parentName || 'Phụ huynh',
-            studentName: student.name,
-            invoices: unpaidInvoices.map(inv => ({ month: inv.month, amount: inv.amount })),
-            totalDebt: unpaidInvoices.reduce((sum, inv) => sum + inv.amount, 0),
-            customTemplate: state.settings.messageTemplates?.tuitionReminder,
-        });
-
-        const result = await copyAndOpenZalo(zaloPhone, message);
-        if (result.success) {
-            toast.success('Đã chép nội dung tin nhắn. Zalo đang mở — hãy dán (Ctrl+V) và gửi!');
-        } else {
-            toast.error(result.error || 'Lỗi khi mở Zalo.');
-        }
-    }, [state.students, state.invoices, state.settings, toast]);
+        setZaloModalState({ isOpen: true, student, invoice });
+    }, [state.students, toast]);
 
     const handleSort = (key: keyof Invoice) => {
         let direction: 'ascending' | 'descending' = 'ascending';
@@ -613,6 +584,12 @@ export const InvoicesTab: React.FC = () => {
             <BalanceStatementModal
                 isOpen={isBalanceStatementOpen}
                 onClose={() => setIsBalanceStatementOpen(false)}
+            />
+            <ZaloSendModal
+                isOpen={zaloModalState.isOpen}
+                onClose={() => setZaloModalState({ isOpen: false, student: null, invoice: null })}
+                student={zaloModalState.student}
+                invoice={zaloModalState.invoice}
             />
         </div>
     );
