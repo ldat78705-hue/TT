@@ -13,6 +13,7 @@ import { BulkDebtPrintModal } from './BulkDebtPrintModal';
 import { PaymentModal } from './PaymentModal';
 import { ClassDebtReportModal } from './ClassDebtReportModal';
 import { zaloSendOverdueReminders } from '../../services/api';
+import { copyAndOpenZalo, buildDebtMessage } from '../../utils/zaloDeepLink';
 
 export const UnpaidStudentsReport: React.FC = () => {
     const { state } = useData();
@@ -30,6 +31,34 @@ export const UnpaidStudentsReport: React.FC = () => {
     const [isSendingZalo, setIsSendingZalo] = useState(false);
 
     const isViewer = role === UserRole.VIEWER;
+
+    const handleZaloDebt = async (student: Student) => {
+        if (!student.parentPhone) {
+            toast.error(`Học viên ${student.name} chưa có SĐT phụ huynh. Vui lòng cập nhật trong mục Học viên.`);
+            return;
+        }
+        const unpaidInvoices = state.invoices
+            .filter(inv => inv.studentId === student.id && inv.status === 'UNPAID')
+            .sort((a, b) => a.month.localeCompare(b.month));
+        const totalDebt = unpaidInvoices.length > 0
+            ? unpaidInvoices.reduce((sum, inv) => sum + inv.amount, 0)
+            : Math.abs(student.balance);
+        const message = buildDebtMessage({
+            centerName: settings.name || 'Trung tâm',
+            centerPhone: settings.phone,
+            parentName: student.parentName || 'Phụ huynh',
+            studentName: student.name,
+            invoices: unpaidInvoices.map(inv => ({ month: inv.month, amount: inv.amount })),
+            totalDebt,
+            customTemplate: settings.messageTemplates?.tuitionReminder,
+        });
+        const result = await copyAndOpenZalo(student.parentPhone, message);
+        if (result.success) {
+            toast.success('Đã chép nội dung tin nhắn. Zalo đang mở — hãy dán (Ctrl+V) và gửi!');
+        } else {
+            toast.error(result.error || 'Lỗi khi mở Zalo.');
+        }
+    };
 
     const handleSort = (key: keyof (Student & { classNames: string })) => {
         let direction: 'ascending' | 'descending' = 'ascending';
@@ -334,6 +363,18 @@ export const UnpaidStudentsReport: React.FC = () => {
                         selectedIds={selectedStudentIds}
                         onSelectionChange={setSelectedStudentIds}
                         fullDataIds={sortedUnpaidStudents.map(s => s.id)}
+                        actions={!isViewer ? (item) => (
+                            <div className="flex items-center gap-1">
+                                {item.parentPhone && (
+                                    <button onClick={() => handleZaloDebt(item)} className="p-1.5 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600" title="Nhắn Zalo nhắc HP">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.04 2 11c0 2.76 1.36 5.22 3.48 6.84L5 22l4.33-2.12C10.2 20.04 11.08 20.12 12 20.12c5.52 0 10-4.04 10-9.06S17.52 2 12 2zm4.5 12.5c-.2.56-1.18 1.08-1.63 1.14-.44.06-.83.2-2.8-.6-2.38-1-3.9-3.44-4.02-3.6-.12-.16-.96-1.28-.96-2.44s.6-1.72.82-1.96c.22-.24.48-.3.64-.3.16 0 .32 0 .46.02.14.02.34-.06.54.42.2.48.68 1.68.74 1.8.06.12.1.26.02.42-.08.16-.12.26-.24.4-.12.14-.24.3-.36.42-.12.12-.24.24-.1.48.14.24.62 1.02 1.32 1.66.9.82 1.66 1.08 1.9 1.2.24.12.38.1.52-.06.14-.16.6-.7.76-.94.16-.24.32-.2.54-.12.22.08 1.38.66 1.62.78.24.12.4.18.46.28.06.1.06.56-.14 1.12z"/></svg>
+                                    </button>
+                                )}
+                                <button onClick={() => setPaymentModalState({ isOpen: true, student: item })} className="p-1.5 rounded-md hover:bg-green-100 dark:hover:bg-green-900/30 text-green-600" title="Ghi nhận thanh toán">
+                                    {React.cloneElement(ICONS.finance as React.ReactElement<{ width?: number | string; height?: number | string }>, {width: 18, height: 18})}
+                                </button>
+                            </div>
+                        ) : undefined}
                     />
                 </div>
                 <div className="md:hidden space-y-4">
@@ -377,13 +418,24 @@ export const UnpaidStudentsReport: React.FC = () => {
                                 },
                             ]}
                             actions={!isViewer ? (
-                                <button 
-                                    onClick={() => setPaymentModalState({ isOpen: true, student: s })} 
-                                    className="p-2 rounded-full text-green-600 hover:bg-green-100 dark:hover:bg-green-900/50" 
-                                    title="Ghi nhận thanh toán"
-                                >
-                                    {React.cloneElement(ICONS.finance as React.ReactElement<{ width?: number | string; height?: number | string }>, {width: 20, height: 20})}
-                                </button>
+                                <div className="flex items-center gap-1">
+                                    {s.parentPhone && (
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); handleZaloDebt(s); }}
+                                            className="p-2 rounded-full text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/50" 
+                                            title="Nhắn Zalo nhắc HP"
+                                        >
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.04 2 11c0 2.76 1.36 5.22 3.48 6.84L5 22l4.33-2.12C10.2 20.04 11.08 20.12 12 20.12c5.52 0 10-4.04 10-9.06S17.52 2 12 2zm4.5 12.5c-.2.56-1.18 1.08-1.63 1.14-.44.06-.83.2-2.8-.6-2.38-1-3.9-3.44-4.02-3.6-.12-.16-.96-1.28-.96-2.44s.6-1.72.82-1.96c.22-.24.48-.3.64-.3.16 0 .32 0 .46.02.14.02.34-.06.54.42.2.48.68 1.68.74 1.8.06.12.1.26.02.42-.08.16-.12.26-.24.4-.12.14-.24.3-.36.42-.12.12-.24.24-.1.48.14.24.62 1.02 1.32 1.66.9.82 1.66 1.08 1.9 1.2.24.12.38.1.52-.06.14-.16.6-.7.76-.94.16-.24.32-.2.54-.12.22.08 1.38.66 1.62.78.24.12.4.18.46.28.06.1.06.56-.14 1.12z"/></svg>
+                                        </button>
+                                    )}
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); setPaymentModalState({ isOpen: true, student: s }); }}
+                                        className="p-2 rounded-full text-green-600 hover:bg-green-100 dark:hover:bg-green-900/50" 
+                                        title="Ghi nhận thanh toán"
+                                    >
+                                        {React.cloneElement(ICONS.finance as React.ReactElement<{ width?: number | string; height?: number | string }>, {width: 20, height: 20})}
+                                    </button>
+                                </div>
                             ) : undefined}
                         />
                      ))}
