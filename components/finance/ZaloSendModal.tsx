@@ -1,5 +1,5 @@
 
-import React, { useRef, useState, useMemo } from 'react';
+import React, { useRef, useState, useMemo, useEffect } from 'react';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { DebtNotice } from './DebtNotice';
@@ -7,7 +7,7 @@ import { TuitionFeeNotice } from './TuitionFeeNotice';
 import { Student, Invoice } from '../../types';
 import { useData } from '../../hooks/useDataContext';
 import { useToast } from '../../hooks/useToast';
-import { copyAndOpenZalo, buildDebtMessage, getStudentZaloPhone } from '../../utils/zaloDeepLink';
+import { copyAndOpenZalo, buildDebtMessage, getStudentZaloPhone, getZaloDeepLink } from '../../utils/zaloDeepLink';
 
 declare global {
     interface Window {
@@ -31,6 +31,14 @@ export const ZaloSendModal: React.FC<ZaloSendModalProps> = ({ isOpen, onClose, s
     const noticeRef = useRef<HTMLDivElement>(null);
     const [isSendingText, setIsSendingText] = useState(false);
     const [isSendingImage, setIsSendingImage] = useState(false);
+
+    // Reset states when modal closes
+    useEffect(() => {
+        if (!isOpen) {
+            setIsSendingText(false);
+            setIsSendingImage(false);
+        }
+    }, [isOpen]);
 
     const zaloPhone = useMemo(() => {
         if (!student) return null;
@@ -86,12 +94,29 @@ export const ZaloSendModal: React.FC<ZaloSendModalProps> = ({ isOpen, onClose, s
         if (!student || !zaloPhone || !noticeRef.current) return;
         setIsSendingImage(true);
         try {
-            // Wait for QR image to load
-            await new Promise(resolve => setTimeout(resolve, 300));
-
             if (!window.html2canvas) {
                 toast.error('Không tìm thấy thư viện tạo ảnh. Vui lòng tải lại trang.');
                 return;
+            }
+
+            // Wait for QR images to fully load before capturing
+            const images = noticeRef.current.querySelectorAll('img');
+            if (images.length > 0) {
+                await Promise.all(
+                    Array.from(images).map(img => {
+                        if (img.complete) return Promise.resolve();
+                        return new Promise<void>((resolve) => {
+                            img.onload = () => resolve();
+                            img.onerror = () => resolve(); // Don't block on error
+                            // Timeout fallback
+                            setTimeout(resolve, 3000);
+                        });
+                    })
+                );
+                // Extra buffer for rendering
+                await new Promise(resolve => setTimeout(resolve, 200));
+            } else {
+                await new Promise(resolve => setTimeout(resolve, 300));
             }
 
             const canvas = await window.html2canvas(noticeRef.current, { scale: 2.5, useCORS: true });
@@ -126,8 +151,7 @@ export const ZaloSendModal: React.FC<ZaloSendModalProps> = ({ isOpen, onClose, s
             }
 
             // Open Zalo
-            const normalized = zaloPhone.replace(/[\s\-().]/g, '').replace(/^\+84/, '0');
-            window.open(`https://zalo.me/${normalized}`, '_blank');
+            window.open(getZaloDeepLink(zaloPhone), '_blank');
             onClose();
         } catch (error) {
             console.error('Error generating image:', error);
@@ -145,7 +169,7 @@ export const ZaloSendModal: React.FC<ZaloSendModalProps> = ({ isOpen, onClose, s
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={`Gửi Zalo — ${student.name}`}>
             {/* Hidden render area for html2canvas */}
-            <div style={{ position: 'absolute', left: '-9999px', width: '10.5cm' }}>
+            <div style={{ position: 'absolute', left: '-9999px', width: invoice ? '210mm' : '10.5cm' }}>
                 <div ref={noticeRef}>
                     {invoice ? (
                         <TuitionFeeNotice invoice={invoice} />
