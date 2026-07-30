@@ -28,6 +28,14 @@ export function getZaloDeepLink(phone: string): string {
     return `https://zalo.me/${normalized}`;
 }
 
+/**
+ * Lấy SĐT Zalo của phụ huynh.
+ * Ưu tiên parentPhone (SĐT Zalo PH), nếu không có thì dùng phone (SĐT chính).
+ */
+export function getStudentZaloPhone(student: { parentPhone?: string; phone?: string }): string | null {
+    return student.parentPhone?.trim() || student.phone?.trim() || null;
+}
+
 interface ZaloDebtMessageParams {
     centerName: string;
     centerPhone?: string;

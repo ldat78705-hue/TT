@@ -15,7 +15,7 @@ import { PaymentModal } from '../components/finance/PaymentModal';
 import { ExportButton } from '../components/common/ExportButton';
 import { zaloSendTuition, zaloGetFollowersList } from '../services/api';
 import { printHtml } from '../utils/html';
-import { copyAndOpenZalo, buildDebtMessage } from '../utils/zaloDeepLink';
+import { copyAndOpenZalo, buildDebtMessage, getStudentZaloPhone } from '../utils/zaloDeepLink';
 
 const removeAccents = (str: string) => {
   if (!str) return '';
@@ -898,7 +898,7 @@ export const StudentsScreen: React.FC = () => {
                                         <button onClick={() => setPaymentModalState({ isOpen: true, student: student })} className="p-2 rounded-full text-green-600 hover:bg-green-100 dark:hover:bg-green-900/50" title="Ghi nhận thanh toán">
                                             {React.cloneElement(ICONS.finance as React.ReactElement, {width: 20, height: 20})}
                                         </button>
-                                        {student.parentPhone && (
+                                        {getStudentZaloPhone(student) && (
                                             <button 
                                                 onClick={async () => {
                                                     const unpaidInvoices = state.invoices
@@ -916,7 +916,7 @@ export const StudentsScreen: React.FC = () => {
                                                         totalDebt,
                                                         customTemplate: state.settings.messageTemplates?.tuitionReminder,
                                                     });
-                                                    const result = await copyAndOpenZalo(student.parentPhone!, message);
+                                                    const result = await copyAndOpenZalo(getStudentZaloPhone(student)!, message);
                                                     if (result.success) {
                                                         toast.success('Đã chép nội dung tin nhắn. Zalo đang mở — hãy dán (Ctrl+V) và gửi!');
                                                     } else {

@@ -14,7 +14,7 @@ import { BulkInvoiceExportModal } from './BulkInvoiceExportModal';
 import { AdvancePaymentModal } from './AdvancePaymentModal';
 import { BalanceStatementModal } from './BalanceStatementModal';
 import { recalculateAllInvoices } from '../../services/api';
-import { copyAndOpenZalo, buildDebtMessage } from '../../utils/zaloDeepLink';
+import { copyAndOpenZalo, buildDebtMessage, getStudentZaloPhone } from '../../utils/zaloDeepLink';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -192,8 +192,9 @@ export const InvoicesTab: React.FC = () => {
             toast.error('Không tìm thấy thông tin học viên.');
             return;
         }
-        if (!student.parentPhone) {
-            toast.error(`Học viên ${student.name} chưa có SĐT phụ huynh. Vui lòng cập nhật trong mục Học viên.`);
+        const zaloPhone = getStudentZaloPhone(student);
+        if (!zaloPhone) {
+            toast.error(`Học viên ${student.name} chưa có SĐT. Vui lòng cập nhật trong mục Học viên.`);
             return;
         }
 
@@ -212,7 +213,7 @@ export const InvoicesTab: React.FC = () => {
             customTemplate: state.settings.messageTemplates?.tuitionReminder,
         });
 
-        const result = await copyAndOpenZalo(student.parentPhone, message);
+        const result = await copyAndOpenZalo(zaloPhone, message);
         if (result.success) {
             toast.success('Đã chép nội dung tin nhắn. Zalo đang mở — hãy dán (Ctrl+V) và gửi!');
         } else {
