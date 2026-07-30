@@ -39,6 +39,9 @@ export function getStudentZaloPhone(student: { parentPhone?: string; phone?: str
 interface ZaloDebtMessageParams {
     centerName: string;
     centerPhone?: string;
+    bankName?: string;
+    bankAccountNumber?: string;
+    bankAccountHolder?: string;
     parentName: string;
     studentName: string;
     invoices: {
@@ -56,7 +59,12 @@ interface ZaloDebtMessageParams {
  * Nếu không → dùng template mặc định chi tiết.
  */
 export function buildDebtMessage(params: ZaloDebtMessageParams): string {
-    const { centerName, centerPhone, parentName, studentName, invoices, totalDebt, customTemplate } = params;
+    const { centerName, centerPhone, bankName, bankAccountNumber, bankAccountHolder, parentName, studentName, invoices, totalDebt, customTemplate } = params;
+
+    // Build bank info string
+    const bankInfo = bankAccountNumber 
+        ? `\nThông tin chuyển khoản:\n  🏦 ${bankName || 'Ngân hàng'}\n  📋 STK: ${bankAccountNumber}\n  👤 ${bankAccountHolder || centerName}`
+        : '';
 
     // Nếu có custom template → process template
     if (customTemplate) {
@@ -71,7 +79,12 @@ export function buildDebtMessage(params: ZaloDebtMessageParams): string {
             .replace(/{centerName}/g, centerName)
             .replace(/{amount}/g, `${totalDebt.toLocaleString('vi-VN')}₫`)
             .replace(/{details}/g, invoiceLines)
-            .replace(/{phone}/g, centerPhone || '');
+            .replace(/{phone}/g, centerPhone || '')
+            .replace(/{bankInfo}/g, bankInfo)
+            .replace(/{bankName}/g, bankName || '')
+            .replace(/{bankAccount}/g, bankAccountNumber || '')
+            .replace(/{bankHolder}/g, bankAccountHolder || '')
+            + (bankInfo && !customTemplate.includes('{bankInfo}') && !customTemplate.includes('{bankAccount}') ? '\n' + bankInfo : '');
     }
 
     // Template mặc định
@@ -87,11 +100,12 @@ export function buildDebtMessage(params: ZaloDebtMessageParams): string {
         invoiceLines,
         ``,
         `Tổng cộng: ${totalDebt.toLocaleString('vi-VN')}₫`,
+        bankInfo,
         ``,
         `Vui lòng thanh toán để đảm bảo quyền lợi học tập của con.`,
         `Trân trọng!`,
         centerPhone ? `${centerName} - SĐT: ${centerPhone}` : centerName,
-    ].join('\n');
+    ].filter(Boolean).join('\n');
 }
 
 /**

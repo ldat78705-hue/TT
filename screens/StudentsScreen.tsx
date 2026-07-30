@@ -910,6 +910,9 @@ export const StudentsScreen: React.FC = () => {
                                                     const message = buildDebtMessage({
                                                         centerName: state.settings.name || 'Trung tâm',
                                                         centerPhone: state.settings.phone,
+                                                        bankName: state.settings.bankName,
+                                                        bankAccountNumber: state.settings.bankAccountNumber,
+                                                        bankAccountHolder: state.settings.bankAccountHolder,
                                                         parentName: student.parentName || 'Phụ huynh',
                                                         studentName: student.name,
                                                         invoices: unpaidInvoices.map(inv => ({ month: inv.month, amount: inv.amount })),

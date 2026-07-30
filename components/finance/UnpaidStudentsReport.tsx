@@ -47,6 +47,9 @@ export const UnpaidStudentsReport: React.FC = () => {
         const message = buildDebtMessage({
             centerName: settings.name || 'Trung tâm',
             centerPhone: settings.phone,
+            bankName: settings.bankName,
+            bankAccountNumber: settings.bankAccountNumber,
+            bankAccountHolder: settings.bankAccountHolder,
             parentName: student.parentName || 'Phụ huynh',
             studentName: student.name,
             invoices: unpaidInvoices.map(inv => ({ month: inv.month, amount: inv.amount })),
