@@ -35,21 +35,13 @@ const numberToVietnameseWords = (n: number): string => {
     return result.charAt(0).toUpperCase() + result.slice(1);
 };
 
-/* ═══════════════════════════════════════════════════════════════
-   SVG Icons — WHITE strokes/fills on SOLID colored circle backgrounds
-   This is the KEY difference from the reference design:
-   Icons must be WHITE (#fff) on solid colored backgrounds for contrast
-   ═══════════════════════════════════════════════════════════════ */
-
-// Person icon — white on coral circle
+/* ═══ SVG Icons — WHITE on solid backgrounds ═══ */
 const SvgPerson = () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
         <circle cx="12" cy="8" r="3.5" fill="#fff"/>
         <path d="M5 20c0-3 3.1-5 7-5s7 2 7 5" fill="#fff" opacity="0.85"/>
     </svg>
 );
-
-// Book icon — white on purple circle  
 const SvgBook = () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
         <path d="M5 4.5A2 2 0 017 2.5h13v19H7a2 2 0 01-2-2v-15z" stroke="#fff" strokeWidth="2" fill="none"/>
@@ -57,8 +49,6 @@ const SvgBook = () => (
         <path d="M9 7h6M9 11h4" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
     </svg>
 );
-
-// Graduation cap — white on coral circle
 const SvgCap = () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
         <path d="M12 3L2 8.5l10 5.5 10-5.5L12 3z" fill="#fff" opacity="0.9"/>
@@ -66,8 +56,6 @@ const SvgCap = () => (
         <path d="M20 8.5v5" stroke="#fff" strokeWidth="1.6" strokeLinecap="round"/>
     </svg>
 );
-
-// Family icon — white on coral circle
 const SvgFamily = () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
         <circle cx="9" cy="7" r="2.8" fill="#fff"/>
@@ -76,33 +64,25 @@ const SvgFamily = () => (
         <path d="M15.5 14.8c.7-.3 1.5-.5 2.5-.5 2 0 3.5 1.2 3.5 3" stroke="#fff" strokeWidth="1.4" fill="none"/>
     </svg>
 );
-
-// Dollar sign — white on coral circle (for debt/credit rows)
 const SvgDollar = () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
         <circle cx="12" cy="12" r="8.5" stroke="#fff" strokeWidth="1.8" fill="none"/>
         <path d="M12 7v10M9.5 9.5c0-1 1.1-1.8 2.5-1.8s2.5.8 2.5 1.8-1.1 1.6-2.5 2-2.5 1-2.5 2c0 1 1.1 1.8 2.5 1.8s2.5-.8 2.5-1.8" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
     </svg>
 );
-
-// Document/invoice icon — white on purple circle
 const SvgDoc = () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
         <rect x="5" y="3" width="14" height="18" rx="2" stroke="#fff" strokeWidth="1.8" fill="none"/>
         <path d="M9 8h6M9 12h6M9 16h4" stroke="#fff" strokeWidth="1.4" strokeLinecap="round"/>
     </svg>
 );
-
-// Heart — filled coral
 const SvgHeart = ({ color = '#E8638B' }: { color?: string }) => (
     <svg width="15" height="15" viewBox="0 0 24 24" fill={color}>
         <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
     </svg>
 );
 
-/* ═══════════════════════════════════════
-   MAIN COMPONENT  
-   ═══════════════════════════════════════ */
+/* ═══ MAIN COMPONENT ═══ */
 export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps>(({ invoice, mode = 'print' }, ref) => {
     const { state } = useData();
     const { students, transactions, settings, classes } = state;
@@ -139,22 +119,22 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
     const { outstandingDebt, openingCredit, totalDue } = financialData;
     const [invoiceYear, invoiceMonthStr] = invoice.month.split('-');
 
-    /* ── Color Palette (matched to reference ảnh 2) ── */
-    const CORAL  = '#E8638B';   // Warm coral/rose — icon circles, accents
-    const PURPLE = '#5B4BB5';   // Vibrant purple — section bars, title, primary
-    const PURPLE_DARK = '#3D2E8C'; // Deep purple — gradients
-    const PURPLE_LIGHT = '#EEEDF7'; // Very light lavender — total bg, borders
-    const ORANGE = '#E8922B';   // Amber — month badge
-    const WHITE  = '#FFFFFF';
-    const TEXT_DARK = '#1E1B3A';  // Near-black for body text
-    const TEXT_MID = '#5A5775';   // Medium gray-purple
-    const TEXT_LIGHT = '#9B97B0'; // Light gray for labels
+    /* ── VIBRANT Color Palette ── */
+    const CORAL = '#E8638B';
+    const PURPLE = '#5B4BB5';
+    const PURPLE_DARK = '#3D2E8C';
+    const PURPLE_LIGHT = '#EEEDF7';
+    const ORANGE = '#E8922B';
+    const WHITE = '#FFFFFF';
+    const BLACK = '#111111';       // Darker text for readability
+    const TEXT_BODY = '#2D2A45';   // Dark purple-black for body
+    const TEXT_LABEL = '#6B6789';  // Labels - darker than before
+    const GREEN = '#16a34a';
 
     const containerW: React.CSSProperties = mode === 'preview'
-        ? { width: '100%', maxWidth: '620px', margin: '0 auto' }
-        : { width: '620px', margin: '0 auto' };
+        ? { width: '100%', maxWidth: '700px', margin: '0 auto' }
+        : { width: '700px', margin: '0 auto' };
 
-    /* Solid colored icon circle — the KEY design element */
     const iconCircle = (bg: string): React.CSSProperties => ({
         width: '42px', height: '42px', borderRadius: '50%',
         background: bg,
@@ -163,7 +143,6 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
         boxShadow: `0 2px 8px ${bg}40`,
     });
 
-    /* Section header bar */
     const sectionBar: React.CSSProperties = {
         background: `linear-gradient(135deg, ${PURPLE_DARK}, ${PURPLE})`,
         color: WHITE,
@@ -171,7 +150,7 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
         fontSize: '13px',
         textTransform: 'uppercase',
         letterSpacing: '0.08em',
-        padding: '9px 20px',
+        padding: '9px 22px',
     };
 
     return (
@@ -179,76 +158,88 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
             ...containerW,
             fontFamily: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
             backgroundColor: WHITE,
-            color: TEXT_DARK,
+            color: TEXT_BODY,
             lineHeight: 1.5,
         }}>
-            <div style={{ padding: '30px 30px 22px' }}>
+            <div style={{ padding: '32px 32px 24px' }}>
 
-                {/* ═══════════ HEADER ═══════════ */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
-                    {/* Left: Logo + Center info */}
-                    <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', flex: 1 }}>
+                {/* ═══════════ HEADER ═══════════ 
+                    Layout: 2 columns
+                    Left: Logo + Name (1 line) + Address + Phone
+                    Right: "PHIẾU THU HỌC PHÍ" on line 1, month tag BELOW on its own line
+                */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
+                    {/* Left column */}
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                         {settings.logoUrl && (
-                            <img src={settings.logoUrl} alt="" style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'contain' }} crossOrigin="anonymous" />
+                            <img src={settings.logoUrl} alt="" style={{ width: '50px', height: '50px', borderRadius: '8px', objectFit: 'contain' }} crossOrigin="anonymous" />
                         )}
                         <div>
-                            <div style={{ fontSize: '18px', fontWeight: 800, color: PURPLE_DARK, textTransform: 'uppercase', lineHeight: 1.25 }}>
+                            <div style={{
+                                fontSize: '17px', fontWeight: 800, color: PURPLE_DARK,
+                                textTransform: 'uppercase', lineHeight: 1.3,
+                                whiteSpace: 'nowrap', // ← PREVENT LINE BREAK
+                            }}>
                                 {settings.name}
                             </div>
                             {settings.address && (
-                                <div style={{ fontSize: '11.5px', color: TEXT_MID, marginTop: '3px' }}>
-                                    <span style={{ color: PURPLE, marginRight: '4px', fontSize: '8px' }}>●</span>{settings.address}
+                                <div style={{ fontSize: '11.5px', color: TEXT_LABEL, marginTop: '3px' }}>
+                                    <span style={{ color: CORAL, marginRight: '4px', fontSize: '9px' }}>●</span>{settings.address}
                                 </div>
                             )}
                             {settings.phone && (
-                                <div style={{ fontSize: '11.5px', color: TEXT_MID, marginTop: '1px' }}>
-                                    <span style={{ color: PURPLE, marginRight: '4px', fontSize: '8px' }}>●</span>Hotline: <strong style={{ color: TEXT_DARK }}>{settings.phone}</strong>
+                                <div style={{ fontSize: '11.5px', color: TEXT_LABEL, marginTop: '1px' }}>
+                                    <span style={{ color: CORAL, marginRight: '4px', fontSize: '9px' }}>●</span>Hotline: <strong style={{ color: BLACK }}>{settings.phone}</strong>
                                 </div>
                             )}
                         </div>
                     </div>
 
-                    {/* Right: Title + Month badge */}
-                    <div style={{ textAlign: 'right', flexShrink: 0, paddingLeft: '10px' }}>
+                    {/* Right column — title ABOVE, month tag BELOW with spacing */}
+                    <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '16px' }}>
                         <div style={{
-                            fontSize: '28px', fontWeight: 900, color: PURPLE_DARK,
-                            textTransform: 'uppercase', lineHeight: 1.0,
+                            fontSize: '24px', fontWeight: 900, color: PURPLE_DARK,
+                            textTransform: 'uppercase', lineHeight: 1.1,
+                            whiteSpace: 'nowrap',
                         }}>
                             PHIẾU THU HỌC PHÍ
                         </div>
-                        <div style={{
-                            display: 'inline-flex', alignItems: 'center', gap: '6px',
-                            marginTop: '8px', padding: '5px 16px',
-                            background: ORANGE, color: WHITE, borderRadius: '5px',
-                            fontSize: '13px', fontWeight: 700,
-                        }}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                                <rect x="3" y="4" width="18" height="18" rx="3" fill={WHITE} opacity="0.35" stroke={WHITE} strokeWidth="1.5"/>
-                                <path d="M3 10h18M8 2v4M16 2v4" stroke={WHITE} strokeWidth="1.5" strokeLinecap="round"/>
-                            </svg>
-                            Tháng {String(parseInt(invoiceMonthStr)).padStart(2, '0')} năm {invoiceYear}
+                        {/* Month badge — separate block, not overlapping */}
+                        <div style={{ marginTop: '8px' }}>
+                            <span style={{
+                                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                padding: '5px 16px',
+                                background: ORANGE, color: WHITE, borderRadius: '5px',
+                                fontSize: '13px', fontWeight: 700,
+                            }}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                    <rect x="3" y="4" width="18" height="18" rx="3" fill={WHITE} opacity="0.35" stroke={WHITE} strokeWidth="1.5"/>
+                                    <path d="M3 10h18M8 2v4M16 2v4" stroke={WHITE} strokeWidth="1.5" strokeLinecap="round"/>
+                                </svg>
+                                Tháng {String(parseInt(invoiceMonthStr)).padStart(2, '0')} năm {invoiceYear}
+                            </span>
                         </div>
                     </div>
                 </div>
 
-                {/* Meta row */}
+                {/* ═══ Meta row: Mã HĐ + Ngày lập ON SAME LINE ═══ */}
                 <div style={{
-                    display: 'flex', justifyContent: 'center', gap: '28px',
-                    fontSize: '11.5px', color: TEXT_LIGHT, padding: '8px 0 10px',
-                    marginBottom: '16px', borderBottom: `1.5px solid ${PURPLE_LIGHT}`,
+                    display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '32px',
+                    fontSize: '12px', color: TEXT_LABEL, padding: '8px 0 10px',
+                    marginBottom: '18px', borderBottom: `1.5px solid ${PURPLE_LIGHT}`,
                 }}>
-                    <span>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ verticalAlign: 'middle', marginRight: '3px' }}>
-                            <rect x="4" y="2" width="16" height="20" rx="2" stroke={TEXT_LIGHT} strokeWidth="1.4" fill="none"/>
-                            <path d="M8 7h8M8 11h5" stroke={TEXT_LIGHT} strokeWidth="1.1" strokeLinecap="round"/>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+                            <rect x="4" y="2" width="16" height="20" rx="2" stroke={TEXT_LABEL} strokeWidth="1.4" fill="none"/>
+                            <path d="M8 7h8M8 11h5" stroke={TEXT_LABEL} strokeWidth="1.1" strokeLinecap="round"/>
                         </svg>
-                        Mã HĐ: <strong style={{ color: TEXT_DARK, fontFamily: 'monospace' }}>#{invoice.id.slice(-5)}</strong>
+                        <span>Mã HĐ: <strong style={{ color: BLACK, fontFamily: 'monospace' }}>#{invoice.id.slice(-5)}</strong></span>
                     </span>
-                    <span>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ verticalAlign: 'middle', marginRight: '3px' }}>
-                            <path d="M17 3a2.8 2.8 0 014 4L7.5 20.5 2 22l1.5-5.5L17 3z" stroke={TEXT_LIGHT} strokeWidth="1.4" strokeLinejoin="round" fill="none"/>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+                            <path d="M17 3a2.8 2.8 0 014 4L7.5 20.5 2 22l1.5-5.5L17 3z" stroke={TEXT_LABEL} strokeWidth="1.4" strokeLinejoin="round" fill="none"/>
                         </svg>
-                        Ngày lập: <strong style={{ color: TEXT_DARK }}>{new Date(invoice.generatedDate).toLocaleDateString('vi-VN')}</strong>
+                        <span>Ngày lập: <strong style={{ color: BLACK }}>{new Date(invoice.generatedDate).toLocaleDateString('vi-VN')}</strong></span>
                     </span>
                 </div>
 
@@ -257,35 +248,32 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                     <div style={sectionBar}>THÔNG TIN HỌC VIÊN</div>
                     <div style={{ padding: '18px 24px' }}>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '18px 0' }}>
-                            {/* Row 1: Họ tên | Lớp */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingRight: '20px', borderRight: `1.5px solid ${PURPLE_LIGHT}` }}>
                                 <div style={iconCircle(CORAL)}><SvgPerson /></div>
                                 <div>
-                                    <div style={{ fontSize: '10px', color: TEXT_LIGHT, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Họ và tên</div>
-                                    <div style={{ fontSize: '16px', fontWeight: 700, color: TEXT_DARK }}>{student.name}</div>
+                                    <div style={{ fontSize: '10px', color: TEXT_LABEL, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Họ và tên</div>
+                                    <div style={{ fontSize: '16px', fontWeight: 700, color: BLACK }}>{student.name}</div>
                                 </div>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingLeft: '20px' }}>
                                 <div style={iconCircle(PURPLE)}><SvgBook /></div>
                                 <div>
-                                    <div style={{ fontSize: '10px', color: TEXT_LIGHT, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Lớp đang học</div>
-                                    <div style={{ fontSize: '15px', fontWeight: 700, color: TEXT_DARK }}>{enrolledClasses.map(c => c.name).join(', ') || '—'}</div>
+                                    <div style={{ fontSize: '10px', color: TEXT_LABEL, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Lớp đang học</div>
+                                    <div style={{ fontSize: '15px', fontWeight: 700, color: BLACK }}>{enrolledClasses.map(c => c.name).join(', ') || '—'}</div>
                                 </div>
                             </div>
-
-                            {/* Row 2: Mã HV | Phụ huynh */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingRight: '20px', borderRight: `1.5px solid ${PURPLE_LIGHT}` }}>
                                 <div style={iconCircle(CORAL)}><SvgCap /></div>
                                 <div>
-                                    <div style={{ fontSize: '10px', color: TEXT_LIGHT, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Mã học viên</div>
-                                    <div style={{ fontSize: '15px', fontWeight: 700, fontFamily: 'monospace', color: TEXT_DARK }}>{student.id}</div>
+                                    <div style={{ fontSize: '10px', color: TEXT_LABEL, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Mã học viên</div>
+                                    <div style={{ fontSize: '15px', fontWeight: 700, fontFamily: 'monospace', color: BLACK }}>{student.id}</div>
                                 </div>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingLeft: '20px' }}>
                                 <div style={iconCircle(CORAL)}><SvgFamily /></div>
                                 <div>
-                                    <div style={{ fontSize: '10px', color: TEXT_LIGHT, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Phụ huynh</div>
-                                    <div style={{ fontSize: '15px', fontWeight: 700, color: TEXT_DARK }}>{student.parentName || '—'}</div>
+                                    <div style={{ fontSize: '10px', color: TEXT_LABEL, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Phụ huynh</div>
+                                    <div style={{ fontSize: '15px', fontWeight: 700, color: BLACK }}>{student.parentName || '—'}</div>
                                 </div>
                             </div>
                         </div>
@@ -299,39 +287,36 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                         <span>THÀNH TIỀN</span>
                     </div>
 
-                    {/* Nợ cũ kỳ trước */}
                     {outstandingDebt > 0 && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 24px', borderBottom: `1px solid ${PURPLE_LIGHT}` }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <div style={iconCircle(CORAL)}><SvgDollar /></div>
-                                <div style={{ fontWeight: 700, fontSize: '14px', color: TEXT_DARK }}>Nợ cũ kỳ trước</div>
+                                <div style={{ fontWeight: 700, fontSize: '14px', color: BLACK }}>Nợ cũ kỳ trước</div>
                             </div>
-                            <div style={{ fontWeight: 700, fontSize: '15px', color: TEXT_DARK }}>{formatCurrency(outstandingDebt)}</div>
+                            <div style={{ fontWeight: 700, fontSize: '15px', color: BLACK }}>{formatCurrency(outstandingDebt)}</div>
                         </div>
                     )}
 
-                    {/* Số dư kỳ trước */}
                     {openingCredit > 0 && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 24px', borderBottom: `1px solid ${PURPLE_LIGHT}` }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <div style={iconCircle('#22c55e')}><SvgDollar /></div>
-                                <div style={{ fontWeight: 700, fontSize: '14px', color: TEXT_DARK }}>Đã thanh toán / Số dư kỳ trước</div>
+                                <div style={iconCircle(GREEN)}><SvgDollar /></div>
+                                <div style={{ fontWeight: 700, fontSize: '14px', color: BLACK }}>Đã thanh toán / Số dư kỳ trước</div>
                             </div>
-                            <div style={{ fontWeight: 700, fontSize: '15px', color: '#16a34a' }}>-{formatCurrency(openingCredit)}</div>
+                            <div style={{ fontWeight: 700, fontSize: '15px', color: GREEN }}>-{formatCurrency(openingCredit)}</div>
                         </div>
                     )}
 
-                    {/* Học phí tháng */}
                     <div style={{ padding: '14px 24px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', flex: 1 }}>
                                 <div style={{ ...iconCircle(PURPLE), marginTop: '2px' }}><SvgDoc /></div>
                                 <div style={{ flex: 1 }}>
-                                    <div style={{ fontWeight: 700, fontSize: '14px', color: TEXT_DARK, marginBottom: '5px' }}>
+                                    <div style={{ fontWeight: 700, fontSize: '14px', color: BLACK, marginBottom: '5px' }}>
                                         Học phí tháng {invoiceMonthStr}/{invoiceYear}
                                     </div>
                                     {invoice.details && (
-                                        <div style={{ fontSize: '12px', color: TEXT_MID, lineHeight: 1.65 }}>
+                                        <div style={{ fontSize: '12.5px', color: TEXT_BODY, lineHeight: 1.65 }}>
                                             {invoice.details.split('\n').filter(l => l.trim()).map((line, i) => (
                                                 <div key={i}>- {line.trim().replace(/^-\s*/, '')}</div>
                                             ))}
@@ -339,7 +324,7 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                                     )}
                                 </div>
                             </div>
-                            <div style={{ fontWeight: 700, fontSize: '15px', whiteSpace: 'nowrap', marginLeft: '14px', color: TEXT_DARK }}>
+                            <div style={{ fontWeight: 700, fontSize: '15px', whiteSpace: 'nowrap', marginLeft: '14px', color: BLACK }}>
                                 {formatCurrency(invoice.amount)}
                             </div>
                         </div>
@@ -354,8 +339,8 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                     background: PURPLE_LIGHT,
                 }}>
                     <div>
-                        <div style={{ fontWeight: 800, fontSize: '16px', textTransform: 'uppercase', color: TEXT_DARK }}>TỔNG THANH TOÁN</div>
-                        <div style={{ fontSize: '11.5px', color: TEXT_MID, fontStyle: 'italic', marginTop: '3px' }}>
+                        <div style={{ fontWeight: 800, fontSize: '16px', textTransform: 'uppercase', color: BLACK }}>TỔNG THANH TOÁN</div>
+                        <div style={{ fontSize: '12px', color: TEXT_BODY, fontStyle: 'italic', marginTop: '3px' }}>
                             (Bằng chữ: {numberToVietnameseWords(totalDue)})
                         </div>
                     </div>
@@ -367,7 +352,6 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                 {/* ═══════════ THÔNG TIN CHUYỂN KHOẢN ═══════════ */}
                 {totalDue > 0 && settings.bankAccountNumber && (
                     <div style={{ border: `1.5px solid ${PURPLE_LIGHT}`, borderRadius: '10px', overflow: 'hidden', marginBottom: '18px', background: WHITE }}>
-                        {/* Centered pill header with decorative side lines */}
                         <div style={{ display: 'flex', alignItems: 'center', padding: '0 24px' }}>
                             <div style={{ flex: 1, height: '1.5px', background: PURPLE_LIGHT }}></div>
                             <div style={{
@@ -381,22 +365,19 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                             <div style={{ flex: 1, height: '1.5px', background: PURPLE_LIGHT }}></div>
                         </div>
 
-                        {/* 3-column: Bank info | Transfer content | QR */}
-                        <div style={{ padding: '16px 24px', display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-                            {/* Col 1: Bank details */}
+                        <div style={{ padding: '16px 24px', display: 'flex', alignItems: 'flex-start', gap: '20px' }}>
                             <div style={{ flex: '0 0 auto' }}>
-                                <div style={{ fontSize: '13px', color: TEXT_MID, fontWeight: 600 }}>{settings.bankName}</div>
-                                <div style={{ fontSize: '22px', fontWeight: 800, fontFamily: "'Courier New', monospace", letterSpacing: '0.04em', color: TEXT_DARK, margin: '3px 0' }}>
+                                <div style={{ fontSize: '13px', color: TEXT_LABEL, fontWeight: 600 }}>{settings.bankName}</div>
+                                <div style={{ fontSize: '22px', fontWeight: 800, fontFamily: "'Courier New', monospace", letterSpacing: '0.04em', color: BLACK, margin: '3px 0' }}>
                                     {settings.bankAccountNumber}
                                 </div>
-                                <div style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: TEXT_MID }}>
+                                <div style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: TEXT_BODY }}>
                                     {settings.bankAccountHolder}
                                 </div>
                             </div>
 
-                            {/* Col 2: Transfer content (centered) */}
                             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80px' }}>
-                                <div style={{ fontSize: '10px', color: TEXT_LIGHT, fontWeight: 600, marginBottom: '6px', textTransform: 'uppercase' }}>
+                                <div style={{ fontSize: '10px', color: TEXT_LABEL, fontWeight: 600, marginBottom: '6px', textTransform: 'uppercase' }}>
                                     Nội dung chuyển khoản (bắt buộc)
                                 </div>
                                 <div style={{
@@ -413,7 +394,6 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                                 </div>
                             </div>
 
-                            {/* Col 3: QR */}
                             {qrCodeUrl && (
                                 <div style={{ flexShrink: 0 }}>
                                     <img src={qrCodeUrl} alt="QR" style={{ width: '130px', height: '130px', objectFit: 'contain' }} crossOrigin="anonymous" />
