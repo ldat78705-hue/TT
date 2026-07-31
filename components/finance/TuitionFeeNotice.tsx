@@ -166,14 +166,14 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                 <td style={{
                     color: C.white, fontWeight: 700, fontSize: '13px',
                     textTransform: 'uppercase' as const, letterSpacing: '0.08em',
-                    padding: '7px 22px 11px',
+                    padding: '5px 22px 13px',
                     textAlign: rightText ? 'left' : 'center',
                 }}>{text}</td>
                 {rightText && (
                     <td style={{
                         color: C.white, fontWeight: 700, fontSize: '13px',
                         textTransform: 'uppercase' as const, letterSpacing: '0.08em',
-                        padding: '7px 22px 11px', textAlign: 'right',
+                        padding: '5px 22px 13px', textAlign: 'right',
                     }}>{rightText}</td>
                 )}
             </tr></tbody>
@@ -365,7 +365,7 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                                 (Bằng chữ: {numberToVietnameseWords(totalDue)})
                             </div>
                         </td>
-                        <td style={{ padding: '18px 22px', verticalAlign: 'middle', textAlign: 'right', fontSize: '34px', fontWeight: 900, color: C.purple, whiteSpace: 'nowrap' }}>
+                        <td style={{ padding: '12px 22px 24px', verticalAlign: 'middle', textAlign: 'right', fontSize: '34px', fontWeight: 900, color: C.purple, whiteSpace: 'nowrap', lineHeight: 1 }}>
                             {formatCurrency(totalDue)}
                         </td>
                     </tr></tbody>
@@ -380,7 +380,7 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                                 display: 'inline-block',
                                 background: `linear-gradient(135deg, ${C.purpleDark}, ${C.purple})`, color: C.white,
                                 fontWeight: 700, fontSize: '12px', textTransform: 'uppercase',
-                                letterSpacing: '0.08em', padding: '6px 28px 10px',
+                                letterSpacing: '0.08em', padding: '4px 28px 12px',
                                 borderRadius: '0 0 8px 8px',
                             }}>
                                 THÔNG TIN CHUYỂN KHOẢN
