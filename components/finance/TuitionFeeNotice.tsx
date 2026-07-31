@@ -201,40 +201,21 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                                 </div>
                             </td>
                             {/* Right: Title + Month */}
-                            <td style={{ verticalAlign: 'top', whiteSpace: 'nowrap' }}>
-                                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                    <tbody>
-                                        <tr>
-                                            <td style={{ textAlign: 'right', paddingBottom: '8px' }}>
-                                                <div style={{ fontSize: '24px', fontWeight: 900, color: C.purpleDark, textTransform: 'uppercase' }}>
-                                                    PHIẾU THU HỌC PHÍ
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            {/* 3-cell centering: spacer | badge | spacer */}
-                                            <td>
-                                                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                                    <tbody>
-                                                        <tr>
-                                                            <td style={{ width: '50%' }}>&nbsp;</td>
-                                                            <td style={{
-                                                                padding: '6px 18px',
-                                                                background: C.orange, color: C.white, borderRadius: '5px',
-                                                                fontSize: '13px', fontWeight: 700,
-                                                                textAlign: 'center',
-                                                                whiteSpace: 'nowrap',
-                                                            }}>
-                                                                📅 Tháng {String(parseInt(invoiceMonthStr)).padStart(2, '0')} năm {invoiceYear}
-                                                            </td>
-                                                            <td style={{ width: '50%' }}>&nbsp;</td>
-                                                        </tr>
-                                                    </tbody>
-                                                </table>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                            <td style={{ verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                                <div style={{ fontSize: '24px', fontWeight: 900, color: C.purpleDark, textTransform: 'uppercase' }}>
+                                    PHIẾU THU HỌC PHÍ
+                                </div>
+                                {/* Month badge — FULL WIDTH block div, text centered inside */}
+                                <div style={{
+                                    marginTop: '8px',
+                                    padding: '6px 0',
+                                    background: C.orange, color: C.white, borderRadius: '5px',
+                                    fontSize: '13px', fontWeight: 700,
+                                    textAlign: 'center',
+                                    width: '100%',
+                                }}>
+                                    📅 Tháng {String(parseInt(invoiceMonthStr)).padStart(2, '0')} năm {invoiceYear}
+                                </div>
                             </td>
                         </tr>
                     </tbody>
@@ -400,36 +381,24 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                                             {settings.bankAccountHolder}
                                         </div>
                                     </td>
-                                    {/* Transfer content — 3-cell centering */}
+                                    {/* Transfer content — FULL WIDTH block, text centered */}
                                     <td style={{ padding: '16px 10px', verticalAlign: 'middle' }}>
-                                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                            <tbody>
-                                                <tr>
-                                                    <td style={{ width: '50%' }}>&nbsp;</td>
-                                                    <td style={{ fontSize: '10px', color: C.label, fontWeight: 600, textTransform: 'uppercase', textAlign: 'center', whiteSpace: 'nowrap', paddingBottom: '6px' }}>
-                                                        Nội dung chuyển khoản (bắt buộc)
-                                                    </td>
-                                                    <td style={{ width: '50%' }}>&nbsp;</td>
-                                                </tr>
-                                                <tr>
-                                                    <td style={{ width: '50%' }}>&nbsp;</td>
-                                                    <td style={{
-                                                        fontFamily: "'Courier New', monospace", fontWeight: 800, fontSize: '14px',
-                                                        padding: '7px 16px',
-                                                        border: `2.5px dashed ${C.purple}`,
-                                                        borderRadius: '6px',
-                                                        background: C.purpleLight,
-                                                        color: C.purpleDark,
-                                                        letterSpacing: '0.06em',
-                                                        whiteSpace: 'nowrap',
-                                                        textAlign: 'center',
-                                                    }}>
-                                                        HOC PHI {student.id}
-                                                    </td>
-                                                    <td style={{ width: '50%' }}>&nbsp;</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
+                                        <div style={{ fontSize: '10px', color: C.label, fontWeight: 600, textTransform: 'uppercase', textAlign: 'center', marginBottom: '6px' }}>
+                                            Nội dung chuyển khoản (bắt buộc)
+                                        </div>
+                                        <div style={{
+                                            width: '100%',
+                                            fontFamily: "'Courier New', monospace", fontWeight: 800, fontSize: '14px',
+                                            padding: '7px 0',
+                                            border: `2.5px dashed ${C.purple}`,
+                                            borderRadius: '6px',
+                                            background: C.purpleLight,
+                                            color: C.purpleDark,
+                                            letterSpacing: '0.06em',
+                                            textAlign: 'center',
+                                        }}>
+                                            HOC PHI {student.id}
+                                        </div>
                                     </td>
                                     {/* QR */}
                                     {qrCodeUrl && (
