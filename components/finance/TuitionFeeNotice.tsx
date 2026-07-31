@@ -86,16 +86,16 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
 
     /* ── Color Palette ── */
     const C = {
-        coral: '#E8638B',
-        purple: '#5B4BB5',
-        purpleDark: '#3D2E8C',
-        purpleLight: '#EEEDF7',
+        coral: '#FF4FA5',
+        purple: '#6D4CFF',
+        purpleDark: '#3B3F99',
+        purpleLight: '#E8EAF3',
         orange: '#E8922B',
         white: '#FFFFFF',
         black: '#111111',
         body: '#2D2A45',
         label: '#6B6789',
-        green: '#16a34a',
+        green: '#00B894',
     };
 
     const W = mode === 'preview' ? '100%' : '700px';
@@ -315,8 +315,7 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                     {outstandingDebt > 0 && (
                         <table style={{ width: '100%', borderCollapse: 'collapse', borderBottom: `1px solid ${C.purpleLight}` }}>
                             <tbody><tr>
-                                <td style={{ padding: '14px 10px 14px 22px', verticalAlign: 'middle', width: '46px' }}><IconImg src={iconUrls.dollar} /></td>
-                                <td style={{ padding: '14px 10px', verticalAlign: 'middle', fontWeight: 700, fontSize: '14px', color: C.black }}>Nợ cũ kỳ trước</td>
+                                <td style={{ padding: '14px 22px', verticalAlign: 'middle', fontWeight: 700, fontSize: '14px', color: C.black }}>Nợ cũ kỳ trước</td>
                                 <td style={{ padding: '14px 22px 14px 10px', verticalAlign: 'middle', textAlign: 'right', fontWeight: 700, fontSize: '15px', color: C.black, whiteSpace: 'nowrap' }}>{formatCurrency(outstandingDebt)}</td>
                             </tr></tbody>
                         </table>
@@ -325,8 +324,7 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                     {openingCredit > 0 && (
                         <table style={{ width: '100%', borderCollapse: 'collapse', borderBottom: `1px solid ${C.purpleLight}` }}>
                             <tbody><tr>
-                                <td style={{ padding: '14px 10px 14px 22px', verticalAlign: 'middle', width: '46px' }}><IconImg src={iconUrls.dollarGreen} /></td>
-                                <td style={{ padding: '14px 10px', verticalAlign: 'middle', fontWeight: 700, fontSize: '14px', color: C.black }}>Đã thanh toán / Số dư kỳ trước</td>
+                                <td style={{ padding: '14px 22px', verticalAlign: 'middle', fontWeight: 700, fontSize: '14px', color: C.black }}>Đã thanh toán / Số dư kỳ trước</td>
                                 <td style={{ padding: '14px 22px 14px 10px', verticalAlign: 'middle', textAlign: 'right', fontWeight: 700, fontSize: '15px', color: C.green, whiteSpace: 'nowrap' }}>-{formatCurrency(openingCredit)}</td>
                             </tr></tbody>
                         </table>
@@ -334,8 +332,7 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
 
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <tbody><tr>
-                            <td style={{ padding: '14px 10px 14px 22px', verticalAlign: 'top', width: '46px', paddingTop: '16px' }}><IconImg src={iconUrls.doc} /></td>
-                            <td style={{ padding: '14px 10px', verticalAlign: 'top' }}>
+                            <td style={{ padding: '14px 22px', verticalAlign: 'top' }}>
                                 <div style={{ fontWeight: 700, fontSize: '14px', color: C.black, marginBottom: '5px' }}>
                                     Học phí tháng {invoiceMonthStr}/{invoiceYear}
                                 </div>
