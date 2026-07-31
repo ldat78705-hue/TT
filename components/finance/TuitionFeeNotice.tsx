@@ -101,108 +101,47 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
     const W = mode === 'preview' ? '100%' : '700px';
     const maxW = mode === 'preview' ? '700px' : undefined;
 
-    // Generate icon as base64 PNG using OffscreenCanvas / Canvas
-    // html2canvas renders <img> tags perfectly — no baseline/flex issues
-    const makeIconUrl = (bg: string, drawFn: (ctx: CanvasRenderingContext2D) => void): string => {
-        const size = 72; // 2x for retina
-        const canvas = document.createElement('canvas');
-        canvas.width = size;
-        canvas.height = size;
-        const ctx = canvas.getContext('2d')!;
-        // Circle background
-        ctx.beginPath();
-        ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
-        ctx.fillStyle = bg;
-        ctx.fill();
-        // White icon
-        ctx.fillStyle = '#fff';
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 3;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        drawFn(ctx);
-        return canvas.toDataURL('image/png');
+    // SVG data URL icon system — vector quality + <img> tag = html2canvas perfect
+    const svgIcon = (bg: string, svgContent: string) => {
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72"><circle cx="36" cy="36" r="36" fill="${bg}"/>${svgContent}</svg>`;
+        return `data:image/svg+xml,${encodeURIComponent(svg)}`;
     };
 
-    // Pre-generate all icon URLs
     const iconUrls = useMemo(() => ({
-        person: makeIconUrl(C.coral, (ctx) => {
-            // Head
-            ctx.beginPath(); ctx.arc(36, 24, 8, 0, Math.PI * 2); ctx.fill();
-            // Body
-            ctx.beginPath(); ctx.arc(36, 58, 18, Math.PI, 0); ctx.fill();
-        }),
-        book: makeIconUrl(C.purple, (ctx) => {
-            ctx.lineWidth = 3.5;
-            ctx.strokeStyle = '#fff';
-            // Book outline
-            ctx.beginPath();
-            ctx.moveTo(20, 16); ctx.lineTo(20, 56); ctx.lineTo(52, 56); ctx.lineTo(52, 16); ctx.lineTo(26, 16);
-            ctx.stroke();
-            // Spine
-            ctx.beginPath(); ctx.moveTo(20, 48); ctx.lineTo(52, 48); ctx.stroke();
-            // Lines
-            ctx.lineWidth = 2.5;
-            ctx.beginPath(); ctx.moveTo(28, 26); ctx.lineTo(44, 26); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(28, 34); ctx.lineTo(40, 34); ctx.stroke();
-        }),
-        cap: makeIconUrl(C.coral, (ctx) => {
-            ctx.fillStyle = '#fff';
-            // Cap top
-            ctx.beginPath(); ctx.moveTo(36, 16); ctx.lineTo(14, 30); ctx.lineTo(36, 44); ctx.lineTo(58, 30); ctx.closePath(); ctx.fill();
-            // Cap bottom
-            ctx.lineWidth = 3; ctx.strokeStyle = '#fff';
-            ctx.beginPath(); ctx.moveTo(22, 34); ctx.lineTo(22, 46); ctx.quadraticCurveTo(36, 54, 50, 46); ctx.lineTo(50, 34); ctx.stroke();
-            // Tassel
-            ctx.beginPath(); ctx.moveTo(56, 30); ctx.lineTo(56, 44); ctx.stroke();
-        }),
-        family: makeIconUrl(C.coral, (ctx) => {
-            // Adult 1
-            ctx.beginPath(); ctx.arc(28, 22, 7, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.arc(28, 50, 14, Math.PI, 0); ctx.fill();
-            // Adult 2 (smaller)
-            ctx.beginPath(); ctx.arc(48, 24, 6, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.arc(48, 48, 10, Math.PI, 0); ctx.fill();
-        }),
-        dollar: makeIconUrl(C.coral, (ctx) => {
-            ctx.strokeStyle = '#fff'; ctx.lineWidth = 3;
-            // Circle
-            ctx.beginPath(); ctx.arc(36, 36, 18, 0, Math.PI * 2); ctx.stroke();
-            // $ sign
-            ctx.lineWidth = 2.5;
-            ctx.beginPath(); ctx.moveTo(36, 22); ctx.lineTo(36, 50); ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(43, 29); ctx.quadraticCurveTo(43, 25, 36, 25);
-            ctx.quadraticCurveTo(29, 25, 29, 30); ctx.quadraticCurveTo(29, 35, 36, 36);
-            ctx.quadraticCurveTo(43, 37, 43, 42); ctx.quadraticCurveTo(43, 47, 36, 47);
-            ctx.quadraticCurveTo(29, 47, 29, 43);
-            ctx.stroke();
-        }),
-        doc: makeIconUrl(C.purple, (ctx) => {
-            ctx.strokeStyle = '#fff'; ctx.lineWidth = 3;
-            // Document
-            ctx.beginPath();
-            ctx.moveTo(22, 12); ctx.lineTo(50, 12); ctx.lineTo(54, 16); ctx.lineTo(54, 56);
-            ctx.lineTo(18, 56); ctx.lineTo(18, 16); ctx.closePath();
-            ctx.stroke();
-            // Lines
-            ctx.lineWidth = 2.5;
-            ctx.beginPath(); ctx.moveTo(26, 26); ctx.lineTo(46, 26); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(26, 34); ctx.lineTo(46, 34); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(26, 42); ctx.lineTo(38, 42); ctx.stroke();
-        }),
-        dollarGreen: makeIconUrl(C.green, (ctx) => {
-            ctx.strokeStyle = '#fff'; ctx.lineWidth = 3;
-            ctx.beginPath(); ctx.arc(36, 36, 18, 0, Math.PI * 2); ctx.stroke();
-            ctx.lineWidth = 2.5;
-            ctx.beginPath(); ctx.moveTo(36, 22); ctx.lineTo(36, 50); ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(43, 29); ctx.quadraticCurveTo(43, 25, 36, 25);
-            ctx.quadraticCurveTo(29, 25, 29, 30); ctx.quadraticCurveTo(29, 35, 36, 36);
-            ctx.quadraticCurveTo(43, 37, 43, 42); ctx.quadraticCurveTo(43, 47, 36, 47);
-            ctx.quadraticCurveTo(29, 47, 29, 43);
-            ctx.stroke();
-        }),
+        person: svgIcon(C.coral,
+            `<circle cx="36" cy="26" r="8" fill="#fff"/>
+             <path d="M20 54c0-7 7-12 16-12s16 5 16 12" fill="#fff" opacity="0.85"/>`
+        ),
+        book: svgIcon(C.purple,
+            `<rect x="18" y="14" width="36" height="44" rx="3" stroke="#fff" stroke-width="3" fill="none"/>
+             <path d="M18 48h36" stroke="#fff" stroke-width="3"/>
+             <path d="M26 24h20M26 32h14" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>`
+        ),
+        cap: svgIcon(C.coral,
+            `<path d="M36 16L12 30l24 14 24-14z" fill="#fff" opacity="0.9"/>
+             <path d="M20 34v12c0 4 7 7 16 7s16-3 16-7V34" stroke="#fff" stroke-width="2.5" fill="none"/>
+             <path d="M56 30v12" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>`
+        ),
+        family: svgIcon(C.coral,
+            `<circle cx="26" cy="22" r="7" fill="#fff"/>
+             <path d="M14 48c0-6 5.5-11 12-11s12 5 12 11" fill="#fff" opacity="0.8"/>
+             <circle cx="48" cy="24" r="5.5" fill="#fff" opacity="0.85"/>
+             <path d="M38 46c0-5 4.5-9 10-9s10 4 10 9" fill="#fff" opacity="0.7"/>`
+        ),
+        dollar: svgIcon(C.coral,
+            `<circle cx="36" cy="36" r="16" stroke="#fff" stroke-width="2.5" fill="none"/>
+             <path d="M36 22v28" stroke="#fff" stroke-width="2"/>
+             <path d="M30 28c0-2.5 2.7-4.5 6-4.5s6 2 6 4.5-2.7 4-6 5-6 2.5-6 5 2.7 4.5 6 4.5 6-2 6-4.5" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/>`
+        ),
+        doc: svgIcon(C.purple,
+            `<rect x="18" y="12" width="36" height="48" rx="4" stroke="#fff" stroke-width="3" fill="none"/>
+             <path d="M26 26h20M26 34h20M26 42h12" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>`
+        ),
+        dollarGreen: svgIcon(C.green,
+            `<circle cx="36" cy="36" r="16" stroke="#fff" stroke-width="2.5" fill="none"/>
+             <path d="M36 22v28" stroke="#fff" stroke-width="2"/>
+             <path d="M30 28c0-2.5 2.7-4.5 6-4.5s6 2 6 4.5-2.7 4-6 5-6 2.5-6 5 2.7 4.5 6 4.5 6-2 6-4.5" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/>`
+        ),
     }), []);
 
     // Icon image component — html2canvas renders <img> perfectly
