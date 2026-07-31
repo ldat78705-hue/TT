@@ -101,46 +101,54 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
     const W = mode === 'preview' ? '100%' : '700px';
     const maxW = mode === 'preview' ? '700px' : undefined;
 
-    // SVG data URL icon system — vector quality + <img> tag = html2canvas perfect
-    const svgIcon = (bg: string, svgContent: string) => {
-        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72"><circle cx="36" cy="36" r="36" fill="${bg}"/>${svgContent}</svg>`;
+    // SVG data URL icon system — Lucide-style stroke icons in colored circles
+    // All icons centered in 72x72 viewBox, drawn in 20-52 area (32px icon, 20px margin)
+    const svgIcon = (bg: string, paths: string) => {
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72"><circle cx="36" cy="36" r="36" fill="${bg}"/><g fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${paths}</g></svg>`;
         return `data:image/svg+xml,${encodeURIComponent(svg)}`;
     };
 
     const iconUrls = useMemo(() => ({
+        // User icon — head circle + shoulders arc (Lucide "User")
         person: svgIcon(C.coral,
-            `<circle cx="36" cy="26" r="8" fill="#fff"/>
-             <path d="M20 54c0-7 7-12 16-12s16 5 16 12" fill="#fff" opacity="0.85"/>`
+            `<circle cx="36" cy="28" r="8"/>
+             <path d="M22 52c0-8 6.3-14 14-14s14 6 14 14"/>`
         ),
+        // Open book icon (Lucide "BookOpen")
         book: svgIcon(C.purple,
-            `<rect x="18" y="14" width="36" height="44" rx="3" stroke="#fff" stroke-width="3" fill="none"/>
-             <path d="M18 48h36" stroke="#fff" stroke-width="3"/>
-             <path d="M26 24h20M26 32h14" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>`
+            `<path d="M20 22v28c5-3 9-4 16-4s11 1 16 4V22c-5 3-9 4-16 4s-11-1-16-4z"/>
+             <path d="M36 18v28"/>`
         ),
-        cap: svgIcon(C.coral,
-            `<path d="M36 16L12 30l24 14 24-14z" fill="#fff" opacity="0.9"/>
-             <path d="M20 34v12c0 4 7 7 16 7s16-3 16-7V34" stroke="#fff" stroke-width="2.5" fill="none"/>
-             <path d="M56 30v12" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>`
+        // ID/Badge icon (Lucide "IdCard" — cleaner than graduation cap)
+        cap: svgIcon(C.purple,
+            `<rect x="16" y="22" width="40" height="28" rx="4"/>
+             <circle cx="30" cy="34" r="4"/>
+             <path d="M22 46c0-3 3.6-5 8-5s8 2 8 5"/>
+             <path d="M44 32h6M44 38h4"/>`
         ),
+        // Users/Family icon (Lucide "Users")
         family: svgIcon(C.coral,
-            `<circle cx="26" cy="22" r="7" fill="#fff"/>
-             <path d="M14 48c0-6 5.5-11 12-11s12 5 12 11" fill="#fff" opacity="0.8"/>
-             <circle cx="48" cy="24" r="5.5" fill="#fff" opacity="0.85"/>
-             <path d="M38 46c0-5 4.5-9 10-9s10 4 10 9" fill="#fff" opacity="0.7"/>`
+            `<circle cx="30" cy="26" r="7"/>
+             <path d="M18 50c0-6.6 5.4-12 12-12 3.3 0 6.3 1.3 8.5 3.5"/>
+             <circle cx="48" cy="28" r="5.5"/>
+             <path d="M38 50c0-5.5 4.5-10 10-10s10 4.5 10 10"/>`
         ),
+        // Alert/Warning circle icon for outstanding debt
         dollar: svgIcon(C.coral,
-            `<circle cx="36" cy="36" r="16" stroke="#fff" stroke-width="2.5" fill="none"/>
-             <path d="M36 22v28" stroke="#fff" stroke-width="2"/>
-             <path d="M30 28c0-2.5 2.7-4.5 6-4.5s6 2 6 4.5-2.7 4-6 5-6 2.5-6 5 2.7 4.5 6 4.5 6-2 6-4.5" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/>`
+            `<circle cx="36" cy="36" r="16"/>
+             <path d="M36 28v10"/>
+             <circle cx="36" cy="44" r="0.5" fill="#fff"/>`
         ),
+        // File/Document icon (Lucide "FileText")
         doc: svgIcon(C.purple,
-            `<rect x="18" y="12" width="36" height="48" rx="4" stroke="#fff" stroke-width="3" fill="none"/>
-             <path d="M26 26h20M26 34h20M26 42h12" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>`
+            `<path d="M42 18H24a3 3 0 0 0-3 3v30a3 3 0 0 0 3 3h24a3 3 0 0 0 3-3V27z"/>
+             <path d="M42 18v9h9"/>
+             <path d="M30 35h12M30 41h12M30 47h8"/>`
         ),
+        // Checkmark circle icon for credit/payment
         dollarGreen: svgIcon(C.green,
-            `<circle cx="36" cy="36" r="16" stroke="#fff" stroke-width="2.5" fill="none"/>
-             <path d="M36 22v28" stroke="#fff" stroke-width="2"/>
-             <path d="M30 28c0-2.5 2.7-4.5 6-4.5s6 2 6 4.5-2.7 4-6 5-6 2.5-6 5 2.7 4.5 6 4.5 6-2 6-4.5" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/>`
+            `<circle cx="36" cy="36" r="16"/>
+             <path d="M28 36l5 5 10-10"/>`
         ),
     }), []);
 
