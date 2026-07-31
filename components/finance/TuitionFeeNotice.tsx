@@ -204,19 +204,20 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                         }}>
                             PHIẾU THU HỌC PHÍ
                         </div>
-                        {/* Month badge — separate block, not overlapping */}
-                        <div style={{ marginTop: '8px' }}>
+                        {/* Month badge — separate block, centered in its own row */}
+                        <div style={{ marginTop: '8px', textAlign: 'center' }}>
                             <span style={{
-                                display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                padding: '5px 16px',
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                padding: '5px 18px',
                                 background: ORANGE, color: WHITE, borderRadius: '5px',
                                 fontSize: '13px', fontWeight: 700,
+                                lineHeight: '14px',
                             }}>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ display: 'block', flexShrink: 0 }}>
                                     <rect x="3" y="4" width="18" height="18" rx="3" fill={WHITE} opacity="0.35" stroke={WHITE} strokeWidth="1.5"/>
                                     <path d="M3 10h18M8 2v4M16 2v4" stroke={WHITE} strokeWidth="1.5" strokeLinecap="round"/>
                                 </svg>
-                                Tháng {String(parseInt(invoiceMonthStr)).padStart(2, '0')} năm {invoiceYear}
+                                <span>Tháng {String(parseInt(invoiceMonthStr)).padStart(2, '0')} năm {invoiceYear}</span>
                             </span>
                         </div>
                     </div>
@@ -228,18 +229,18 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                     fontSize: '12px', color: TEXT_LABEL, padding: '8px 0 10px',
                     marginBottom: '18px', borderBottom: `1.5px solid ${PURPLE_LIGHT}`,
                 }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', lineHeight: 1 }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, display: 'block' }}>
                             <rect x="4" y="2" width="16" height="20" rx="2" stroke={TEXT_LABEL} strokeWidth="1.4" fill="none"/>
                             <path d="M8 7h8M8 11h5" stroke={TEXT_LABEL} strokeWidth="1.1" strokeLinecap="round"/>
                         </svg>
-                        <span>Mã HĐ: <strong style={{ color: BLACK, fontFamily: 'monospace' }}>#{invoice.id.slice(-5)}</strong></span>
+                        <span style={{ lineHeight: '13px' }}>Mã HĐ: <strong style={{ color: BLACK, fontFamily: 'monospace' }}>#{invoice.id.slice(-5)}</strong></span>
                     </span>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', lineHeight: 1 }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, display: 'block' }}>
                             <path d="M17 3a2.8 2.8 0 014 4L7.5 20.5 2 22l1.5-5.5L17 3z" stroke={TEXT_LABEL} strokeWidth="1.4" strokeLinejoin="round" fill="none"/>
                         </svg>
-                        <span>Ngày lập: <strong style={{ color: BLACK }}>{new Date(invoice.generatedDate).toLocaleDateString('vi-VN')}</strong></span>
+                        <span style={{ lineHeight: '13px' }}>Ngày lập: <strong style={{ color: BLACK }}>{new Date(invoice.generatedDate).toLocaleDateString('vi-VN')}</strong></span>
                     </span>
                 </div>
 
@@ -376,19 +377,21 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                                 </div>
                             </div>
 
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80px' }}>
-                                <div style={{ fontSize: '10px', color: TEXT_LABEL, fontWeight: 600, marginBottom: '6px', textTransform: 'uppercase' }}>
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '10px', color: TEXT_LABEL, fontWeight: 600, marginBottom: '6px', textTransform: 'uppercase', textAlign: 'center', width: '100%' }}>
                                     Nội dung chuyển khoản (bắt buộc)
                                 </div>
                                 <div style={{
                                     fontFamily: "'Courier New', monospace", fontWeight: 800, fontSize: '15px',
-                                    padding: '8px 18px',
+                                    padding: '8px 20px',
                                     border: `2.5px dashed ${PURPLE}`,
                                     borderRadius: '6px',
                                     background: PURPLE_LIGHT,
                                     color: PURPLE_DARK,
-                                    letterSpacing: '0.06em',
+                                    letterSpacing: '0.08em',
                                     whiteSpace: 'nowrap',
+                                    textAlign: 'center',
+                                    display: 'inline-block',
                                 }}>
                                     HOC PHI {student.id}
                                 </div>
