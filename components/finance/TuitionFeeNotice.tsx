@@ -365,7 +365,7 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                                 (Bằng chữ: {numberToVietnameseWords(totalDue)})
                             </div>
                         </td>
-                        <td style={{ padding: '12px 22px 24px', verticalAlign: 'middle', textAlign: 'right', fontSize: '34px', fontWeight: 900, color: C.purple, whiteSpace: 'nowrap', lineHeight: 1 }}>
+                        <td style={{ padding: '6px 22px 28px', verticalAlign: 'middle', textAlign: 'right', fontSize: '34px', fontWeight: 900, color: C.purple, whiteSpace: 'nowrap', lineHeight: 1 }}>
                             {formatCurrency(totalDue)}
                         </td>
                     </tr></tbody>
