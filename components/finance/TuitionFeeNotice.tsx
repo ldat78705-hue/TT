@@ -166,13 +166,14 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                 <td style={{
                     color: C.white, fontWeight: 700, fontSize: '13px',
                     textTransform: 'uppercase' as const, letterSpacing: '0.08em',
-                    padding: '9px 22px',
+                    padding: '7px 22px 11px',
+                    textAlign: rightText ? 'left' : 'center',
                 }}>{text}</td>
                 {rightText && (
                     <td style={{
                         color: C.white, fontWeight: 700, fontSize: '13px',
                         textTransform: 'uppercase' as const, letterSpacing: '0.08em',
-                        padding: '9px 22px', textAlign: 'right',
+                        padding: '7px 22px 11px', textAlign: 'right',
                     }}>{rightText}</td>
                 )}
             </tr></tbody>
@@ -379,7 +380,7 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                                 display: 'inline-block',
                                 background: `linear-gradient(135deg, ${C.purpleDark}, ${C.purple})`, color: C.white,
                                 fontWeight: 700, fontSize: '12px', textTransform: 'uppercase',
-                                letterSpacing: '0.08em', padding: '8px 28px',
+                                letterSpacing: '0.08em', padding: '6px 28px 10px',
                                 borderRadius: '0 0 8px 8px',
                             }}>
                                 THÔNG TIN CHUYỂN KHOẢN
