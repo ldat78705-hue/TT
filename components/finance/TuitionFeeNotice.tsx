@@ -91,6 +91,7 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
         purpleDark: '#3B3F99',
         purpleLight: '#E8EAF3',
         orange: '#E8922B',
+        bg: '#FFFFE0',
         white: '#FFFFFF',
         black: '#111111',
         body: '#2D2A45',
@@ -184,7 +185,7 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
         <div ref={ref} style={{
             width: W, maxWidth: maxW, margin: '0 auto',
             fontFamily: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
-            backgroundColor: C.white, color: C.body, lineHeight: 1.5,
+            backgroundColor: C.bg, color: C.body, lineHeight: 1.5,
         }}>
             <div style={{ padding: '32px 32px 24px' }}>
 
