@@ -36,29 +36,58 @@ const numberToVietnameseWords = (n: number): string => {
 };
 
 /*
- * ╔══════════════════════════════════════════════════════════╗
- * ║  DESIGN: Stripe Invoice × Notion × Linear               ║
- * ║  Typography-first, whitespace-driven, max 3 colors       ║
- * ║  html2canvas-safe: TABLE layout, no inline-flex, no SVG  ║
- * ║  in text badges, all text in block-level divs             ║
- * ╚══════════════════════════════════════════════════════════╝
+ * ╔════════════════════════════════════════════════════════════════╗
+ * ║  DESIGN STRATEGY: html2canvas-safe layout                      ║
+ * ║  - ALL layout uses <div> + <table> (never inline-flex spans)  ║
+ * ║  - NO SVG inside text badges (html2canvas clips them)         ║
+ * ║  - Icon circles use <div> with flex (safe in html2canvas)     ║
+ * ║  - Text always direct child of <div> (never wrapped in span)  ║
+ * ╚════════════════════════════════════════════════════════════════╝
  */
 
-/* ═══ DESIGN TOKENS ═══ */
-const T = {
-    indigo: '#3B3F99',
-    purple: '#6D4CFF',
-    pink: '#FF4FA5',
-    border: '#E8EAF3',
-    bg: '#FFFFFF',
-    bgSoft: '#F8F9FC',
-    text: '#1A1A2E',
-    textSecondary: '#6B7280',
-    textMuted: '#9CA3AF',
-    success: '#00B894',
-    font: "'Inter', 'Be Vietnam Pro', 'SF Pro Display', -apple-system, 'Segoe UI', sans-serif",
-};
+/* ═══ SVG Icons — WHITE on solid backgrounds ═══ */
+const SvgPerson = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="8" r="3.5" fill="#fff"/>
+        <path d="M5 20c0-3 3.1-5 7-5s7 2 7 5" fill="#fff" opacity="0.85"/>
+    </svg>
+);
+const SvgBook = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M5 4.5A2 2 0 017 2.5h13v19H7a2 2 0 01-2-2v-15z" stroke="#fff" strokeWidth="2" fill="none"/>
+        <path d="M5 17.5A2 2 0 017 15.5h13" stroke="#fff" strokeWidth="2"/>
+        <path d="M9 7h6M9 11h4" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+);
+const SvgCap = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M12 3L2 8.5l10 5.5 10-5.5L12 3z" fill="#fff" opacity="0.9"/>
+        <path d="M6 11v5c0 1.3 2.7 2.5 6 2.5s6-1.2 6-2.5v-5" stroke="#fff" strokeWidth="1.6" fill="none"/>
+        <path d="M20 8.5v5" stroke="#fff" strokeWidth="1.6" strokeLinecap="round"/>
+    </svg>
+);
+const SvgFamily = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <circle cx="9" cy="7" r="2.8" fill="#fff"/>
+        <circle cx="16" cy="8" r="2.2" fill="#fff" opacity="0.8"/>
+        <path d="M3 19c0-2.5 2.7-4.5 6-4.5s6 2 6 4.5" fill="#fff" opacity="0.7"/>
+        <path d="M15.5 14.8c.7-.3 1.5-.5 2.5-.5 2 0 3.5 1.2 3.5 3" stroke="#fff" strokeWidth="1.4" fill="none"/>
+    </svg>
+);
+const SvgDollar = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="8.5" stroke="#fff" strokeWidth="1.8" fill="none"/>
+        <path d="M12 7v10M9.5 9.5c0-1 1.1-1.8 2.5-1.8s2.5.8 2.5 1.8-1.1 1.6-2.5 2-2.5 1-2.5 2c0 1 1.1 1.8 2.5 1.8s2.5-.8 2.5-1.8" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+);
+const SvgDoc = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <rect x="5" y="3" width="14" height="18" rx="2" stroke="#fff" strokeWidth="1.8" fill="none"/>
+        <path d="M9 8h6M9 12h6M9 16h4" stroke="#fff" strokeWidth="1.4" strokeLinecap="round"/>
+    </svg>
+);
 
+/* ═══ MAIN COMPONENT ═══ */
 export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps>(({ invoice, mode = 'print' }, ref) => {
     const { state } = useData();
     const { students, transactions, settings, classes } = state;
@@ -94,304 +123,288 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
 
     const { outstandingDebt, openingCredit, totalDue } = financialData;
     const [invoiceYear, invoiceMonthStr] = invoice.month.split('-');
-    const monthLabel = `Tháng ${String(parseInt(invoiceMonthStr)).padStart(2, '0')} / ${invoiceYear}`;
 
-    /* ── Shared Styles ── */
-    const label: React.CSSProperties = {
-        fontSize: '10px', fontWeight: 600, color: T.textMuted,
-        textTransform: 'uppercase', letterSpacing: '0.08em',
-        marginBottom: '4px',
+    /* ── Color Palette ── */
+    const C = {
+        coral: '#E8638B',
+        purple: '#5B4BB5',
+        purpleDark: '#3D2E8C',
+        purpleLight: '#EEEDF7',
+        orange: '#E8922B',
+        white: '#FFFFFF',
+        black: '#111111',
+        body: '#2D2A45',
+        label: '#6B6789',
+        green: '#16a34a',
     };
-    const value: React.CSSProperties = {
-        fontSize: '14px', fontWeight: 600, color: T.text,
-    };
-    const divider: React.CSSProperties = {
-        height: '1px', background: T.border, margin: '0',
-    };
+
+    const W = mode === 'preview' ? '100%' : '700px';
+    const maxW = mode === 'preview' ? '700px' : undefined;
+
+    // Icon circle helper — simple div with flex
+    const ic = (bg: string, children: React.ReactNode) => (
+        <div style={{
+            width: '40px', height: '40px', borderRadius: '50%',
+            background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0, minWidth: '40px',
+        }}>{children}</div>
+    );
+
+    // Section header bar
+    const bar = (text: string, rightText?: string) => (
+        <div style={{
+            background: `linear-gradient(135deg, ${C.purpleDark}, ${C.purple})`,
+            color: C.white, fontWeight: 700, fontSize: '13px',
+            textTransform: 'uppercase' as const, letterSpacing: '0.08em',
+            padding: '9px 22px',
+            display: rightText ? 'flex' : 'block',
+            justifyContent: rightText ? 'space-between' : undefined,
+        }}>
+            <div>{text}</div>
+            {rightText && <div>{rightText}</div>}
+        </div>
+    );
 
     return (
         <div ref={ref} style={{
-            width: mode === 'preview' ? '100%' : '680px',
-            maxWidth: mode === 'preview' ? '680px' : undefined,
-            margin: '0 auto',
-            fontFamily: T.font,
-            backgroundColor: T.bg,
-            color: T.text,
-            lineHeight: 1.6,
+            width: W, maxWidth: maxW, margin: '0 auto',
+            fontFamily: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
+            backgroundColor: C.white, color: C.body, lineHeight: 1.5,
         }}>
-            <div style={{ padding: '40px 36px 32px' }}>
+            <div style={{ padding: '32px 32px 24px' }}>
 
-                {/* ══════════════════════════════════════════════
-                    HEADER — Stripe-style: clean, logo left, title right
-                   ══════════════════════════════════════════════ */}
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                {/* ══════════ HEADER — using TABLE for html2canvas safety ══════════ */}
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '6px' }}>
                     <tbody>
                         <tr>
-                            <td style={{ verticalAlign: 'top' }}>
-                                {/* Brand */}
-                                <div style={{ fontSize: '16px', fontWeight: 700, color: T.indigo, letterSpacing: '-0.01em' }}>
-                                    {settings.name}
+                            {/* Left: Logo + Name */}
+                            <td style={{ verticalAlign: 'top', paddingRight: '12px' }}>
+                                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                                    {settings.logoUrl && (
+                                        <img src={settings.logoUrl} alt="" style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'contain' }} crossOrigin="anonymous" />
+                                    )}
+                                    <div>
+                                        <div style={{ fontSize: '17px', fontWeight: 800, color: C.purpleDark, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                                            {settings.name}
+                                        </div>
+                                        {settings.address && (
+                                            <div style={{ fontSize: '11px', color: C.label, marginTop: '3px' }}>
+                                                <span style={{ color: C.coral, marginRight: '4px' }}>●</span>{settings.address}
+                                            </div>
+                                        )}
+                                        {settings.phone && (
+                                            <div style={{ fontSize: '11px', color: C.label, marginTop: '1px' }}>
+                                                <span style={{ color: C.coral, marginRight: '4px' }}>●</span>Hotline: <strong style={{ color: C.black }}>{settings.phone}</strong>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                                {settings.address && (
-                                    <div style={{ fontSize: '12px', color: T.textSecondary, marginTop: '4px' }}>
-                                        {settings.address}
-                                    </div>
-                                )}
-                                {settings.phone && (
-                                    <div style={{ fontSize: '12px', color: T.textSecondary, marginTop: '2px' }}>
-                                        {settings.phone}
-                                    </div>
-                                )}
                             </td>
-                            <td style={{ verticalAlign: 'top', textAlign: 'right' }}>
-                                {/* Title */}
-                                <div style={{
-                                    fontSize: '22px', fontWeight: 800, color: T.indigo,
-                                    letterSpacing: '-0.02em',
-                                }}>
+                            {/* Right: Title + Month */}
+                            <td style={{ verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                                <div style={{ fontSize: '24px', fontWeight: 900, color: C.purpleDark, textTransform: 'uppercase' }}>
                                     PHIẾU THU HỌC PHÍ
                                 </div>
-                                {/* Month badge — SIMPLE inline-block div, centered text */}
-                                <div style={{
-                                    display: 'inline-block',
-                                    marginTop: '8px',
-                                    padding: '5px 20px',
-                                    background: T.indigo,
-                                    color: T.bg,
-                                    borderRadius: '20px',
-                                    fontSize: '12px',
-                                    fontWeight: 600,
-                                    letterSpacing: '0.04em',
-                                    textAlign: 'center',
-                                }}>
-                                    {monthLabel}
+                                {/* Month badge — SIMPLE div, NO SVG, NO inline-flex */}
+                                <div style={{ marginTop: '8px', textAlign: 'center' }}>
+                                    <div style={{
+                                        display: 'inline-block',
+                                        padding: '6px 18px',
+                                        background: C.orange, color: C.white, borderRadius: '5px',
+                                        fontSize: '13px', fontWeight: 700,
+                                        textAlign: 'center',
+                                    }}>
+                                        📅 Tháng {String(parseInt(invoiceMonthStr)).padStart(2, '0')} năm {invoiceYear}
+                                    </div>
                                 </div>
                             </td>
                         </tr>
                     </tbody>
                 </table>
 
-                {/* Meta — invoice ID + date */}
-                <div style={{ ...divider, margin: '20px 0 16px' }}></div>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                {/* ══════════ META ROW — using TABLE for perfect icon-text alignment ══════════ */}
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '18px', borderBottom: `1.5px solid ${C.purpleLight}` }}>
                     <tbody>
                         <tr>
-                            <td style={{ fontSize: '12px', color: T.textSecondary }}>
-                                Mã HĐ: <strong style={{ color: T.text, fontFamily: 'monospace' }}>#{invoice.id.slice(-5)}</strong>
-                            </td>
-                            <td style={{ fontSize: '12px', color: T.textSecondary, textAlign: 'right' }}>
-                                Ngày lập: <strong style={{ color: T.text }}>{new Date(invoice.generatedDate).toLocaleDateString('vi-VN')}</strong>
+                            <td style={{ textAlign: 'center', padding: '10px 0', fontSize: '12px', color: C.label }}>
+                                📋 Mã HĐ: <strong style={{ color: C.black, fontFamily: 'monospace' }}>#{invoice.id.slice(-5)}</strong>
+                                <span style={{ margin: '0 20px' }}></span>
+                                ✏️ Ngày lập: <strong style={{ color: C.black }}>{new Date(invoice.generatedDate).toLocaleDateString('vi-VN')}</strong>
                             </td>
                         </tr>
                     </tbody>
                 </table>
 
-                {/* ══════════════════════════════════════════════
-                    STUDENT INFO — Notion-style card
-                   ══════════════════════════════════════════════ */}
-                <div style={{
-                    marginTop: '24px',
-                    padding: '20px 24px',
-                    background: T.bgSoft,
-                    borderRadius: '10px',
-                    border: `1px solid ${T.border}`,
-                }}>
-                    <div style={{
-                        fontSize: '11px', fontWeight: 700, color: T.indigo,
-                        textTransform: 'uppercase', letterSpacing: '0.1em',
-                        marginBottom: '16px',
-                    }}>
-                        Thông tin học viên
-                    </div>
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <tbody>
-                            <tr>
-                                <td style={{ width: '50%', paddingBottom: '14px', verticalAlign: 'top' }}>
-                                    <div style={label}>Họ và tên</div>
-                                    <div style={{ ...value, fontSize: '16px', fontWeight: 700 }}>{student.name}</div>
-                                </td>
-                                <td style={{ width: '50%', paddingBottom: '14px', verticalAlign: 'top' }}>
-                                    <div style={label}>Lớp đang học</div>
-                                    <div style={value}>{enrolledClasses.map(c => c.name).join(', ') || '—'}</div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style={{ verticalAlign: 'top' }}>
-                                    <div style={label}>Mã học viên</div>
-                                    <div style={{ ...value, fontFamily: 'monospace' }}>{student.id}</div>
-                                </td>
-                                <td style={{ verticalAlign: 'top' }}>
-                                    <div style={label}>Phụ huynh</div>
-                                    <div style={value}>{student.parentName || '—'}</div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* ══════════════════════════════════════════════
-                    LINE ITEMS — Stripe Invoice style
-                   ══════════════════════════════════════════════ */}
-                <div style={{ marginTop: '28px' }}>
-                    {/* Table Header */}
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead>
-                            <tr style={{ borderBottom: `2px solid ${T.indigo}` }}>
-                                <th style={{
-                                    textAlign: 'left', padding: '10px 0',
-                                    fontSize: '10px', fontWeight: 700, color: T.indigo,
-                                    textTransform: 'uppercase', letterSpacing: '0.1em',
-                                }}>
-                                    Nội dung
-                                </th>
-                                <th style={{
-                                    textAlign: 'right', padding: '10px 0',
-                                    fontSize: '10px', fontWeight: 700, color: T.indigo,
-                                    textTransform: 'uppercase', letterSpacing: '0.1em',
-                                }}>
-                                    Thành tiền
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {outstandingDebt > 0 && (
-                                <tr style={{ borderBottom: `1px solid ${T.border}` }}>
-                                    <td style={{ padding: '14px 0', fontSize: '14px', color: T.text }}>
-                                        Nợ cũ kỳ trước
-                                    </td>
-                                    <td style={{ padding: '14px 0', fontSize: '14px', fontWeight: 600, color: T.text, textAlign: 'right' }}>
-                                        {formatCurrency(outstandingDebt)}
-                                    </td>
-                                </tr>
-                            )}
-                            {openingCredit > 0 && (
-                                <tr style={{ borderBottom: `1px solid ${T.border}` }}>
-                                    <td style={{ padding: '14px 0', fontSize: '14px', color: T.text }}>
-                                        Số dư kỳ trước
-                                    </td>
-                                    <td style={{ padding: '14px 0', fontSize: '14px', fontWeight: 600, color: T.success, textAlign: 'right' }}>
-                                        -{formatCurrency(openingCredit)}
-                                    </td>
-                                </tr>
-                            )}
-                            <tr style={{ borderBottom: `1px solid ${T.border}` }}>
-                                <td style={{ padding: '14px 0', verticalAlign: 'top' }}>
-                                    <div style={{ fontSize: '14px', fontWeight: 600, color: T.text }}>
-                                        Học phí tháng {invoiceMonthStr}/{invoiceYear}
-                                    </div>
-                                    {invoice.details && (
-                                        <div style={{ fontSize: '12px', color: T.textSecondary, marginTop: '6px', lineHeight: 1.7 }}>
-                                            {invoice.details.split('\n').filter(l => l.trim()).map((line, i) => (
-                                                <div key={i}>· {line.trim().replace(/^-\s*/, '')}</div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </td>
-                                <td style={{ padding: '14px 0', fontSize: '14px', fontWeight: 600, color: T.text, textAlign: 'right', verticalAlign: 'top' }}>
-                                    {formatCurrency(invoice.amount)}
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    {/* TOTAL — prominent */}
-                    <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '0' }}>
-                        <tbody>
-                            <tr>
-                                <td style={{ padding: '20px 0', verticalAlign: 'bottom' }}>
-                                    <div style={{ fontSize: '16px', fontWeight: 800, color: T.text, textTransform: 'uppercase' }}>
-                                        Tổng thanh toán
-                                    </div>
-                                    <div style={{ fontSize: '11px', color: T.textSecondary, fontStyle: 'italic', marginTop: '2px' }}>
-                                        ({numberToVietnameseWords(totalDue)})
-                                    </div>
-                                </td>
-                                <td style={{ padding: '20px 0', textAlign: 'right', verticalAlign: 'bottom' }}>
-                                    <div style={{
-                                        fontSize: '32px', fontWeight: 800, color: T.indigo,
-                                        letterSpacing: '-0.02em',
-                                    }}>
-                                        {formatCurrency(totalDue)}
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* ══════════════════════════════════════════════
-                    PAYMENT — Bank transfer info
-                   ══════════════════════════════════════════════ */}
-                {totalDue > 0 && settings.bankAccountNumber && (
-                    <div style={{
-                        marginTop: '8px',
-                        padding: '24px',
-                        background: T.bgSoft,
-                        borderRadius: '10px',
-                        border: `1px solid ${T.border}`,
-                    }}>
-                        <div style={{
-                            fontSize: '11px', fontWeight: 700, color: T.indigo,
-                            textTransform: 'uppercase', letterSpacing: '0.1em',
-                            marginBottom: '18px',
-                            textAlign: 'center',
-                        }}>
-                            Thông tin chuyển khoản
-                        </div>
-
+                {/* ══════════ THÔNG TIN HỌC VIÊN ══════════ */}
+                <div style={{ marginBottom: '18px', border: `1.5px solid ${C.purpleLight}`, borderRadius: '10px', overflow: 'hidden' }}>
+                    {bar('THÔNG TIN HỌC VIÊN')}
+                    <div style={{ padding: '16px 22px' }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <tbody>
                                 <tr>
-                                    {/* Bank details */}
-                                    <td style={{ verticalAlign: 'top', paddingRight: '16px' }}>
-                                        <div style={label}>Ngân hàng</div>
-                                        <div style={{ ...value, marginBottom: '12px' }}>{settings.bankName}</div>
-                                        <div style={label}>Số tài khoản</div>
-                                        <div style={{
-                                            fontSize: '20px', fontWeight: 800, color: T.text,
-                                            fontFamily: "'Courier New', monospace",
-                                            letterSpacing: '0.05em', marginBottom: '12px',
-                                        }}>
+                                    <td style={{ padding: '8px 16px 8px 0', borderRight: `1.5px solid ${C.purpleLight}`, width: '50%', verticalAlign: 'middle' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            {ic(C.coral, <SvgPerson />)}
+                                            <div>
+                                                <div style={{ fontSize: '10px', color: C.label, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Họ và tên</div>
+                                                <div style={{ fontSize: '16px', fontWeight: 700, color: C.black }}>{student.name}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td style={{ padding: '8px 0 8px 16px', width: '50%', verticalAlign: 'middle' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            {ic(C.purple, <SvgBook />)}
+                                            <div>
+                                                <div style={{ fontSize: '10px', color: C.label, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Lớp đang học</div>
+                                                <div style={{ fontSize: '15px', fontWeight: 700, color: C.black }}>{enrolledClasses.map(c => c.name).join(', ') || '—'}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style={{ padding: '8px 16px 8px 0', borderRight: `1.5px solid ${C.purpleLight}`, verticalAlign: 'middle' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            {ic(C.coral, <SvgCap />)}
+                                            <div>
+                                                <div style={{ fontSize: '10px', color: C.label, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Mã học viên</div>
+                                                <div style={{ fontSize: '15px', fontWeight: 700, fontFamily: 'monospace', color: C.black }}>{student.id}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td style={{ padding: '8px 0 8px 16px', verticalAlign: 'middle' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            {ic(C.coral, <SvgFamily />)}
+                                            <div>
+                                                <div style={{ fontSize: '10px', color: C.label, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Phụ huynh</div>
+                                                <div style={{ fontSize: '15px', fontWeight: 700, color: C.black }}>{student.parentName || '—'}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {/* ══════════ NỘI DUNG / DIỄN GIẢI ══════════ */}
+                <div style={{ marginBottom: '18px', border: `1.5px solid ${C.purpleLight}`, borderRadius: '10px', overflow: 'hidden' }}>
+                    {bar('NỘI DUNG / DIỄN GIẢI', 'THÀNH TIỀN')}
+
+                    {outstandingDebt > 0 && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 22px', borderBottom: `1px solid ${C.purpleLight}` }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                {ic(C.coral, <SvgDollar />)}
+                                <div style={{ fontWeight: 700, fontSize: '14px', color: C.black }}>Nợ cũ kỳ trước</div>
+                            </div>
+                            <div style={{ fontWeight: 700, fontSize: '15px', color: C.black }}>{formatCurrency(outstandingDebt)}</div>
+                        </div>
+                    )}
+
+                    {openingCredit > 0 && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 22px', borderBottom: `1px solid ${C.purpleLight}` }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                {ic(C.green, <SvgDollar />)}
+                                <div style={{ fontWeight: 700, fontSize: '14px', color: C.black }}>Đã thanh toán / Số dư kỳ trước</div>
+                            </div>
+                            <div style={{ fontWeight: 700, fontSize: '15px', color: C.green }}>-{formatCurrency(openingCredit)}</div>
+                        </div>
+                    )}
+
+                    <div style={{ padding: '14px 22px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', flex: 1 }}>
+                                <div style={{ marginTop: '2px' }}>{ic(C.purple, <SvgDoc />)}</div>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ fontWeight: 700, fontSize: '14px', color: C.black, marginBottom: '5px' }}>
+                                        Học phí tháng {invoiceMonthStr}/{invoiceYear}
+                                    </div>
+                                    {invoice.details && (
+                                        <div style={{ fontSize: '12.5px', color: C.body, lineHeight: 1.65 }}>
+                                            {invoice.details.split('\n').filter(l => l.trim()).map((line, i) => (
+                                                <div key={i}>- {line.trim().replace(/^-\s*/, '')}</div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <div style={{ fontWeight: 700, fontSize: '15px', whiteSpace: 'nowrap', marginLeft: '14px', color: C.black }}>
+                                {formatCurrency(invoice.amount)}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ══════════ TỔNG THANH TOÁN ══════════ */}
+                <div style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    padding: '18px 22px', marginBottom: '18px',
+                    border: `1.5px solid ${C.purpleLight}`, borderRadius: '10px',
+                    background: C.purpleLight,
+                }}>
+                    <div>
+                        <div style={{ fontWeight: 800, fontSize: '16px', textTransform: 'uppercase', color: C.black }}>TỔNG THANH TOÁN</div>
+                        <div style={{ fontSize: '12px', color: C.body, fontStyle: 'italic', marginTop: '3px' }}>
+                            (Bằng chữ: {numberToVietnameseWords(totalDue)})
+                        </div>
+                    </div>
+                    <div style={{ fontSize: '34px', fontWeight: 900, color: C.purple }}>
+                        {formatCurrency(totalDue)}
+                    </div>
+                </div>
+
+                {/* ══════════ THÔNG TIN CHUYỂN KHOẢN ══════════ */}
+                {totalDue > 0 && settings.bankAccountNumber && (
+                    <div style={{ border: `1.5px solid ${C.purpleLight}`, borderRadius: '10px', overflow: 'hidden', marginBottom: '18px' }}>
+                        {/* Header pill — centered */}
+                        <div style={{ textAlign: 'center', padding: '0', borderBottom: `1.5px solid ${C.purpleLight}` }}>
+                            <div style={{
+                                display: 'inline-block',
+                                background: `linear-gradient(135deg, ${C.purpleDark}, ${C.purple})`, color: C.white,
+                                fontWeight: 700, fontSize: '12px', textTransform: 'uppercase',
+                                letterSpacing: '0.08em', padding: '8px 28px',
+                                borderRadius: '0 0 8px 8px',
+                            }}>
+                                THÔNG TIN CHUYỂN KHOẢN
+                            </div>
+                        </div>
+
+                        {/* 3-column using TABLE */}
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <tbody>
+                                <tr>
+                                    {/* Bank info */}
+                                    <td style={{ padding: '16px 14px 16px 22px', verticalAlign: 'middle' }}>
+                                        <div style={{ fontSize: '13px', color: C.label, fontWeight: 600 }}>{settings.bankName}</div>
+                                        <div style={{ fontSize: '20px', fontWeight: 800, fontFamily: "'Courier New', monospace", letterSpacing: '0.03em', color: C.black, margin: '3px 0' }}>
                                             {settings.bankAccountNumber}
                                         </div>
-                                        <div style={label}>Chủ tài khoản</div>
-                                        <div style={{ ...value, textTransform: 'uppercase' }}>{settings.bankAccountHolder}</div>
+                                        <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: C.body }}>
+                                            {settings.bankAccountHolder}
+                                        </div>
                                     </td>
-
-                                    {/* Transfer content — centered */}
-                                    <td style={{ verticalAlign: 'middle', textAlign: 'center', padding: '0 12px' }}>
-                                        <div style={{
-                                            ...label,
-                                            textAlign: 'center',
-                                            marginBottom: '8px',
-                                        }}>
-                                            Nội dung CK (bắt buộc)
+                                    {/* Transfer content */}
+                                    <td style={{ padding: '16px 10px', verticalAlign: 'middle', textAlign: 'center' }}>
+                                        <div style={{ fontSize: '10px', color: C.label, fontWeight: 600, marginBottom: '6px', textTransform: 'uppercase' }}>
+                                            Nội dung chuyển khoản (bắt buộc)
                                         </div>
                                         <div style={{
                                             display: 'inline-block',
-                                            padding: '10px 24px',
-                                            border: `2px dashed ${T.indigo}`,
-                                            borderRadius: '8px',
-                                            background: T.bg,
-                                            fontFamily: "'Courier New', monospace",
-                                            fontSize: '15px',
-                                            fontWeight: 800,
-                                            color: T.indigo,
-                                            letterSpacing: '0.08em',
-                                            textAlign: 'center',
+                                            fontFamily: "'Courier New', monospace", fontWeight: 800, fontSize: '14px',
+                                            padding: '7px 16px',
+                                            border: `2.5px dashed ${C.purple}`,
+                                            borderRadius: '6px',
+                                            background: C.purpleLight,
+                                            color: C.purpleDark,
+                                            letterSpacing: '0.06em',
+                                            whiteSpace: 'nowrap',
                                         }}>
                                             HOC PHI {student.id}
                                         </div>
                                     </td>
-
                                     {/* QR */}
                                     {qrCodeUrl && (
-                                        <td style={{ verticalAlign: 'middle', textAlign: 'right', paddingLeft: '12px' }}>
-                                            <img
-                                                src={qrCodeUrl} alt="QR"
-                                                style={{ width: '120px', height: '120px', objectFit: 'contain', borderRadius: '8px' }}
-                                                crossOrigin="anonymous"
-                                            />
+                                        <td style={{ padding: '16px 22px 16px 10px', verticalAlign: 'middle', textAlign: 'right' }}>
+                                            <img src={qrCodeUrl} alt="QR" style={{ width: '125px', height: '125px', objectFit: 'contain' }} crossOrigin="anonymous" />
                                         </td>
                                     )}
                                 </tr>
@@ -400,17 +413,13 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                     </div>
                 )}
 
-                {/* ══════════════════════════════════════════════
-                    FOOTER
-                   ══════════════════════════════════════════════ */}
-                <div style={{ ...divider, margin: '24px 0 16px' }}></div>
+                {/* ══════════ FOOTER ══════════ */}
                 <div style={{
-                    textAlign: 'center',
-                    fontSize: '12px',
-                    color: T.textMuted,
-                    fontStyle: 'italic',
+                    textAlign: 'center', padding: '12px 0 0',
+                    borderTop: `1.5px solid ${C.purpleLight}`,
+                    fontSize: '13px', color: C.coral, fontWeight: 600, fontStyle: 'italic',
                 }}>
-                    Cảm ơn Quý phụ huynh và học viên đã tin tưởng đồng hành!
+                    ❤️ Cảm ơn Quý phụ huynh và học viên đã tin tưởng đồng hành!
                 </div>
             </div>
         </div>
