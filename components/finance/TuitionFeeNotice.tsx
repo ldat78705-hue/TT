@@ -45,47 +45,7 @@ const numberToVietnameseWords = (n: number): string => {
  * ╚════════════════════════════════════════════════════════════════╝
  */
 
-/* ═══ SVG Icons — WHITE on solid backgrounds ═══ */
-const SvgPerson = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ display: 'block' }}>
-        <circle cx="12" cy="8" r="3.5" fill="#fff"/>
-        <path d="M5 20c0-3 3.1-5 7-5s7 2 7 5" fill="#fff" opacity="0.85"/>
-    </svg>
-);
-const SvgBook = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ display: 'block' }}>
-        <path d="M5 4.5A2 2 0 017 2.5h13v19H7a2 2 0 01-2-2v-15z" stroke="#fff" strokeWidth="2" fill="none"/>
-        <path d="M5 17.5A2 2 0 017 15.5h13" stroke="#fff" strokeWidth="2"/>
-        <path d="M9 7h6M9 11h4" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
-    </svg>
-);
-const SvgCap = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ display: 'block' }}>
-        <path d="M12 3L2 8.5l10 5.5 10-5.5L12 3z" fill="#fff" opacity="0.9"/>
-        <path d="M6 11v5c0 1.3 2.7 2.5 6 2.5s6-1.2 6-2.5v-5" stroke="#fff" strokeWidth="1.6" fill="none"/>
-        <path d="M20 8.5v5" stroke="#fff" strokeWidth="1.6" strokeLinecap="round"/>
-    </svg>
-);
-const SvgFamily = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ display: 'block' }}>
-        <circle cx="9" cy="7" r="2.8" fill="#fff"/>
-        <circle cx="16" cy="8" r="2.2" fill="#fff" opacity="0.8"/>
-        <path d="M3 19c0-2.5 2.7-4.5 6-4.5s6 2 6 4.5" fill="#fff" opacity="0.7"/>
-        <path d="M15.5 14.8c.7-.3 1.5-.5 2.5-.5 2 0 3.5 1.2 3.5 3" stroke="#fff" strokeWidth="1.4" fill="none"/>
-    </svg>
-);
-const SvgDollar = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ display: 'block' }}>
-        <circle cx="12" cy="12" r="8.5" stroke="#fff" strokeWidth="1.8" fill="none"/>
-        <path d="M12 7v10M9.5 9.5c0-1 1.1-1.8 2.5-1.8s2.5.8 2.5 1.8-1.1 1.6-2.5 2-2.5 1-2.5 2c0 1 1.1 1.8 2.5 1.8s2.5-.8 2.5-1.8" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
-    </svg>
-);
-const SvgDoc = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ display: 'block' }}>
-        <rect x="5" y="3" width="14" height="18" rx="2" stroke="#fff" strokeWidth="1.8" fill="none"/>
-        <path d="M9 8h6M9 12h6M9 16h4" stroke="#fff" strokeWidth="1.4" strokeLinecap="round"/>
-    </svg>
-);
+/* ═══ No SVG icons — using emoji for html2canvas compatibility ═══ */
 
 /* ═══ MAIN COMPONENT ═══ */
 export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps>(({ invoice, mode = 'print' }, ref) => {
@@ -141,33 +101,136 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
     const W = mode === 'preview' ? '100%' : '700px';
     const maxW = mode === 'preview' ? '700px' : undefined;
 
-    // Icon circle helper — TABLE centering (html2canvas-proof, no flex)
-    const ic = (bg: string, children: React.ReactNode) => (
-        <table style={{ width: '36px', height: '36px', borderCollapse: 'collapse' }}>
-            <tbody><tr>
-                <td style={{
-                    width: '36px', height: '36px',
-                    borderRadius: '50%', background: bg,
-                    textAlign: 'center', verticalAlign: 'middle',
-                    padding: 0,
-                }}>{children}</td>
-            </tr></tbody>
-        </table>
+    // Generate icon as base64 PNG using OffscreenCanvas / Canvas
+    // html2canvas renders <img> tags perfectly — no baseline/flex issues
+    const makeIconUrl = (bg: string, drawFn: (ctx: CanvasRenderingContext2D) => void): string => {
+        const size = 72; // 2x for retina
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d')!;
+        // Circle background
+        ctx.beginPath();
+        ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+        ctx.fillStyle = bg;
+        ctx.fill();
+        // White icon
+        ctx.fillStyle = '#fff';
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        drawFn(ctx);
+        return canvas.toDataURL('image/png');
+    };
+
+    // Pre-generate all icon URLs
+    const iconUrls = useMemo(() => ({
+        person: makeIconUrl(C.coral, (ctx) => {
+            // Head
+            ctx.beginPath(); ctx.arc(36, 24, 8, 0, Math.PI * 2); ctx.fill();
+            // Body
+            ctx.beginPath(); ctx.arc(36, 58, 18, Math.PI, 0); ctx.fill();
+        }),
+        book: makeIconUrl(C.purple, (ctx) => {
+            ctx.lineWidth = 3.5;
+            ctx.strokeStyle = '#fff';
+            // Book outline
+            ctx.beginPath();
+            ctx.moveTo(20, 16); ctx.lineTo(20, 56); ctx.lineTo(52, 56); ctx.lineTo(52, 16); ctx.lineTo(26, 16);
+            ctx.stroke();
+            // Spine
+            ctx.beginPath(); ctx.moveTo(20, 48); ctx.lineTo(52, 48); ctx.stroke();
+            // Lines
+            ctx.lineWidth = 2.5;
+            ctx.beginPath(); ctx.moveTo(28, 26); ctx.lineTo(44, 26); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(28, 34); ctx.lineTo(40, 34); ctx.stroke();
+        }),
+        cap: makeIconUrl(C.coral, (ctx) => {
+            ctx.fillStyle = '#fff';
+            // Cap top
+            ctx.beginPath(); ctx.moveTo(36, 16); ctx.lineTo(14, 30); ctx.lineTo(36, 44); ctx.lineTo(58, 30); ctx.closePath(); ctx.fill();
+            // Cap bottom
+            ctx.lineWidth = 3; ctx.strokeStyle = '#fff';
+            ctx.beginPath(); ctx.moveTo(22, 34); ctx.lineTo(22, 46); ctx.quadraticCurveTo(36, 54, 50, 46); ctx.lineTo(50, 34); ctx.stroke();
+            // Tassel
+            ctx.beginPath(); ctx.moveTo(56, 30); ctx.lineTo(56, 44); ctx.stroke();
+        }),
+        family: makeIconUrl(C.coral, (ctx) => {
+            // Adult 1
+            ctx.beginPath(); ctx.arc(28, 22, 7, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(28, 50, 14, Math.PI, 0); ctx.fill();
+            // Adult 2 (smaller)
+            ctx.beginPath(); ctx.arc(48, 24, 6, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(48, 48, 10, Math.PI, 0); ctx.fill();
+        }),
+        dollar: makeIconUrl(C.coral, (ctx) => {
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 3;
+            // Circle
+            ctx.beginPath(); ctx.arc(36, 36, 18, 0, Math.PI * 2); ctx.stroke();
+            // $ sign
+            ctx.lineWidth = 2.5;
+            ctx.beginPath(); ctx.moveTo(36, 22); ctx.lineTo(36, 50); ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(43, 29); ctx.quadraticCurveTo(43, 25, 36, 25);
+            ctx.quadraticCurveTo(29, 25, 29, 30); ctx.quadraticCurveTo(29, 35, 36, 36);
+            ctx.quadraticCurveTo(43, 37, 43, 42); ctx.quadraticCurveTo(43, 47, 36, 47);
+            ctx.quadraticCurveTo(29, 47, 29, 43);
+            ctx.stroke();
+        }),
+        doc: makeIconUrl(C.purple, (ctx) => {
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 3;
+            // Document
+            ctx.beginPath();
+            ctx.moveTo(22, 12); ctx.lineTo(50, 12); ctx.lineTo(54, 16); ctx.lineTo(54, 56);
+            ctx.lineTo(18, 56); ctx.lineTo(18, 16); ctx.closePath();
+            ctx.stroke();
+            // Lines
+            ctx.lineWidth = 2.5;
+            ctx.beginPath(); ctx.moveTo(26, 26); ctx.lineTo(46, 26); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(26, 34); ctx.lineTo(46, 34); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(26, 42); ctx.lineTo(38, 42); ctx.stroke();
+        }),
+        dollarGreen: makeIconUrl(C.green, (ctx) => {
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.arc(36, 36, 18, 0, Math.PI * 2); ctx.stroke();
+            ctx.lineWidth = 2.5;
+            ctx.beginPath(); ctx.moveTo(36, 22); ctx.lineTo(36, 50); ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(43, 29); ctx.quadraticCurveTo(43, 25, 36, 25);
+            ctx.quadraticCurveTo(29, 25, 29, 30); ctx.quadraticCurveTo(29, 35, 36, 36);
+            ctx.quadraticCurveTo(43, 37, 43, 42); ctx.quadraticCurveTo(43, 47, 36, 47);
+            ctx.quadraticCurveTo(29, 47, 29, 43);
+            ctx.stroke();
+        }),
+    }), []);
+
+    // Icon image component — html2canvas renders <img> perfectly
+    const IconImg = ({ src }: { src: string }) => (
+        <img src={src} alt="" style={{ width: '36px', height: '36px', display: 'block' }} />
     );
 
-    // Section header bar
+    // Section header bar — TABLE-based for html2canvas
     const bar = (text: string, rightText?: string) => (
-        <div style={{
+        <table style={{
+            width: '100%', borderCollapse: 'collapse',
             background: `linear-gradient(135deg, ${C.purpleDark}, ${C.purple})`,
-            color: C.white, fontWeight: 700, fontSize: '13px',
-            textTransform: 'uppercase' as const, letterSpacing: '0.08em',
-            padding: '9px 22px',
-            display: rightText ? 'flex' : 'block',
-            justifyContent: rightText ? 'space-between' : undefined,
         }}>
-            <div>{text}</div>
-            {rightText && <div>{rightText}</div>}
-        </div>
+            <tbody><tr>
+                <td style={{
+                    color: C.white, fontWeight: 700, fontSize: '13px',
+                    textTransform: 'uppercase' as const, letterSpacing: '0.08em',
+                    padding: '9px 22px',
+                }}>{text}</td>
+                {rightText && (
+                    <td style={{
+                        color: C.white, fontWeight: 700, fontSize: '13px',
+                        textTransform: 'uppercase' as const, letterSpacing: '0.08em',
+                        padding: '9px 22px', textAlign: 'right',
+                    }}>{rightText}</td>
+                )}
+            </tr></tbody>
+        </table>
     );
 
     return (
@@ -184,26 +247,30 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                         <tr>
                             {/* Left: Logo + Name */}
                             <td style={{ verticalAlign: 'top', paddingRight: '12px' }}>
-                                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                                    {settings.logoUrl && (
-                                        <img src={settings.logoUrl} alt="" style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'contain' }} crossOrigin="anonymous" />
-                                    )}
-                                    <div>
-                                        <div style={{ fontSize: '17px', fontWeight: 800, color: C.purpleDark, textTransform: 'uppercase', whiteSpace: 'nowrap', textAlign: 'center' }}>
-                                            {settings.name}
-                                        </div>
-                                        {settings.address && (
-                                            <div style={{ fontSize: '11px', color: C.label, marginTop: '3px' }}>
-                                                {settings.address}
-                                            </div>
+                                <table style={{ borderCollapse: 'collapse' }}>
+                                    <tbody><tr>
+                                        {settings.logoUrl && (
+                                            <td style={{ verticalAlign: 'top', paddingRight: '10px' }}>
+                                                <img src={settings.logoUrl} alt="" style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'contain' }} crossOrigin="anonymous" />
+                                            </td>
                                         )}
-                                        {settings.phone && (
-                                            <div style={{ fontSize: '11px', color: C.label, marginTop: '1px' }}>
-                                                Hotline: <strong style={{ color: C.black }}>{settings.phone}</strong>
+                                        <td style={{ verticalAlign: 'top' }}>
+                                            <div style={{ fontSize: '17px', fontWeight: 800, color: C.purpleDark, textTransform: 'uppercase', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                                                {settings.name}
                                             </div>
-                                        )}
-                                    </div>
-                                </div>
+                                            {settings.address && (
+                                                <div style={{ fontSize: '11px', color: C.label, marginTop: '3px' }}>
+                                                    {settings.address}
+                                                </div>
+                                            )}
+                                            {settings.phone && (
+                                                <div style={{ fontSize: '11px', color: C.label, marginTop: '1px' }}>
+                                                    Hotline: <strong style={{ color: C.black }}>{settings.phone}</strong>
+                                                </div>
+                                            )}
+                                        </td>
+                                    </tr></tbody>
+                                </table>
                             </td>
                             {/* Right: Title + Month */}
                             <td style={{ verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>
@@ -217,7 +284,7 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                                     textAlign: 'right',
                                     color: '#E53935',
                                 }}>
-                                    📅 Tháng {String(parseInt(invoiceMonthStr)).padStart(2, '0')} năm {invoiceYear}
+                                    Tháng {String(parseInt(invoiceMonthStr)).padStart(2, '0')} năm {invoiceYear}
                                 </div>
                             </td>
                         </tr>
@@ -228,16 +295,9 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                 <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '18px', borderBottom: `1.5px solid ${C.purpleLight}` }}>
                     <tbody>
                         <tr>
-                            <td style={{ textAlign: 'right', padding: '10px 8px 10px 0', fontSize: '12px', color: C.label, verticalAlign: 'middle', width: '18px' }}>
-                                📋
-                            </td>
-                            <td style={{ textAlign: 'left', padding: '10px 20px 10px 0', fontSize: '12px', color: C.label, verticalAlign: 'middle' }}>
+                            <td style={{ textAlign: 'center', padding: '10px 0', fontSize: '12px', color: C.label, verticalAlign: 'middle' }}>
                                 Mã HĐ: <strong style={{ color: C.black, fontFamily: 'monospace' }}>#{invoice.id.slice(-5)}</strong>
-                            </td>
-                            <td style={{ textAlign: 'right', padding: '10px 8px 10px 20px', fontSize: '12px', color: C.label, verticalAlign: 'middle', width: '18px' }}>
-                                ✏️
-                            </td>
-                            <td style={{ textAlign: 'left', padding: '10px 0', fontSize: '12px', color: C.label, verticalAlign: 'middle' }}>
+                                <span style={{ margin: '0 16px', color: C.purpleLight }}>|</span>
                                 Ngày lập: <strong style={{ color: C.black }}>{new Date(invoice.generatedDate).toLocaleDateString('vi-VN')}</strong>
                             </td>
                         </tr>
@@ -254,7 +314,7 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                                     <td style={{ padding: '8px 16px 8px 0', borderRight: `1.5px solid ${C.purpleLight}`, width: '50%', verticalAlign: 'middle' }}>
                                         <table style={{ borderCollapse: 'collapse' }}>
                                             <tbody><tr>
-                                                <td style={{ verticalAlign: 'middle', paddingRight: '10px' }}>{ic(C.coral, <SvgPerson />)}</td>
+                                <td style={{ verticalAlign: 'middle', paddingRight: '10px' }}><IconImg src={iconUrls.person} /></td>
                                                 <td style={{ verticalAlign: 'middle' }}>
                                                     <div style={{ fontSize: '10px', color: C.label, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Họ và tên</div>
                                                     <div style={{ fontSize: '16px', fontWeight: 700, color: C.black }}>{student.name}</div>
@@ -265,7 +325,7 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                                     <td style={{ padding: '8px 0 8px 16px', width: '50%', verticalAlign: 'middle' }}>
                                         <table style={{ borderCollapse: 'collapse' }}>
                                             <tbody><tr>
-                                                <td style={{ verticalAlign: 'middle', paddingRight: '10px' }}>{ic(C.purple, <SvgBook />)}</td>
+                                                <td style={{ verticalAlign: 'middle', paddingRight: '10px' }}><IconImg src={iconUrls.book} /></td>
                                                 <td style={{ verticalAlign: 'middle' }}>
                                                     <div style={{ fontSize: '10px', color: C.label, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Lớp đang học</div>
                                                     <div style={{ fontSize: '15px', fontWeight: 700, color: C.black }}>{enrolledClasses.map(c => c.name).join(', ') || '—'}</div>
@@ -278,7 +338,7 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                                     <td style={{ padding: '8px 16px 8px 0', borderRight: `1.5px solid ${C.purpleLight}`, verticalAlign: 'middle' }}>
                                         <table style={{ borderCollapse: 'collapse' }}>
                                             <tbody><tr>
-                                                <td style={{ verticalAlign: 'middle', paddingRight: '10px' }}>{ic(C.coral, <SvgCap />)}</td>
+                                                <td style={{ verticalAlign: 'middle', paddingRight: '10px' }}><IconImg src={iconUrls.cap} /></td>
                                                 <td style={{ verticalAlign: 'middle' }}>
                                                     <div style={{ fontSize: '10px', color: C.label, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Mã học viên</div>
                                                     <div style={{ fontSize: '15px', fontWeight: 700, fontFamily: 'monospace', color: C.black }}>{student.id}</div>
@@ -289,7 +349,7 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                                     <td style={{ padding: '8px 0 8px 16px', verticalAlign: 'middle' }}>
                                         <table style={{ borderCollapse: 'collapse' }}>
                                             <tbody><tr>
-                                                <td style={{ verticalAlign: 'middle', paddingRight: '10px' }}>{ic(C.coral, <SvgFamily />)}</td>
+                                                <td style={{ verticalAlign: 'middle', paddingRight: '10px' }}><IconImg src={iconUrls.family} /></td>
                                                 <td style={{ verticalAlign: 'middle' }}>
                                                     <div style={{ fontSize: '10px', color: C.label, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Phụ huynh</div>
                                                     <div style={{ fontSize: '15px', fontWeight: 700, color: C.black }}>{student.parentName || '—'}</div>
@@ -310,7 +370,7 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                     {outstandingDebt > 0 && (
                         <table style={{ width: '100%', borderCollapse: 'collapse', borderBottom: `1px solid ${C.purpleLight}` }}>
                             <tbody><tr>
-                                <td style={{ padding: '14px 0 14px 22px', verticalAlign: 'middle', width: '46px' }}>{ic(C.coral, <SvgDollar />)}</td>
+                                <td style={{ padding: '14px 10px 14px 22px', verticalAlign: 'middle', width: '46px' }}><IconImg src={iconUrls.dollar} /></td>
                                 <td style={{ padding: '14px 10px', verticalAlign: 'middle', fontWeight: 700, fontSize: '14px', color: C.black }}>Nợ cũ kỳ trước</td>
                                 <td style={{ padding: '14px 22px 14px 10px', verticalAlign: 'middle', textAlign: 'right', fontWeight: 700, fontSize: '15px', color: C.black, whiteSpace: 'nowrap' }}>{formatCurrency(outstandingDebt)}</td>
                             </tr></tbody>
@@ -320,7 +380,7 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                     {openingCredit > 0 && (
                         <table style={{ width: '100%', borderCollapse: 'collapse', borderBottom: `1px solid ${C.purpleLight}` }}>
                             <tbody><tr>
-                                <td style={{ padding: '14px 0 14px 22px', verticalAlign: 'middle', width: '46px' }}>{ic(C.green, <SvgDollar />)}</td>
+                                <td style={{ padding: '14px 10px 14px 22px', verticalAlign: 'middle', width: '46px' }}><IconImg src={iconUrls.dollarGreen} /></td>
                                 <td style={{ padding: '14px 10px', verticalAlign: 'middle', fontWeight: 700, fontSize: '14px', color: C.black }}>Đã thanh toán / Số dư kỳ trước</td>
                                 <td style={{ padding: '14px 22px 14px 10px', verticalAlign: 'middle', textAlign: 'right', fontWeight: 700, fontSize: '15px', color: C.green, whiteSpace: 'nowrap' }}>-{formatCurrency(openingCredit)}</td>
                             </tr></tbody>
@@ -329,7 +389,7 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
 
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <tbody><tr>
-                            <td style={{ padding: '14px 0 14px 22px', verticalAlign: 'top', width: '46px', paddingTop: '16px' }}>{ic(C.purple, <SvgDoc />)}</td>
+                            <td style={{ padding: '14px 10px 14px 22px', verticalAlign: 'top', width: '46px', paddingTop: '16px' }}><IconImg src={iconUrls.doc} /></td>
                             <td style={{ padding: '14px 10px', verticalAlign: 'top' }}>
                                 <div style={{ fontWeight: 700, fontSize: '14px', color: C.black, marginBottom: '5px' }}>
                                     Học phí tháng {invoiceMonthStr}/{invoiceYear}
@@ -432,7 +492,7 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                     borderTop: `1.5px solid ${C.purpleLight}`,
                     fontSize: '13px', color: C.coral, fontWeight: 600, fontStyle: 'italic',
                 }}>
-                    ❤️ Cảm ơn Quý phụ huynh và học viên đã tin tưởng đồng hành!
+                    ❤ Cảm ơn Quý phụ huynh và học viên đã tin tưởng đồng hành!
                 </div>
             </div>
         </div>
