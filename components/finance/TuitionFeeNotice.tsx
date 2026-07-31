@@ -317,7 +317,7 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                     {outstandingDebt > 0 && (
                         <table style={{ width: '100%', borderCollapse: 'collapse', borderBottom: `1px solid ${C.purpleLight}` }}>
                             <tbody><tr>
-                                <td style={{ padding: '14px 22px', verticalAlign: 'middle', fontWeight: 700, fontSize: '14px', color: C.black }}>Nợ cũ kỳ trước</td>
+                                <td style={{ padding: '14px 22px', verticalAlign: 'middle', fontWeight: 700, fontSize: '14px', color: C.black }}>Học phí các tháng trước</td>
                                 <td style={{ padding: '14px 22px 14px 10px', verticalAlign: 'middle', textAlign: 'right', fontWeight: 700, fontSize: '15px', color: C.black, whiteSpace: 'nowrap' }}>{formatCurrency(outstandingDebt)}</td>
                             </tr></tbody>
                         </table>
