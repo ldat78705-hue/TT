@@ -205,14 +205,12 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                                 <div style={{ fontSize: '24px', fontWeight: 900, color: C.purpleDark, textTransform: 'uppercase' }}>
                                     PHIẾU THU HỌC PHÍ
                                 </div>
-                                {/* Month badge — FULL WIDTH block div, text centered inside */}
+                                {/* Month badge — no background, red text */}
                                 <div style={{
                                     marginTop: '8px',
-                                    padding: '6px 0',
-                                    background: C.orange, color: C.white, borderRadius: '5px',
-                                    fontSize: '13px', fontWeight: 700,
+                                    fontSize: '14px', fontWeight: 800,
                                     textAlign: 'center',
-                                    width: '100%',
+                                    color: '#E53935',
                                 }}>
                                     📅 Tháng {String(parseInt(invoiceMonthStr)).padStart(2, '0')} năm {invoiceYear}
                                 </div>
@@ -388,12 +386,9 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                                         </div>
                                         <div style={{
                                             width: '100%',
-                                            fontFamily: "'Courier New', monospace", fontWeight: 800, fontSize: '14px',
+                                            fontFamily: "'Courier New', monospace", fontWeight: 800, fontSize: '15px',
                                             padding: '7px 0',
-                                            border: `2.5px dashed ${C.purple}`,
-                                            borderRadius: '6px',
-                                            background: C.purpleLight,
-                                            color: C.purpleDark,
+                                            color: '#E53935',
                                             letterSpacing: '0.06em',
                                             textAlign: 'center',
                                         }}>
