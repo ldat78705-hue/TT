@@ -201,21 +201,39 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                                 </div>
                             </td>
                             {/* Right: Title + Month */}
-                            <td style={{ verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                                <div style={{ fontSize: '24px', fontWeight: 900, color: C.purpleDark, textTransform: 'uppercase' }}>
-                                    PHIẾU THU HỌC PHÍ
-                                </div>
-                                {/* Month badge — centered using margin:auto TABLE (html2canvas-proof) */}
-                                <table style={{ margin: '8px auto 0', borderCollapse: 'collapse' }}>
-                                    <tbody><tr><td style={{
-                                        padding: '6px 18px',
-                                        background: C.orange, color: C.white, borderRadius: '5px',
-                                        fontSize: '13px', fontWeight: 700,
-                                        textAlign: 'center',
-                                        whiteSpace: 'nowrap',
-                                    }}>
-                                        📅 Tháng {String(parseInt(invoiceMonthStr)).padStart(2, '0')} năm {invoiceYear}
-                                    </td></tr></tbody>
+                            <td style={{ verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                    <tbody>
+                                        <tr>
+                                            <td style={{ textAlign: 'right', paddingBottom: '8px' }}>
+                                                <div style={{ fontSize: '24px', fontWeight: 900, color: C.purpleDark, textTransform: 'uppercase' }}>
+                                                    PHIẾU THU HỌC PHÍ
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            {/* 3-cell centering: spacer | badge | spacer */}
+                                            <td>
+                                                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td style={{ width: '50%' }}>&nbsp;</td>
+                                                            <td style={{
+                                                                padding: '6px 18px',
+                                                                background: C.orange, color: C.white, borderRadius: '5px',
+                                                                fontSize: '13px', fontWeight: 700,
+                                                                textAlign: 'center',
+                                                                whiteSpace: 'nowrap',
+                                                            }}>
+                                                                📅 Tháng {String(parseInt(invoiceMonthStr)).padStart(2, '0')} năm {invoiceYear}
+                                                            </td>
+                                                            <td style={{ width: '50%' }}>&nbsp;</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    </tbody>
                                 </table>
                             </td>
                         </tr>
@@ -382,25 +400,35 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                                             {settings.bankAccountHolder}
                                         </div>
                                     </td>
-                                    {/* Transfer content — centered using margin:auto TABLE (html2canvas-proof) */}
+                                    {/* Transfer content — 3-cell centering */}
                                     <td style={{ padding: '16px 10px', verticalAlign: 'middle' }}>
-                                        <div style={{ fontSize: '10px', color: C.label, fontWeight: 600, marginBottom: '6px', textTransform: 'uppercase', textAlign: 'center' }}>
-                                            Nội dung chuyển khoản (bắt buộc)
-                                        </div>
-                                        <table style={{ margin: '0 auto', borderCollapse: 'collapse' }}>
-                                            <tbody><tr><td style={{
-                                                fontFamily: "'Courier New', monospace", fontWeight: 800, fontSize: '14px',
-                                                padding: '7px 16px',
-                                                border: `2.5px dashed ${C.purple}`,
-                                                borderRadius: '6px',
-                                                background: C.purpleLight,
-                                                color: C.purpleDark,
-                                                letterSpacing: '0.06em',
-                                                whiteSpace: 'nowrap',
-                                                textAlign: 'center',
-                                            }}>
-                                                HOC PHI {student.id}
-                                            </td></tr></tbody>
+                                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                            <tbody>
+                                                <tr>
+                                                    <td style={{ width: '50%' }}>&nbsp;</td>
+                                                    <td style={{ fontSize: '10px', color: C.label, fontWeight: 600, textTransform: 'uppercase', textAlign: 'center', whiteSpace: 'nowrap', paddingBottom: '6px' }}>
+                                                        Nội dung chuyển khoản (bắt buộc)
+                                                    </td>
+                                                    <td style={{ width: '50%' }}>&nbsp;</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style={{ width: '50%' }}>&nbsp;</td>
+                                                    <td style={{
+                                                        fontFamily: "'Courier New', monospace", fontWeight: 800, fontSize: '14px',
+                                                        padding: '7px 16px',
+                                                        border: `2.5px dashed ${C.purple}`,
+                                                        borderRadius: '6px',
+                                                        background: C.purpleLight,
+                                                        color: C.purpleDark,
+                                                        letterSpacing: '0.06em',
+                                                        whiteSpace: 'nowrap',
+                                                        textAlign: 'center',
+                                                    }}>
+                                                        HOC PHI {student.id}
+                                                    </td>
+                                                    <td style={{ width: '50%' }}>&nbsp;</td>
+                                                </tr>
+                                            </tbody>
                                         </table>
                                     </td>
                                     {/* QR */}
