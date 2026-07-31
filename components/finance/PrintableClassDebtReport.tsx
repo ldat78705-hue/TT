@@ -1,5 +1,5 @@
 
-import { forwardRef } from 'react';
+import React, { forwardRef } from 'react';
 import { Student, CenterSettings, Invoice } from '../../types';
 
 interface PrintableClassDebtReportProps {
@@ -9,11 +9,17 @@ interface PrintableClassDebtReportProps {
     showClassColumn?: boolean;
     isDetailed?: boolean;
     invoices?: Invoice[];
+    /** 'print' = fixed A4 width for html2canvas export; 'preview' = responsive for modal display */
+    mode?: 'print' | 'preview';
 }
 
 const formatCurrency = (amount: number) => `${Math.abs(Math.round(amount)).toLocaleString('vi-VN')} ₫`;
 
-export const PrintableClassDebtReport = forwardRef<HTMLDivElement, PrintableClassDebtReportProps>(({ students, className, settings, showClassColumn, isDetailed, invoices }, ref) => {
+export const PrintableClassDebtReport = forwardRef<HTMLDivElement, PrintableClassDebtReportProps>(({ students, className, settings, showClassColumn, isDetailed, invoices, mode = 'print' }, ref) => {
+    const isPreview = mode === 'preview';
+    const containerStyle: React.CSSProperties = isPreview
+        ? { width: '100%', maxWidth: '100%', margin: '0 auto', color: '#000', backgroundColor: '#fff' }
+        : { width: '210mm', minHeight: '297mm', margin: 'auto', color: '#000', backgroundColor: '#fff' };
     
     const totalDebt = students
         .filter(s => s.balance < 0)
@@ -23,7 +29,7 @@ export const PrintableClassDebtReport = forwardRef<HTMLDivElement, PrintableClas
     const textStyle = { color: '#000' };
 
     return (
-        <div ref={ref} className="bg-white p-8 font-sans text-sm" style={{ width: '210mm', minHeight: '297mm', margin: 'auto', ...textStyle }}>
+        <div ref={ref} className="bg-white p-8 font-sans text-sm" style={containerStyle}>
             {/* Header */}
             <header className="text-center pb-2" style={textStyle}>
                 <h1 className="text-lg font-bold uppercase">{settings.name}</h1>

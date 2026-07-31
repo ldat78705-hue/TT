@@ -1,5 +1,5 @@
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { useData } from '../../hooks/useDataContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
@@ -15,6 +15,7 @@ import { ClassDebtReportModal } from './ClassDebtReportModal';
 import { zaloSendOverdueReminders } from '../../services/api';
 import { getStudentZaloPhone } from '../../utils/zaloDeepLink';
 import { ZaloSendModal } from './ZaloSendModal';
+import { getLastReminderLabel } from '../../utils/zaloReminderHistory';
 
 export const UnpaidStudentsReport: React.FC = () => {
     const { state } = useData();
@@ -31,6 +32,13 @@ export const UnpaidStudentsReport: React.FC = () => {
     const [showStats, setShowStats] = useState(false);
     const [isSendingZalo, setIsSendingZalo] = useState(false);
     const [zaloModalState, setZaloModalState] = useState<{ isOpen: boolean; student: Student | null }>({ isOpen: false, student: null });
+    const [zaloRefreshKey, setZaloRefreshKey] = useState(0);
+    const handleZaloSent = useCallback(() => setZaloRefreshKey(k => k + 1), []);
+    // Bulk deep link queue
+    const [bulkZaloQueue, setBulkZaloQueue] = useState<Student[]>([]);
+    const [bulkZaloIndex, setBulkZaloIndex] = useState(0);
+    const isBulkZaloMode = bulkZaloQueue.length > 0;
+
 
     const isViewer = role === UserRole.VIEWER;
 
@@ -154,6 +162,33 @@ export const UnpaidStudentsReport: React.FC = () => {
         return sortableItems;
     }, [unpaidStudents, sortConfig]);
 
+    const handleBulkZaloStart = useCallback(() => {
+        const studentsWithPhone = sortedUnpaidStudents
+            .filter(s => selectedStudentIds.includes(s.id) && getStudentZaloPhone(s));
+        if (studentsWithPhone.length === 0) {
+            toast.info('Không có học viên nào có SĐT Zalo để gửi.');
+            return;
+        }
+        setBulkZaloQueue(studentsWithPhone);
+        setBulkZaloIndex(0);
+        setZaloModalState({ isOpen: true, student: studentsWithPhone[0] });
+    }, [sortedUnpaidStudents, selectedStudentIds, toast]);
+
+    const handleBulkZaloClose = useCallback(() => {
+        if (isBulkZaloMode) {
+            const nextIndex = bulkZaloIndex + 1;
+            if (nextIndex < bulkZaloQueue.length) {
+                setBulkZaloIndex(nextIndex);
+                setZaloModalState({ isOpen: true, student: bulkZaloQueue[nextIndex] });
+                return;
+            }
+            setBulkZaloQueue([]);
+            setBulkZaloIndex(0);
+            toast.success(`Đã hoàn thành nhắc nhở ${bulkZaloQueue.length} học viên.`);
+        }
+        setZaloModalState({ isOpen: false, student: null });
+    }, [isBulkZaloMode, bulkZaloIndex, bulkZaloQueue, toast]);
+
     const handleToggleAllMobile = () => {
         if (selectedStudentIds.length === sortedUnpaidStudents.length && sortedUnpaidStudents.length > 0) {
             setSelectedStudentIds([]);
@@ -166,8 +201,17 @@ export const UnpaidStudentsReport: React.FC = () => {
         return unpaidStudents.reduce((sum, s) => sum + s.balance, 0);
     }, [unpaidStudents]);
 
-    const columns: Column<Student & { classNames: string }>[] = [
-        { header: 'Họ tên', accessor: 'name', sortable: true },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const columns: Column<Student & { classNames: string }>[] = useMemo(() => [
+        { header: 'Họ tên', accessor: (item) => {
+            const label = getLastReminderLabel(item.id);
+            return (
+                <div className="flex items-center gap-2">
+                    <span>{item.name}</span>
+                    {label && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 font-medium whitespace-nowrap" title={`Lần nhắc gần nhất: ${label}`}>🔔 {label}</span>}
+                </div>
+            );
+        }, sortable: true, sortKey: 'name' as keyof (Student & { classNames: string }) },
         { header: 'Các lớp học', accessor: 'classNames' },
         {
             header: 'Số tiền nợ',
@@ -189,7 +233,8 @@ export const UnpaidStudentsReport: React.FC = () => {
             sortable: true,
             sortKey: 'balance'
         },
-    ];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    ], [isViewer, zaloRefreshKey]);
     
     const exportData = useMemo(() => sortedUnpaidStudents.map(s => ({
         name: s.name,
@@ -302,6 +347,13 @@ export const UnpaidStudentsReport: React.FC = () => {
                                 📱 Nhắc Zalo ({selectedStudentIds.length})
                             </Button>
                         )}
+                        <Button 
+                            onClick={handleBulkZaloStart}
+                            disabled={selectedStudentIds.length === 0}
+                            variant="secondary"
+                        >
+                            💬 Nhắc từng người ({selectedStudentIds.length})
+                        </Button>
                     </div>
                 </div>
 
@@ -434,9 +486,16 @@ export const UnpaidStudentsReport: React.FC = () => {
             />
             <ZaloSendModal
                 isOpen={zaloModalState.isOpen}
-                onClose={() => setZaloModalState({ isOpen: false, student: null })}
+                onClose={handleBulkZaloClose}
                 student={zaloModalState.student}
+                source="debt"
+                onSent={handleZaloSent}
             />
+            {isBulkZaloMode && zaloModalState.isOpen && (
+                <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-2 rounded-full shadow-lg text-sm font-medium z-50 animate-pulse">
+                    📨 {bulkZaloIndex + 1} / {bulkZaloQueue.length}
+                </div>
+            )}
         </>
     )
 }

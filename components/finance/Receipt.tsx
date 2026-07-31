@@ -4,11 +4,13 @@ import { Transaction } from '../../types';
 
 interface ReceiptProps {
     transaction: Transaction;
+    /** 'print' = fixed A4 width for export; 'preview' = responsive for modal display */
+    mode?: 'print' | 'preview';
 }
 
 const formatCurrency = (amount: number) => `${Math.round(Math.abs(amount)).toLocaleString('vi-VN')} ₫`;
 
-export const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(({ transaction }, ref) => {
+export const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(({ transaction, mode = 'print' }, ref) => {
     const { state } = useData();
     const { students, settings, classes } = state;
 
@@ -21,15 +23,20 @@ export const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(({ transaction }
     if (!student) return <div ref={ref}>Không tìm thấy học viên.</div>;
 
     const receiptDate = new Date(transaction.date);
+    const isPreview = mode === 'preview';
+
+    const containerStyle: React.CSSProperties = isPreview
+        ? { width: '100%', maxWidth: '100%', margin: '0 auto', boxSizing: 'border-box' as const }
+        : { width: '210mm', margin: '0 auto', boxSizing: 'border-box' as const };
 
     return (
-        <div ref={ref} className="bg-white p-6 text-gray-900 font-sans" style={{ width: '210mm', margin: '0 auto', boxSizing: 'border-box' }}>
+        <div ref={ref} className="bg-white text-gray-900 font-sans" style={{ ...containerStyle, padding: isPreview ? '20px' : '24px' }}>
             {/* Header */}
-            <div className="text-center mb-4 border-b-2 border-gray-800 pb-4">
+            <div className="text-center mb-4 border-b-2 border-gray-300 pb-4">
                 <h1 className="text-2xl font-bold uppercase tracking-wide" style={{ color: settings.themeColor }}>{settings.name}</h1>
-                <div className="text-xs mt-1">
+                <div className="text-xs mt-1 text-gray-500">
                     {settings.address && <span className="block">{settings.address}</span>}
-                    {settings.phone && <span>Hotline: <span className="font-medium">{settings.phone}</span></span>}
+                    {settings.phone && <span>Hotline: <span className="font-medium text-gray-700">{settings.phone}</span></span>}
                 </div>
             </div>
 
@@ -37,7 +44,7 @@ export const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(({ transaction }
             <div className="text-center mb-6">
                 <h2 className="text-3xl font-extrabold uppercase tracking-tight">PHIẾU THU</h2>
                 <div className="flex items-center justify-center gap-4 text-xs mt-2 text-gray-500">
-                    <span>Số phiếu: <span className="font-mono font-bold text-gray-800">#{transaction.id.slice(-8)}</span></span>
+                    <span>Số phiếu: <span className="font-mono font-bold text-gray-700">#{transaction.id.slice(-8)}</span></span>
                     <span>•</span>
                     <span>Ngày: {receiptDate.toLocaleDateString('vi-VN')}</span>
                     <span>•</span>
@@ -84,14 +91,14 @@ export const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(({ transaction }
 
             {/* Total */}
             <div className="flex justify-end mb-6">
-                <div className="text-right border-2 border-gray-800 rounded-lg px-6 py-3">
+                <div className="text-right border-2 border-gray-300 rounded-lg px-6 py-3 bg-gray-50">
                     <span className="block text-xs uppercase tracking-widest text-gray-500">Tổng số tiền đã thu</span>
                     <span className="block text-2xl font-bold tracking-tight">{formatCurrency(transaction.amount)}</span>
                 </div>
             </div>
 
             {/* Balance after payment */}
-            <div className="bg-gray-50 p-3 rounded-lg text-sm mb-6">
+            <div className="bg-gray-50 p-3 rounded-lg text-sm mb-6 border border-gray-200">
                 <p>Số dư tài khoản sau giao dịch: <span className={`font-bold ${student.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>{student.balance.toLocaleString('vi-VN')} ₫</span></p>
             </div>
 

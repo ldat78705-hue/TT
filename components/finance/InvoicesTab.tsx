@@ -590,6 +590,7 @@ export const InvoicesTab: React.FC = () => {
                 onClose={() => setZaloModalState({ isOpen: false, student: null, invoice: null })}
                 student={zaloModalState.student}
                 invoice={zaloModalState.invoice}
+                source="invoices"
             />
         </div>
     );

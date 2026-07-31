@@ -8,6 +8,8 @@ interface DebtNoticeProps {
     settings: CenterSettings;
     attendance?: AttendanceRecord[];
     classes?: Class[];
+    /** 'print' = fixed-size for html2canvas export; 'preview' = responsive for modal display */
+    mode?: 'print' | 'preview';
 }
 
 const formatCurrency = (amount: number) => `${Math.round(amount).toLocaleString('vi-VN')} ₫`;
@@ -16,7 +18,7 @@ const normalizeAccountName = (name: string) => {
     return name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toUpperCase();
 };
 
-export const DebtNotice: React.FC<DebtNoticeProps> = ({ student, transactions: _transactions, settings, attendance = [], classes = [] }) => {
+export const DebtNotice: React.FC<DebtNoticeProps> = ({ student, transactions: _transactions, settings, attendance = [], classes = [], mode = 'print' }) => {
     const totalDue = student.balance < 0 ? Math.abs(student.balance) : 0;
 
     // Get student's classes
@@ -92,73 +94,155 @@ export const DebtNotice: React.FC<DebtNoticeProps> = ({ student, transactions: _
         return `https://img.vietqr.io/image/${bankBin}-${bankAccountNumber}-compact2.png?${new URLSearchParams(params).toString()}`;
     }, [settings, student.id, totalDue]);
 
+    const isPreview = mode === 'preview';
+
+    // Container styles
+    const containerStyle: React.CSSProperties = isPreview
+        ? { fontFamily: "'Segoe UI', system-ui, sans-serif", maxWidth: '100%', margin: '0 auto', color: '#111827', backgroundColor: '#fff' }
+        : { fontFamily: "'Segoe UI', system-ui, sans-serif", maxWidth: '480px', margin: '0 auto', color: '#111827', backgroundColor: '#fff' };
+
     return (
-        <div className="bg-white p-3 text-gray-900 border border-gray-300 flex flex-col text-[10px]" style={{ fontFamily: "Arial, sans-serif", maxWidth: '320px', margin: '0 auto' }}>
-            <header className="text-center pb-2 border-b border-dashed border-gray-400">
-                <h1 className="text-sm font-bold uppercase whitespace-nowrap" style={{ color: settings.themeColor }}>{settings.name}</h1>
-                <p>{settings.address}</p>
-                <p>ĐT: {settings.phone}</p>
-            </header>
+        <div 
+            className={isPreview ? "rounded-lg" : ""}
+            style={containerStyle}
+        >
+            {/* Inner wrapper with padding */}
+            <div style={{ padding: isPreview ? '20px' : '24px' }}>
+                {/* Header */}
+                <header style={{ textAlign: 'center', paddingBottom: '12px', borderBottom: '2px dashed #d1d5db' }}>
+                    <h1 style={{ fontSize: '16px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.025em', color: settings.themeColor || '#4F46E5', margin: 0, lineHeight: 1.3 }}>
+                        {settings.name}
+                    </h1>
+                    <p style={{ fontSize: '12px', color: '#6b7280', margin: '2px 0 0' }}>{settings.address}</p>
+                    <p style={{ fontSize: '12px', color: '#6b7280', margin: '2px 0 0' }}>ĐT: {settings.phone}</p>
+                </header>
 
-            <div className="text-center my-2">
-                <h2 className="text-sm font-bold uppercase">THÔNG BÁO HỌC PHÍ</h2>
-                <p className="text-gray-600 italic">Ngày: {new Date().toLocaleDateString('vi-VN')}</p>
-            </div>
+                {/* Title */}
+                <div style={{ textAlign: 'center', margin: '14px 0' }}>
+                    <h2 style={{ fontSize: '18px', fontWeight: 800, textTransform: 'uppercase', margin: 0, color: '#111827' }}>
+                        THÔNG BÁO HỌC PHÍ
+                    </h2>
+                    <p style={{ fontSize: '12px', color: '#6b7280', fontStyle: 'italic', margin: '4px 0 0' }}>
+                        Ngày: {new Date().toLocaleDateString('vi-VN')}
+                    </p>
+                </div>
 
-            <div className="mb-2">
-                <p><span className="font-bold">Học viên:</span> {student.name}</p>
-                {student.parentName && <p><span className="font-bold">Phụ huynh:</span> {student.parentName}</p>}
-            </div>
+                {/* Student Info */}
+                <div style={{ marginBottom: '12px', padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', backgroundColor: '#f9fafb' }}>
+                    <p style={{ fontSize: '13px', margin: '0 0 4px' }}>
+                        <span style={{ fontWeight: 700 }}>Học viên:</span> {student.name}
+                    </p>
+                    {student.parentName && (
+                        <p style={{ fontSize: '13px', margin: '0 0 4px' }}>
+                            <span style={{ fontWeight: 700 }}>Phụ huynh:</span> {student.parentName}
+                        </p>
+                    )}
+                    {studentClasses.length > 0 && (
+                        <p style={{ fontSize: '12px', margin: '0', color: '#6b7280' }}>
+                            Lớp: {studentClasses.map(c => c.name).join(', ')}
+                        </p>
+                    )}
+                </div>
 
-            {/* === GIAO DỊCH - Tích hợp từ điểm danh === */}
-            <div className="border-t border-b border-gray-300 py-1 mb-1">
-                <p className="font-bold text-[10px] mb-1 uppercase">Giao dịch gần đây:</p>
-                {monthlySummaries.length > 0 ? (
-                    <div className="space-y-0.5">
-                        {monthlySummaries.map((item, idx) => (
-                            <div key={idx} className="ml-1 text-[9px] py-0.5">
-                                <span className="font-semibold">{item.monthLabel}</span>
-                                {' - '}<span style={{ color: settings.themeColor }}>{item.className}</span>
-                                {': '}
-                                <span className="font-bold">{item.sessions} buổi</span>
-                                {item.feeType === 'PER_SESSION' && item.rate > 0 && (
-                                    <span> × {formatCurrency(item.rate)} = <span className="font-bold">{formatCurrency(item.total)}</span></span>
-                                )}
-                                {item.feeType === 'MONTHLY' && item.total > 0 && (
-                                    <span> → <span className="font-bold">{formatCurrency(item.total)}</span></span>
-                                )}
+                {/* Attendance Breakdown */}
+                <div style={{ marginBottom: '12px', padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: '6px' }}>
+                    <p style={{ fontWeight: 700, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 8px', color: '#374151' }}>
+                        Chi tiết học phí:
+                    </p>
+                    {monthlySummaries.length > 0 ? (
+                        <div>
+                            {monthlySummaries.map((item, idx) => (
+                                <div key={idx} style={{ fontSize: '12px', padding: '5px 0', borderBottom: idx < monthlySummaries.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                        <div>
+                                            <span style={{ fontWeight: 600 }}>{item.monthLabel}</span>
+                                            <span style={{ color: settings.themeColor || '#4F46E5' }}> — {item.className}</span>
+                                        </div>
+                                        {item.feeType === 'PER_SESSION' && item.rate > 0 && (
+                                            <span style={{ fontWeight: 700, whiteSpace: 'nowrap', marginLeft: '8px' }}>
+                                                {formatCurrency(item.total)}
+                                            </span>
+                                        )}
+                                        {item.feeType === 'MONTHLY' && item.total > 0 && (
+                                            <span style={{ fontWeight: 700, whiteSpace: 'nowrap', marginLeft: '8px' }}>
+                                                {formatCurrency(item.total)}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>
+                                        {item.sessions} buổi
+                                        {item.feeType === 'PER_SESSION' && item.rate > 0 && ` × ${formatCurrency(item.rate)}`}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p style={{ color: '#9ca3af', fontStyle: 'italic', fontSize: '12px', margin: 0 }}>
+                            Chưa có dữ liệu điểm danh.
+                        </p>
+                    )}
+                </div>
+
+                {/* Total Due */}
+                <div style={{ 
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+                    padding: '12px 14px', margin: '0 0 12px',
+                    borderTop: '2px solid #1f2937', borderBottom: '2px solid #1f2937',
+                    backgroundColor: totalDue > 0 ? '#fef2f2' : '#f0fdf4'
+                }}>
+                    <span style={{ fontWeight: 700, textTransform: 'uppercase', fontSize: '13px' }}>
+                        Cần thanh toán
+                    </span>
+                    <span style={{ fontWeight: 800, fontSize: '20px', color: totalDue > 0 ? '#dc2626' : '#16a34a' }}>
+                        {formatCurrency(totalDue)}
+                    </span>
+                </div>
+
+                {/* Bank Transfer Info */}
+                {totalDue > 0 && settings.bankAccountNumber && (
+                    <div style={{ padding: '12px', border: '1px solid #e5e7eb', borderRadius: '6px', backgroundColor: '#fffbeb' }}>
+                        <p style={{ fontWeight: 700, fontSize: '12px', textTransform: 'uppercase', textDecoration: 'underline', margin: '0 0 8px', textAlign: 'center' }}>
+                            Thông tin chuyển khoản
+                        </p>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+                            <div style={{ flex: 1 }}>
+                                <p style={{ fontSize: '12px', margin: '0 0 2px' }}>{settings.bankName}</p>
+                                <p style={{ fontSize: '15px', fontWeight: 700, fontFamily: 'monospace', margin: '0 0 2px' }}>
+                                    {settings.bankAccountNumber}
+                                </p>
+                                <p style={{ fontSize: '12px', margin: '0 0 8px' }}>{settings.bankAccountHolder}</p>
+                                <div style={{ 
+                                    padding: '6px 10px', backgroundColor: '#fef3c7', border: '1.5px solid #f59e0b', 
+                                    borderRadius: '4px', textAlign: 'center' 
+                                }}>
+                                    <p style={{ fontSize: '10px', fontWeight: 700, margin: '0 0 2px', textTransform: 'uppercase' }}>
+                                        Nội dung CK:
+                                    </p>
+                                    <p style={{ fontSize: '14px', fontWeight: 700, fontFamily: 'monospace', margin: 0, color: '#dc2626' }}>
+                                        {`HOC PHI ${student.id}`}
+                                    </p>
+                                </div>
                             </div>
-                        ))}
+                            {qrCodeUrl && (
+                                <div style={{ textAlign: 'center', flexShrink: 0 }}>
+                                    <img 
+                                        src={qrCodeUrl} alt="QR Code" 
+                                        style={{ width: '120px', height: '120px', objectFit: 'contain' }}
+                                        crossOrigin="anonymous" 
+                                    />
+                                    <p style={{ fontSize: '10px', fontWeight: 600, margin: '4px 0 0' }}>
+                                        Quét mã thanh toán
+                                    </p>
+                                </div>
+                            )}
+                        </div>
                     </div>
-                ) : (
-                    <p className="text-gray-500 italic ml-1">Chưa có dữ liệu điểm danh.</p>
                 )}
-            </div>
-            
-            <div className="flex justify-between items-center my-1 py-2 border-t border-b border-gray-800">
-                <span className="font-bold uppercase text-xs">Cần thanh toán</span>
-                <span className="font-bold text-lg">{formatCurrency(totalDue)}</span>
-            </div>
 
-            <div className="mt-1">
-                 <p className="font-bold underline mb-1">Thanh toán qua ngân hàng:</p>
-                 <p>{settings.bankName} - {settings.bankAccountNumber}</p>
-                 <p>Chủ TK: {settings.bankAccountHolder}</p>
-                 <div className="mt-1">
-                    <span className="font-bold">Nội dung CK: </span>
-                    <span className="font-mono font-bold">{`HOC PHI ${student.id}`}</span>
+                {/* Footer */}
+                <div style={{ textAlign: 'center', marginTop: '12px', fontStyle: 'italic', fontSize: '11px', color: '#9ca3af' }}>
+                    <p style={{ margin: 0 }}>Cảm ơn Quý phụ huynh!</p>
                 </div>
-            </div>
-            
-            {qrCodeUrl && (
-                <div className="text-center mt-2 pt-2 border-t border-dashed border-gray-400">
-                    <img src={qrCodeUrl} alt="QR Code" className="w-24 h-24 mx-auto" crossOrigin="anonymous" />
-                    <p className="mt-1 font-semibold">Quét mã thanh toán</p>
-                </div>
-            )}
-            
-            <div className="text-center mt-2 italic text-[9px]">
-                <p>Cảm ơn Quý phụ huynh!</p>
             </div>
         </div>
     );

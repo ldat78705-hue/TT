@@ -361,6 +361,7 @@ export const AdvancePaymentModal: React.FC<AdvancePaymentModalProps> = ({ isOpen
                         months={months}
                         discountPercent={discountPercent}
                         finalAmount={finalAmount}
+                        mode="print"
                     />
                 )}
             </div>

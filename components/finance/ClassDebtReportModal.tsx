@@ -48,6 +48,21 @@ export const ClassDebtReportModal: React.FC<ClassDebtReportModalProps> = ({ isOp
             onClose={onClose} 
             title={`Báo cáo Công nợ - ${className}`}
         >
+            {/* Hidden off-screen render for html2canvas export */}
+            <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+                <div ref={reportRef}>
+                    <PrintableClassDebtReport 
+                        students={students}
+                        className={className}
+                        settings={state.settings}
+                        showClassColumn={showClassColumn}
+                        isDetailed={isDetailed}
+                        invoices={state.invoices}
+                        mode="print"
+                    />
+                </div>
+            </div>
+
             <div className="flex justify-end p-4 bg-gray-50 dark:bg-gray-800/50 border-b dark:border-gray-700">
                 <label className="flex items-center space-x-2 cursor-pointer">
                     <input 
@@ -60,17 +75,16 @@ export const ClassDebtReportModal: React.FC<ClassDebtReportModalProps> = ({ isOp
                 </label>
             </div>
             <div className="bg-gray-200 dark:bg-gray-900 p-4 overflow-y-auto max-h-[60vh]">
-                <div className="mx-auto bg-white p-2" style={{ width: '210mm' }}>
-                    <div ref={reportRef}>
-                        <PrintableClassDebtReport 
-                            students={students}
-                            className={className}
-                            settings={state.settings}
-                            showClassColumn={showClassColumn}
-                            isDetailed={isDetailed}
-                            invoices={state.invoices}
-                        />
-                    </div>
+                <div className="mx-auto bg-white rounded-lg overflow-hidden shadow">
+                    <PrintableClassDebtReport 
+                        students={students}
+                        className={className}
+                        settings={state.settings}
+                        showClassColumn={showClassColumn}
+                        isDetailed={isDetailed}
+                        invoices={state.invoices}
+                        mode="preview"
+                    />
                 </div>
             </div>
 

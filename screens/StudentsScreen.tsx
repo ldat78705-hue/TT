@@ -798,6 +798,11 @@ export const StudentsScreen: React.FC = () => {
                     onSort={handleSort}
                     actions={canManage ? (student) => (
                         <>
+                            {student.balance < 0 && getStudentZaloPhone(student) && (
+                                <button onClick={() => setZaloModalState({ isOpen: true, student })} className="text-blue-600 hover:text-blue-800" title="Nhắn Zalo nhắc HP">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.04 2 11c0 2.76 1.36 5.22 3.48 6.84L5 22l4.33-2.12C10.2 20.04 11.08 20.12 12 20.12c5.52 0 10-4.04 10-9.06S17.52 2 12 2zm4.5 12.5c-.2.56-1.18 1.08-1.63 1.14-.44.06-.83.2-2.8-.6-2.38-1-3.9-3.44-4.02-3.6-.12-.16-.96-1.28-.96-2.44s.6-1.72.82-1.96c.22-.24.48-.3.64-.3.16 0 .32 0 .46.02.14.02.34-.06.54.42.2.48.68 1.68.74 1.8.06.12.1.26.02.42-.08.16-.12.26-.24.4-.12.14-.24.3-.36.42-.12.12-.24.24-.1.48.14.24.62 1.02 1.32 1.66.9.82 1.66 1.08 1.9 1.2.24.12.38.1.52-.06.14-.16.6-.7.76-.94.16-.24.32-.2.54-.12.22.08 1.38.66 1.62.78.24.12.4.18.46.28.06.1.06.56-.14 1.12z"/></svg>
+                                </button>
+                            )}
                             {state.settings.zaloOaEnabled && (
                                 (student as any).zaloUserId ? (
                                     <span className="text-blue-500 text-xs" title="Đã liên kết Zalo">✅</span>
@@ -1004,6 +1009,7 @@ export const StudentsScreen: React.FC = () => {
                 isOpen={zaloModalState.isOpen}
                 onClose={() => setZaloModalState({ isOpen: false, student: null })}
                 student={zaloModalState.student}
+                source="students"
             />
 
             {/* QR Print Modal */}

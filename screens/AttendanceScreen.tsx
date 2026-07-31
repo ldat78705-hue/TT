@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useData } from '../hooks/useDataContext';
 import { useAuth } from '../hooks/useAuth';
@@ -27,6 +27,8 @@ export const AttendanceScreen: React.FC = () => {
     const [confirmDeleteModalOpen, setConfirmDeleteModalOpen] = useState(false);
     const [unmarkedConfirmModalOpen, setUnmarkedConfirmModalOpen] = useState(false);
     const [zaloNotificationData, setZaloNotificationData] = useState<string[] | null>(null);
+    // Track whether the user has made local edits — prevents background polling from resetting attendanceData
+    const isDirty = useRef(false);
 
 
     const isViewer = role === UserRole.VIEWER;
@@ -102,7 +104,17 @@ export const AttendanceScreen: React.FC = () => {
     }, [attendance, classId, date, classStudents]);
 
 
+    // Reset dirty flag when route changes (different class/date)
     useEffect(() => {
+        isDirty.current = false;
+    }, [classId, date]);
+
+    useEffect(() => {
+        // Skip re-initialization if the user has made local edits (isDirty).
+        // This prevents background data polling (silentRefresh) from wiping
+        // the user's in-progress attendance changes.
+        if (isDirty.current) return;
+
         const initialData = new Map<string, {status: AttendanceStatus, note: string}>();
         classStudents.forEach(student => {
             const record = attendance.find(a => a.classId === classId && a.studentId === student.id && a.date === date);
@@ -116,6 +128,7 @@ export const AttendanceScreen: React.FC = () => {
 
     const handleStatusChange = (studentId: string, status: AttendanceStatus) => {
         if (!canTakeAttendance) return;
+        isDirty.current = true;
         setAttendanceData(prev => {
             const newMap = new Map(prev);
             const current = newMap.get(studentId) || { status: AttendanceStatus.UNMARKED, note: '' };
@@ -126,6 +139,7 @@ export const AttendanceScreen: React.FC = () => {
 
     const handleNoteChange = (studentId: string, note: string) => {
         if (!canTakeAttendance) return;
+        isDirty.current = true;
         setAttendanceData(prev => {
             const newMap = new Map(prev);
             const current = newMap.get(studentId) || { status: AttendanceStatus.UNMARKED, note: '' };
@@ -136,6 +150,7 @@ export const AttendanceScreen: React.FC = () => {
 
     const handleBulkChange = (status: AttendanceStatus) => {
         if (!canTakeAttendance) return;
+        isDirty.current = true;
         setAttendanceData(prev => {
             const newMap = new Map(prev);
             classStudents.forEach(student => {
@@ -278,6 +293,7 @@ export const AttendanceScreen: React.FC = () => {
                                    <Button size="sm" variant="secondary" onClick={() => {
                                        const note = (document.getElementById('bulk-note-input') as HTMLInputElement)?.value || '';
                                        if (note) {
+                                           isDirty.current = true;
                                            setAttendanceData(prev => {
                                                const newMap = new Map(prev);
                                                classStudents.forEach(student => {

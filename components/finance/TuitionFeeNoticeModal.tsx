@@ -180,7 +180,7 @@ ${qrUrl ? `<img src="${qrUrl}" style="width:180px;height:180px;margin:8px auto;d
         <Modal isOpen={isOpen} onClose={onClose} title={`Chi tiết Hóa đơn #${invoice.id.slice(-6)}`}>
             {/* Hidden component for image download */}
             <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
-                <TuitionFeeNotice ref={noticeRef} invoice={invoice} />
+                <TuitionFeeNotice ref={noticeRef} invoice={invoice} mode="print" />
             </div>
             
             <div className="space-y-6">

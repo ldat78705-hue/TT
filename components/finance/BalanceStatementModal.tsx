@@ -123,7 +123,7 @@ export const BalanceStatementModal: React.FC<BalanceStatementModalProps> = ({ is
         <>
             {/* Hidden render target */}
             <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
-                {selectedStudentId && <BalanceStatement ref={noticeRef} studentId={selectedStudentId} upToMonth={displayMonth} />}
+                {selectedStudentId && <BalanceStatement ref={noticeRef} studentId={selectedStudentId} upToMonth={displayMonth} mode="print" />}
             </div>
 
             <Modal isOpen={isOpen} onClose={isBulkExporting ? () => {} : onClose} title="📋 Phiếu Thông Báo Số Dư Học Phí">
@@ -189,10 +189,8 @@ export const BalanceStatementModal: React.FC<BalanceStatementModalProps> = ({ is
                                     </p>
                                 </div>
                             </div>
-                            <div className="max-h-[400px] overflow-y-auto p-2 bg-white">
-                                <div className="transform scale-[0.5] origin-top-left" style={{ width: '200%' }}>
-                                    <BalanceStatement studentId={selectedStudentId} upToMonth={displayMonth} />
-                                </div>
+                            <div className="max-h-[500px] overflow-y-auto p-2 bg-white">
+                                <BalanceStatement studentId={selectedStudentId} upToMonth={displayMonth} mode="preview" />
                             </div>
                         </div>
                     )}

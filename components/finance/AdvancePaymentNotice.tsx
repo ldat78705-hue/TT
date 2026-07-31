@@ -7,6 +7,8 @@ interface AdvancePaymentNoticeProps {
     months: number;
     discountPercent: number;
     finalAmount: number;
+    /** 'print' = fixed A4 width for export; 'preview' = responsive for modal display */
+    mode?: 'print' | 'preview';
 }
 
 const formatCurrency = (amount: number) => `${Math.round(amount).toLocaleString('vi-VN')} ₫`;
@@ -21,7 +23,7 @@ const normalizeAccountName = (name: string) => {
 };
 
 export const AdvancePaymentNotice = forwardRef<HTMLDivElement, AdvancePaymentNoticeProps>(
-    ({ studentId, months, discountPercent, finalAmount }, ref) => {
+    ({ studentId, months, discountPercent, finalAmount, mode = 'print' }, ref) => {
     const { state } = useData();
     const { students, classes, settings } = state;
 
@@ -94,19 +96,25 @@ export const AdvancePaymentNotice = forwardRef<HTMLDivElement, AdvancePaymentNot
 
     if (!student) return <div ref={ref}>Học viên không tồn tại.</div>;
 
+    const isPreview = mode === 'preview';
+
+    const containerStyle: React.CSSProperties = isPreview
+        ? { width: '100%', maxWidth: '100%', margin: '0 auto', boxSizing: 'border-box' as const }
+        : { width: '210mm', margin: '0 auto', boxSizing: 'border-box' as const };
+
     return (
-        <div ref={ref} className="bg-white p-5 text-gray-900 font-sans flex flex-col" style={{ width: '210mm', margin: '0 auto', boxSizing: 'border-box' }}>
+        <div ref={ref} className="bg-white text-gray-900 font-sans flex flex-col" style={{ ...containerStyle, padding: isPreview ? '20px' : '20px' }}>
             {/* Header */}
             <div className="text-center mb-4">
                 <h1 className="text-2xl font-bold uppercase tracking-wide mb-0.5" style={{ color: settings.themeColor || '#4F46E5' }}>
                     {settings.name}
                 </h1>
-                <div className="text-xs flex flex-col items-center">
+                <div className="text-xs flex flex-col items-center text-gray-500">
                     {settings.address && <span>{settings.address}</span>}
-                    {settings.phone && <span>Hotline: <span className="font-medium">{settings.phone}</span></span>}
+                    {settings.phone && <span>Hotline: <span className="font-medium text-gray-700">{settings.phone}</span></span>}
                 </div>
                 <div className="mt-3">
-                    <h2 className="text-2xl font-extrabold uppercase tracking-tight text-gray-800">
+                    <h2 className={`font-extrabold uppercase tracking-tight text-gray-800 ${isPreview ? 'text-xl' : 'text-2xl'}`}>
                         PHIẾU THU HỌC PHÍ TRƯỚC
                     </h2>
                     <p className="text-base mt-1 font-medium text-gray-600">
@@ -120,8 +128,8 @@ export const AdvancePaymentNotice = forwardRef<HTMLDivElement, AdvancePaymentNot
             </div>
 
             {/* Student Info */}
-            <div className="mb-3 border border-gray-300 p-3">
-                <h3 className="text-xs font-bold uppercase tracking-wider mb-2 border-b border-gray-300 pb-1">Thông tin Học viên</h3>
+            <div className="mb-3 border border-gray-300 p-3 rounded">
+                <h3 className="text-xs font-bold uppercase tracking-wider mb-2 border-b border-gray-300 pb-1 text-gray-500">Thông tin Học viên</h3>
                 <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
                     <div><span className="text-xs text-gray-500">Họ và tên</span><p className="font-bold text-lg">{student.name}</p></div>
                     <div><span className="text-xs text-gray-500">Lớp đang học</span><p className="font-semibold">{enrolledClasses.map(c => c.name).join(', ')}</p></div>
@@ -186,7 +194,7 @@ export const AdvancePaymentNotice = forwardRef<HTMLDivElement, AdvancePaymentNot
 
                 {/* Grand Total */}
                 <div className="flex justify-end mt-4">
-                    <div className="text-right">
+                    <div className="text-right bg-gray-50 px-5 py-3 rounded border border-gray-200">
                         <span className="block text-xs uppercase tracking-widest font-bold text-gray-600">TỔNG SỐ TIỀN CẦN THU</span>
                         <span className="block text-3xl font-extrabold tracking-tight" style={{ color: settings.themeColor || '#4F46E5' }}>
                             {formatCurrency(finalAmount)}
@@ -197,16 +205,16 @@ export const AdvancePaymentNotice = forwardRef<HTMLDivElement, AdvancePaymentNot
 
             {/* Payment Info */}
             <div className="border-t-2 border-dashed border-gray-400 pt-3 mt-auto">
-                <h4 className="font-bold text-sm uppercase tracking-widest mb-2 text-center">THÔNG TIN CHUYỂN KHOẢN</h4>
+                <h4 className="font-bold text-sm uppercase tracking-widest mb-2 text-center text-gray-700">THÔNG TIN CHUYỂN KHOẢN</h4>
                 <div className="flex justify-between items-start gap-4 mt-2">
                     <div className="w-1/2 space-y-3 text-left">
                         <div>
                             <p className="font-semibold text-base">{settings.bankName}</p>
                             <p className="font-bold text-2xl tracking-wider font-mono my-0.5">{settings.bankAccountNumber}</p>
-                            <p className="font-semibold uppercase text-sm">{settings.bankAccountHolder}</p>
+                            <p className="font-semibold uppercase text-sm text-gray-600">{settings.bankAccountHolder}</p>
                         </div>
                         <div className="text-center">
-                            <p className="text-xs uppercase tracking-wider font-bold mb-1">NỘI DUNG CHUYỂN KHOẢN (BẮT BUỘC)</p>
+                            <p className="text-xs uppercase tracking-wider font-bold mb-1 text-gray-600">NỘI DUNG CHUYỂN KHOẢN (BẮT BUỘC)</p>
                             <div className="inline-flex items-center justify-center font-mono font-bold text-lg px-5 py-2 bg-yellow-100 border-2 border-yellow-400 rounded leading-none" style={{ lineHeight: '1' }}>
                                 {`HOC PHI ${student.id}`}
                             </div>
@@ -221,7 +229,7 @@ export const AdvancePaymentNotice = forwardRef<HTMLDivElement, AdvancePaymentNot
                                 crossOrigin="anonymous"
                             />
                         )}
-                        <p className="mt-1 text-xs uppercase tracking-wide font-medium">
+                        <p className="mt-1 text-xs uppercase tracking-wide font-medium text-gray-500">
                             Quét mã để thanh toán
                         </p>
                     </div>

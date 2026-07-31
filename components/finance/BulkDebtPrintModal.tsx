@@ -187,7 +187,7 @@ export const BulkDebtPrintModal: React.FC<BulkDebtPrintModalProps> = ({ isOpen, 
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Xuất Thông Báo Học Phí">
-            <div ref={noticeRenderRef} style={{ position: 'absolute', left: '-9999px', width: '10.5cm' }}>
+            <div ref={noticeRenderRef} style={{ position: 'absolute', left: '-9999px', width: '480px' }}>
                 {studentToRender && (
                     <DebtNotice
                         student={studentToRender}
@@ -195,6 +195,7 @@ export const BulkDebtPrintModal: React.FC<BulkDebtPrintModalProps> = ({ isOpen, 
                         settings={settings}
                         attendance={attendance}
                         classes={classes}
+                        mode="print"
                     />
                 )}
             </div>
@@ -238,7 +239,7 @@ export const BulkDebtPrintModal: React.FC<BulkDebtPrintModalProps> = ({ isOpen, 
 
                 <div className="md:col-span-2 bg-gray-200 dark:bg-gray-900 p-4 rounded-lg">
                     <h3 className="text-center font-semibold mb-2">Xem trước Phiếu báo</h3>
-                    <div className="bg-white shadow-lg mx-auto" style={{ width: '10.5cm', minHeight: '14.8cm' }}>
+                    <div className="bg-white shadow-lg mx-auto rounded-lg overflow-hidden" style={{ maxWidth: '500px' }}>
                          {studentToRender ? (
                             <DebtNotice
                                 student={studentToRender}
@@ -246,6 +247,7 @@ export const BulkDebtPrintModal: React.FC<BulkDebtPrintModalProps> = ({ isOpen, 
                                 settings={settings}
                                 attendance={attendance}
                                 classes={classes}
+                                mode="preview"
                             />
                         ) : (
                             <div className="h-64 flex items-center justify-center text-gray-500">
