@@ -208,10 +208,9 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                         <div style={{ marginTop: '8px', textAlign: 'center' }}>
                             <span style={{
                                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                padding: '5px 18px',
+                                padding: '6px 18px',
                                 background: ORANGE, color: WHITE, borderRadius: '5px',
                                 fontSize: '13px', fontWeight: 700,
-                                lineHeight: '14px',
                             }}>
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ display: 'block', flexShrink: 0 }}>
                                     <rect x="3" y="4" width="18" height="18" rx="3" fill={WHITE} opacity="0.35" stroke={WHITE} strokeWidth="1.5"/>
@@ -226,21 +225,21 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                 {/* ═══ Meta row: Mã HĐ + Ngày lập ON SAME LINE ═══ */}
                 <div style={{
                     display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '32px',
-                    fontSize: '12px', color: TEXT_LABEL, padding: '8px 0 10px',
+                    fontSize: '12px', color: TEXT_LABEL, padding: '10px 0',
                     marginBottom: '18px', borderBottom: `1.5px solid ${PURPLE_LIGHT}`,
                 }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', lineHeight: 1 }}>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, display: 'block' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
                             <rect x="4" y="2" width="16" height="20" rx="2" stroke={TEXT_LABEL} strokeWidth="1.4" fill="none"/>
                             <path d="M8 7h8M8 11h5" stroke={TEXT_LABEL} strokeWidth="1.1" strokeLinecap="round"/>
                         </svg>
-                        <span style={{ lineHeight: '13px' }}>Mã HĐ: <strong style={{ color: BLACK, fontFamily: 'monospace' }}>#{invoice.id.slice(-5)}</strong></span>
+                        <span>Mã HĐ: <strong style={{ color: BLACK, fontFamily: 'monospace' }}>#{invoice.id.slice(-5)}</strong></span>
                     </span>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', lineHeight: 1 }}>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, display: 'block' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
                             <path d="M17 3a2.8 2.8 0 014 4L7.5 20.5 2 22l1.5-5.5L17 3z" stroke={TEXT_LABEL} strokeWidth="1.4" strokeLinejoin="round" fill="none"/>
                         </svg>
-                        <span style={{ lineHeight: '13px' }}>Ngày lập: <strong style={{ color: BLACK }}>{new Date(invoice.generatedDate).toLocaleDateString('vi-VN')}</strong></span>
+                        <span>Ngày lập: <strong style={{ color: BLACK }}>{new Date(invoice.generatedDate).toLocaleDateString('vi-VN')}</strong></span>
                     </span>
                 </div>
 
