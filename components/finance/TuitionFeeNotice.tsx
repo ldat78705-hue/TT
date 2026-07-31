@@ -139,11 +139,10 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
              <path d="M36 28v10"/>
              <circle cx="36" cy="44" r="0.5" fill="#fff"/>`
         ),
-        // File/Document icon (Lucide "FileText")
+        // File/Document icon (Lucide "FileText" — centered rect)
         doc: svgIcon(C.purple,
-            `<path d="M42 18H24a3 3 0 0 0-3 3v30a3 3 0 0 0 3 3h24a3 3 0 0 0 3-3V27z"/>
-             <path d="M42 18v9h9"/>
-             <path d="M30 35h12M30 41h12M30 47h8"/>`
+            `<rect x="20" y="16" width="32" height="40" rx="3"/>
+             <path d="M28 28h16M28 35h16M28 42h10"/>`
         ),
         // Checkmark circle icon for credit/payment
         dollarGreen: svgIcon(C.green,
@@ -206,13 +205,13 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                                                 {settings.name}
                                             </div>
                                             {settings.address && (
-                                                <div style={{ fontSize: '11px', color: C.label, marginTop: '3px' }}>
+                                                <div style={{ fontSize: '11px', color: C.green, marginTop: '3px', textAlign: 'center' }}>
                                                     {settings.address}
                                                 </div>
                                             )}
                                             {settings.phone && (
-                                                <div style={{ fontSize: '11px', color: C.label, marginTop: '1px' }}>
-                                                    Hotline: <strong style={{ color: C.black }}>{settings.phone}</strong>
+                                                <div style={{ fontSize: '11px', color: C.green, marginTop: '1px', textAlign: 'center' }}>
+                                                    Hotline: <strong>{settings.phone}</strong>
                                                 </div>
                                             )}
                                         </td>
@@ -228,7 +227,7 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                                 <div style={{
                                     marginTop: '8px',
                                     fontSize: '14px', fontWeight: 800,
-                                    textAlign: 'right',
+                                    textAlign: 'center',
                                     color: '#E53935',
                                 }}>
                                     Tháng {String(parseInt(invoiceMonthStr)).padStart(2, '0')} năm {invoiceYear}
