@@ -139,10 +139,10 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
              <path d="M36 28v10"/>
              <circle cx="36" cy="44" r="0.5" fill="#fff"/>`
         ),
-        // File/Document icon (Lucide "FileText" — centered rect)
+        // File/Document icon — simple centered document with text lines
         doc: svgIcon(C.purple,
-            `<rect x="20" y="16" width="32" height="40" rx="3"/>
-             <path d="M28 28h16M28 35h16M28 42h10"/>`
+            `<rect x="22" y="17" width="28" height="38" rx="3" stroke-width="2"/>
+             <path d="M29 29h14M29 35h14M29 41h8" stroke-width="2"/>`
         ),
         // Checkmark circle icon for credit/payment
         dollarGreen: svgIcon(C.green,
@@ -219,11 +219,10 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                                 </table>
                             </td>
                             {/* Right: Title + Month */}
-                            <td style={{ verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                                <div style={{ fontSize: '24px', fontWeight: 900, color: C.purpleDark, textTransform: 'uppercase' }}>
+                            <td style={{ verticalAlign: 'top', textAlign: 'center' }}>
+                                <div style={{ fontSize: '24px', fontWeight: 900, color: C.purpleDark, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
                                     PHIẾU THU HỌC PHÍ
                                 </div>
-                                {/* Month badge — red text, aligned right under title */}
                                 <div style={{
                                     marginTop: '8px',
                                     fontSize: '14px', fontWeight: 800,
