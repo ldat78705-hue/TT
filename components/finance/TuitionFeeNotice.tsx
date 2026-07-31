@@ -47,27 +47,27 @@ const numberToVietnameseWords = (n: number): string => {
 
 /* ═══ SVG Icons — WHITE on solid backgrounds ═══ */
 const SvgPerson = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ display: 'block' }}>
         <circle cx="12" cy="8" r="3.5" fill="#fff"/>
         <path d="M5 20c0-3 3.1-5 7-5s7 2 7 5" fill="#fff" opacity="0.85"/>
     </svg>
 );
 const SvgBook = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ display: 'block' }}>
         <path d="M5 4.5A2 2 0 017 2.5h13v19H7a2 2 0 01-2-2v-15z" stroke="#fff" strokeWidth="2" fill="none"/>
         <path d="M5 17.5A2 2 0 017 15.5h13" stroke="#fff" strokeWidth="2"/>
         <path d="M9 7h6M9 11h4" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
     </svg>
 );
 const SvgCap = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ display: 'block' }}>
         <path d="M12 3L2 8.5l10 5.5 10-5.5L12 3z" fill="#fff" opacity="0.9"/>
         <path d="M6 11v5c0 1.3 2.7 2.5 6 2.5s6-1.2 6-2.5v-5" stroke="#fff" strokeWidth="1.6" fill="none"/>
         <path d="M20 8.5v5" stroke="#fff" strokeWidth="1.6" strokeLinecap="round"/>
     </svg>
 );
 const SvgFamily = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ display: 'block' }}>
         <circle cx="9" cy="7" r="2.8" fill="#fff"/>
         <circle cx="16" cy="8" r="2.2" fill="#fff" opacity="0.8"/>
         <path d="M3 19c0-2.5 2.7-4.5 6-4.5s6 2 6 4.5" fill="#fff" opacity="0.7"/>
@@ -75,13 +75,13 @@ const SvgFamily = () => (
     </svg>
 );
 const SvgDollar = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ display: 'block' }}>
         <circle cx="12" cy="12" r="8.5" stroke="#fff" strokeWidth="1.8" fill="none"/>
         <path d="M12 7v10M9.5 9.5c0-1 1.1-1.8 2.5-1.8s2.5.8 2.5 1.8-1.1 1.6-2.5 2-2.5 1-2.5 2c0 1 1.1 1.8 2.5 1.8s2.5-.8 2.5-1.8" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
     </svg>
 );
 const SvgDoc = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ display: 'block' }}>
         <rect x="5" y="3" width="14" height="18" rx="2" stroke="#fff" strokeWidth="1.8" fill="none"/>
         <path d="M9 8h6M9 12h6M9 16h4" stroke="#fff" strokeWidth="1.4" strokeLinecap="round"/>
     </svg>
@@ -141,13 +141,18 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
     const W = mode === 'preview' ? '100%' : '700px';
     const maxW = mode === 'preview' ? '700px' : undefined;
 
-    // Icon circle helper — using TABLE for html2canvas alignment
+    // Icon circle helper — TABLE centering (html2canvas-proof, no flex)
     const ic = (bg: string, children: React.ReactNode) => (
-        <div style={{
-            width: '36px', height: '36px', borderRadius: '50%',
-            background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0, minWidth: '36px',
-        }}>{children}</div>
+        <table style={{ width: '36px', height: '36px', borderCollapse: 'collapse' }}>
+            <tbody><tr>
+                <td style={{
+                    width: '36px', height: '36px',
+                    borderRadius: '50%', background: bg,
+                    textAlign: 'center', verticalAlign: 'middle',
+                    padding: 0,
+                }}>{children}</td>
+            </tr></tbody>
+        </table>
     );
 
     // Section header bar
@@ -223,19 +228,17 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                 <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '18px', borderBottom: `1.5px solid ${C.purpleLight}` }}>
                     <tbody>
                         <tr>
-                            <td style={{ textAlign: 'center', padding: '10px 0' }}>
-                                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                    <tbody>
-                                        <tr>
-                                            <td style={{ textAlign: 'right', paddingRight: '20px', fontSize: '12px', color: C.label, verticalAlign: 'middle' }}>
-                                                📋 Mã HĐ: <strong style={{ color: C.black, fontFamily: 'monospace' }}>#{invoice.id.slice(-5)}</strong>
-                                            </td>
-                                            <td style={{ textAlign: 'left', paddingLeft: '20px', fontSize: '12px', color: C.label, verticalAlign: 'middle' }}>
-                                                ✏️ Ngày lập: <strong style={{ color: C.black }}>{new Date(invoice.generatedDate).toLocaleDateString('vi-VN')}</strong>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                            <td style={{ textAlign: 'right', padding: '10px 8px 10px 0', fontSize: '12px', color: C.label, verticalAlign: 'middle', width: '18px' }}>
+                                📋
+                            </td>
+                            <td style={{ textAlign: 'left', padding: '10px 20px 10px 0', fontSize: '12px', color: C.label, verticalAlign: 'middle' }}>
+                                Mã HĐ: <strong style={{ color: C.black, fontFamily: 'monospace' }}>#{invoice.id.slice(-5)}</strong>
+                            </td>
+                            <td style={{ textAlign: 'right', padding: '10px 8px 10px 20px', fontSize: '12px', color: C.label, verticalAlign: 'middle', width: '18px' }}>
+                                ✏️
+                            </td>
+                            <td style={{ textAlign: 'left', padding: '10px 0', fontSize: '12px', color: C.label, verticalAlign: 'middle' }}>
+                                Ngày lập: <strong style={{ color: C.black }}>{new Date(invoice.generatedDate).toLocaleDateString('vi-VN')}</strong>
                             </td>
                         </tr>
                     </tbody>
