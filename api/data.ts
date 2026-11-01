@@ -649,8 +649,14 @@ export async function executeOperationInternal(operation: { op: string, payload:
         });
 
         // Only check deletions for affected collections
+        // IMPORTANT: Never delete documents that are NOT managed by the sharding system
+        // (e.g. _messageLog_*, webhookLogs, auditLogs stored separately, etc.)
+        const PROTECTED_PREFIXES = ['_messageLog', 'webhookLog'];
         Object.keys(cache.rawShardStrings).forEach(key => {
-            if (key !== '_sync' && updatedShards[key] === undefined) {
+            if (key === '_sync') return;
+            // Never delete protected documents (message logs, webhook logs, etc.)
+            if (PROTECTED_PREFIXES.some(prefix => key.startsWith(prefix))) return;
+            if (updatedShards[key] === undefined) {
                 if (affectedCollections && !affectedCollections.some(col => key === col || key.startsWith(col + '_'))) {
                     return;
                 }
@@ -1170,9 +1176,13 @@ export default async function handler(req: any, res: any) {
                 
                 const batch = writeBatch(db);
 
-                // 1. Delete all existing documents to ensure a clean slate
+                // 1. Delete all existing DATA documents to ensure a clean slate
+                // IMPORTANT: Preserve documents not managed by the sharding system
+                const RESTORE_PROTECTED_PREFIXES = ['_messageLog', 'webhookLog'];
                 const querySnapshot = await getDocs(collection(db, colName));
                 querySnapshot.forEach(docSnap => {
+                    // Never delete protected documents (message logs, webhook logs)
+                    if (RESTORE_PROTECTED_PREFIXES.some(prefix => docSnap.id.startsWith(prefix))) return;
                     batch.delete(docSnap.ref);
                 });
 
