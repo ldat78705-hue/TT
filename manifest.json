@@ -1,0 +1,16 @@
+{
+  "short_name": "EduCenter Pro",
+  "name": "EduCenter Pro - Quản lý Trung tâm Dạy thêm",
+  "description": "Một ứng dụng React chuyên nghiệp để quản lý toàn diện trung tâm dạy thêm, bao gồm quản lý học viên, giáo viên, nhân viên, lớp học, điểm danh và tính học phí thông minh.",
+  "icons": [
+    {
+      "src": "logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#4f46e5",
+  "background_color": "#f8fafc"
+}

@@ -1,0 +1,93 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Create local.properties
+        run: echo "sdk.dir=$ANDROID_HOME" > android/local.properties
+
+      - name: Make gradlew executable
+        working-directory: android
+        run: chmod +x gradlew
+
+      - name: Get version info
+        id: version
+        run: |
+          VERSION_NAME=$(grep 'versionName' android/app/build.gradle.kts | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          VERSION_CODE=$(grep 'versionCode' android/app/build.gradle.kts | head -1 | sed 's/[^0-9]*//g')
+          echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
+          echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
+          echo "Building v$VERSION_NAME (build $VERSION_CODE)"
+
+      - name: Build Release APK
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: Rename APK
+        run: |
+          APK_NAME="EduCenterPro-v${{ steps.version.outputs.version_name }}.apk"
+          cp android/app/build/outputs/apk/release/app-release.apk "$APK_NAME"
+          echo "apk_name=$APK_NAME" >> $GITHUB_OUTPUT
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: EduCenterPro-v${{ steps.version.outputs.version_name }}
+          path: EduCenterPro-v${{ steps.version.outputs.version_name }}.apk
+
+      - name: Delete existing release (if any)
+        run: |
+          gh release delete "v${{ steps.version.outputs.version_name }}" --yes || true
+          git push origin :refs/tags/v${{ steps.version.outputs.version_name }} || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version_name }}
+          name: "📱 EduCenter Pro v${{ steps.version.outputs.version_name }}"
+          files: EduCenterPro-v${{ steps.version.outputs.version_name }}.apk
+          body: |
+            ## 📱 EduCenter Pro v${{ steps.version.outputs.version_name }} (Build ${{ steps.version.outputs.version_code }})
+            
+            ### 📥 Cách cài đặt:
+            1. Tải file **EduCenterPro-v${{ steps.version.outputs.version_name }}.apk** bên dưới
+            2. Mở file trên điện thoại → Bấm **Cài đặt**
+            3. Mở app **EduCenter Pro** → Đăng nhập
+            
+            > ⚠️ Lần đầu cần cho phép "Cài từ nguồn không xác định" trong Cài đặt điện thoại
+            
+            ### 🔧 Cải thiện v2.8.4:
+            - 🔴 Sửa lỗi sĩ số hiển thị sai: Bên ngoài ghi 28 nhưng bên trong chỉ 17 HS
+              → Giờ sĩ số bên ngoài chỉ đếm học viên đang theo học (ACTIVE)
+            - ⚡ Kế thừa tất cả cải thiện từ v2.8.3:
+              - Sửa app đứng khi offline, QR không hiện lớp, nút Sync quay mãi
+              - Tăng cường bảo mật log dữ liệu
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

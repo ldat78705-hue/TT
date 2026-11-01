@@ -1,0 +1,322 @@
+/* Inter font loaded via index.html link tag for better performance */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --color-primary: #4f46e5;
+    --color-primary-dark: #4338ca;
+    --color-sidebar-bg-dark: #111827; /* Default sidebar color, matches new background */
+
+    /* New Light Theme */
+    --background-light: #f1f5f9; /* slate-100, soft gray */
+    --card-bg-light: #ffffff;
+    --text-light-primary: #0f172a; /* Near black for high contrast */
+    --text-light-secondary: #475569;
+    --border-light: #e2e8f0;
+
+    /* New Dark Theme - Matching screenshot */
+    --background-dark: #1e293b;    /* slate-800, dark navy */
+    --card-bg-dark: #334155;    /* slate-700 */
+    --text-dark-primary: #f1f5f9; /* slate-100 */
+    --text-dark-secondary: #94a3b8; /* slate-400 */
+    --border-dark: #475569;     /* slate-600 */
+}
+
+@layer base {
+  html {
+    font-family: "Inter", system-ui, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  body {
+    background-color: var(--background-light);
+    color: var(--text-light-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior-y: none; /* Prevent pull-to-refresh on mobile for native feel */
+    -webkit-tap-highlight-color: transparent; /* Remove blue tap highlight on mobile */
+  }
+  .dark body {
+    background-color: var(--background-dark);
+    color: var(--text-dark-primary);
+  }
+}
+
+@layer components {
+  .card-base {
+    @apply bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-700/60 p-4 md:p-6 transition-all duration-200;
+  }
+  
+  .form-input, .form-select, .form-textarea {
+    @apply w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-colors duration-200;
+  }
+
+  .form-fieldset {
+    @apply border border-slate-200 dark:border-slate-700 p-6 rounded-lg;
+  }
+
+  .form-legend {
+    @apply px-2 text-sm font-semibold text-slate-500 dark:text-slate-400;
+  }
+
+  .btn-base {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95;
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 dark:bg-slate-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-400 dark:bg-slate-500;
+}
+
+/* Safe area padding for mobile PWA */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+/* Print Styles */
+@media print {
+  .print-hidden, aside, header, .bottom-nav, nav, [class*="BottomNav"] {
+      display: none !important;
+  }
+  body {
+      background-color: #ffffff !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      font-size: 12pt;
+  }
+  .modal-content-wrapper {
+    overflow-y: visible !important;
+    padding: 0 !important;
+  }
+  .invoice-page-break {
+      page-break-after: always;
+      break-after: page;
+  }
+  .invoice-page-break:last-child {
+      page-break-after: auto;
+      break-after: auto;
+  }
+  .print-only { display: block !important; }
+  .print-receipt {
+    max-width: 80mm;
+    margin: 0 auto;
+    font-family: monospace;
+    font-size: 10pt;
+  }
+  .print-receipt table { width: 100%; border-collapse: collapse; }
+  .print-receipt td, .print-receipt th { padding: 4px 2px; border-bottom: 1px dashed #ccc; text-align: left; }
+  .print-attendance-table { width: 100%; border-collapse: collapse; }
+  .print-attendance-table td, .print-attendance-table th { padding: 6px 8px; border: 1px solid #333; font-size: 10pt; }
+  .print-attendance-table th { background: #f0f0f0 !important; font-weight: bold; }
+}
+.print-only { display: none; }
+
+/* ═══════════════════════════════════════════════════ */
+/* LOGIN SCREEN — Premium Animated Glassmorphism      */
+/* ═══════════════════════════════════════════════════ */
+
+#login-context {
+  background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #1a1a3e);
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Floating particles */
+.login-area {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+.circles {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  overflow: hidden;
+  margin: 0; padding: 0;
+}
+.circles li {
+  position: absolute;
+  display: block;
+  list-style: none;
+  width: 20px; height: 20px;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(2px);
+  border: 1px solid rgba(255,255,255,0.08);
+  animation: floatUp 25s linear infinite;
+  bottom: -150px;
+  border-radius: 12px;
+}
+.circles li:nth-child(1){ left: 25%; width: 80px; height: 80px; animation-delay: 0s; border-radius: 16px; }
+.circles li:nth-child(2){ left: 10%; width: 20px; height: 20px; animation-delay: 2s; animation-duration: 12s; }
+.circles li:nth-child(3){ left: 70%; width: 24px; height: 24px; animation-delay: 4s; }
+.circles li:nth-child(4){ left: 40%; width: 60px; height: 60px; animation-delay: 0s; animation-duration: 18s; border-radius: 20px; }
+.circles li:nth-child(5){ left: 65%; width: 20px; height: 20px; animation-delay: 0s; }
+.circles li:nth-child(6){ left: 75%; width: 100px; height: 100px; animation-delay: 3s; border-radius: 24px; }
+.circles li:nth-child(7){ left: 35%; width: 140px; height: 140px; animation-delay: 7s; border-radius: 30px; }
+.circles li:nth-child(8){ left: 50%; width: 25px; height: 25px; animation-delay: 15s; animation-duration: 45s; }
+.circles li:nth-child(9){ left: 20%; width: 15px; height: 15px; animation-delay: 2s; animation-duration: 35s; }
+.circles li:nth-child(10){ left: 85%; width: 120px; height: 120px; animation-delay: 0s; animation-duration: 11s; border-radius: 28px; }
+
+@keyframes floatUp {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(-1200px) rotate(720deg); opacity: 0; }
+}
+
+/* Glassmorphism login card */
+.login-glass-card {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 1.5rem;
+  box-shadow: 
+    0 8px 32px rgba(0,0,0,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.1);
+  animation: cardEnter 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+@keyframes cardEnter {
+  from { opacity: 0; transform: translateY(30px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Login inputs - premium glass style */
+.login-glass-card .form-input {
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.15) !important;
+  color: #fff !important;
+  border-radius: 0.75rem !important;
+  transition: all 0.3s ease !important;
+}
+.login-glass-card .form-input::placeholder {
+  color: rgba(255,255,255,0.35);
+}
+.login-glass-card .form-input:focus {
+  border-color: rgba(139,92,246,0.6) !important;
+  box-shadow: 0 0 0 3px rgba(139,92,246,0.15), 0 0 20px rgba(139,92,246,0.1) !important;
+  background: rgba(255,255,255,0.1) !important;
+}
+
+/* Login button - gradient glow */
+.login-glass-card .btn-base {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+.login-glass-card .btn-base::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 200%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.6s ease;
+}
+.login-glass-card .btn-base:hover::before {
+  left: 100%;
+}
+.login-glass-card .btn-base:hover {
+  box-shadow: 0 0 30px rgba(139,92,246,0.4);
+  transform: translateY(-1px);
+}
+
+/* Brand header styling */
+.login-header-content {
+  color: #e0e7ff;
+  animation: brandEnter 1s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
+  opacity: 0;
+}
+@keyframes brandEnter {
+  from { opacity: 0; transform: translateX(-30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.login-header-content p {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+}
+.login-header-content img {
+  max-height: 10rem;
+  border-radius: 0.75rem;
+  object-fit: contain;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+@media (min-width: 768px) {
+  .login-header-content img {
+      margin-left: 0;
+      margin-right: 0;
+  }
+}
+.login-header-content iframe {
+  border-radius: 0.75rem;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* Help box in login */
+.login-help-box {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 0.75rem;
+  color: rgba(255,255,255,0.6);
+}
+.login-help-box h4 {
+  color: rgba(255,255,255,0.8);
+}
+.login-help-box code {
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.9);
+}
