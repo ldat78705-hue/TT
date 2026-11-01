@@ -406,6 +406,9 @@ export const TuitionFeeNotice = forwardRef<HTMLDivElement, TuitionFeeNoticeProps
                                         <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: C.body }}>
                                             {settings.bankAccountHolder}
                                         </div>
+                                        <div style={{ fontSize: '14px', fontWeight: 800, color: '#E53935', marginTop: '6px' }}>
+                                            Số tiền: {formatCurrency(totalDue)}
+                                        </div>
                                     </td>
                                     {/* Transfer content — FULL WIDTH block, text centered */}
                                     <td style={{ padding: '16px 10px', verticalAlign: 'middle' }}>
