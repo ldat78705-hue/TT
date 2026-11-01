@@ -252,6 +252,9 @@ export async function getSplitData(centerId: string = '_legacy', forceRefresh = 
             querySnapshot.forEach((docSnap) => {
                 const id = docSnap.id;
                 if (id === '_sync') return;
+                // Skip documents not managed by the sharding system
+                // These are managed separately (e.g. by /api/zalo endpoint)
+                if (id.startsWith('_messageLog') || id.startsWith('webhookLog')) return;
                 
                 hasData = true;
                 const docData = docSnap.data().data;
