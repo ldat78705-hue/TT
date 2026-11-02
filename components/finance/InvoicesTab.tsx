@@ -399,26 +399,7 @@ export const InvoicesTab: React.FC = () => {
                                     
                                     const studentsToSend: any[] = [];
                                     try {
-                                        // Pre-generate QR codes to warm cache (avoids per-render delay)
-                                        if (isSllChannel && state.settings.bankBin && state.settings.bankAccountNumber) {
-                                            const { generateQRDataUrl } = await import('../../utils/vietqr');
-                                            setImageGenProgress('Chuẩn bị mã QR...');
-                                            const uniqueStudents = new Map<string, { balance: number; id: string }>();
-                                            for (const inv of selectedUnpaidInvoices) {
-                                                const st = state.students.find(s => s.id === inv.studentId);
-                                                if (st) uniqueStudents.set(st.id, st);
-                                            }
-                                            await Promise.all(Array.from(uniqueStudents.values()).map(s =>
-                                                generateQRDataUrl({
-                                                    bankBin: state.settings.bankBin!,
-                                                    accountNo: state.settings.bankAccountNumber!,
-                                                    accountName: state.settings.bankAccountHolder || undefined,
-                                                    amount: Math.abs(s.balance),
-                                                    content: `HOC PHI ${s.id}`,
-                                                })
-                                            ));
-                                        }
-
+                                        
                                         for (let i = 0; i < selectedUnpaidInvoices.length; i++) {
                                             const inv = selectedUnpaidInvoices[i];
                                             const student = state.students.find(s => s.id === inv.studentId);
@@ -440,7 +421,7 @@ export const InvoicesTab: React.FC = () => {
                                                     setImageGenProgress(`Tạo ảnh HĐ ${i + 1}/${selectedUnpaidInvoices.length}: ${student.name}...`);
 
                                                     setImageGenInvoice(inv);
-                                                    await new Promise(r => setTimeout(r, 200)); // QR already cached
+                                                    await new Promise(r => setTimeout(r, 500));
                                                     
                                                     const el = debtImageRef.current;
                                                     if (el) {
