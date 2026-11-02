@@ -340,8 +340,22 @@ export const UnpaidStudentsReport: React.FC = () => {
                                     
                                     const studentsToSend: any[] = [];
                                     try {
-                                        // Build student data with optional image URLs (SLL only)
+                                        // Pre-generate QR codes to warm cache (avoids per-render delay)
+                                        if (isSllChannel && settings.bankBin && settings.bankAccountNumber) {
+                                            const { generateQRDataUrl } = await import('../../utils/vietqr');
+                                            setImageGenProgress('Chuẩn bị mã QR...');
+                                            await Promise.all(selectedStudentObjs.map(s =>
+                                                generateQRDataUrl({
+                                                    bankBin: settings.bankBin!,
+                                                    accountNo: settings.bankAccountNumber!,
+                                                    accountName: settings.bankAccountHolder || undefined,
+                                                    amount: Math.abs(s.balance),
+                                                    content: `HOC PHI ${s.id}`,
+                                                })
+                                            ));
+                                        }
                                         
+                                        // Build student data with optional image URLs (SLL only)
                                         for (let i = 0; i < selectedStudentObjs.length; i++) {
                                             const s = selectedStudentObjs[i];
                                             const studentData: any = {
@@ -359,8 +373,8 @@ export const UnpaidStudentsReport: React.FC = () => {
                                                     setImageGenProgress(`Tạo ảnh phiếu HP ${i + 1}/${selectedStudentObjs.length}: ${s.name}...`);
                                                     setImageGenStudent(s);
                                                     
-                                                    // Wait for React to render the DebtNotice
-                                                    await new Promise(r => setTimeout(r, 500));
+                                                    // Wait for React to render the DebtNotice (QR already cached)
+                                                    await new Promise(r => setTimeout(r, 200));
                                                     
                                                     const el = debtImageRef.current;
                                                     if (el) {
