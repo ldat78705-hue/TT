@@ -38,6 +38,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, stu
     // Track previous isOpen to detect open transition
     const prevIsOpenRef = React.useRef(false);
     
+    // QR state — MUST be before any early return (Rules of Hooks)
+    const [qrUrl, setQrUrl] = useState('');
+
     useEffect(() => {
         // Only reset when modal OPENS (false → true), not when student data updates
         const justOpened = isOpen && !prevIsOpenRef.current;
@@ -60,6 +63,26 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, stu
         }
     }, [student, isOpen]);
 
+    // QR generation effect — also before early return
+    const { bankBin, bankAccountNumber, bankAccountHolder } = state.settings;
+    const studentId = student?.id || '';
+    const canGenerateQR = !!(bankBin && bankAccountNumber && paymentMethod === 'transfer' && amount > 0 && student);
+    const transferDescription = studentId ? `HOC PHI ${studentId}` : '';
+
+    useEffect(() => {
+        if (!canGenerateQR) {
+            setQrUrl('');
+            return;
+        }
+        generateQRDataUrl({
+            bankBin: bankBin!,
+            accountNo: bankAccountNumber!,
+            accountName: bankAccountHolder || undefined,
+            amount,
+            content: transferDescription,
+        }).then(url => setQrUrl(url || ''));
+    }, [canGenerateQR, bankBin, bankAccountNumber, bankAccountHolder, amount, transferDescription]);
+
     if (!student) return null;
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -70,7 +93,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, stu
         }
         setIsLoading(true);
         try {
-            // 1. Record the payment transaction
             const finalDate = date.length === 16 ? `${date}:00` : date;
             await addAdjustment({
                 studentId: student.id,
@@ -96,7 +118,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, stu
         if (!student) return;
         setIsSendingZalo(true);
         try {
-            // Token is stored as JSON object in 'educenter_user_session'
             let token = '';
             try {
                 const session = JSON.parse(localStorage.getItem('educenter_user_session') || '{}');
@@ -133,28 +154,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, stu
             setIsSendingZalo(false);
         }
     };
-
-    // Chuẩn bị URL VietQR
-    const { bankBin, bankAccountNumber, bankAccountHolder } = state.settings;
-    const canGenerateQR = bankBin && bankAccountNumber && paymentMethod === 'transfer' && amount > 0;
-    
-    // Yêu cầu bắt buộc phải có cú pháp này để chặn triệt để nhầm lẫn
-    const transferDescription = `HOC PHI ${student.id}`;
-    
-    const [qrUrl, setQrUrl] = useState('');
-    useEffect(() => {
-        if (!canGenerateQR) {
-            setQrUrl('');
-            return;
-        }
-        generateQRDataUrl({
-            bankBin: bankBin!,
-            accountNo: bankAccountNumber!,
-            accountName: bankAccountHolder || undefined,
-            amount,
-            content: transferDescription,
-        }).then(url => setQrUrl(url || ''));
-    }, [canGenerateQR, bankBin, bankAccountNumber, bankAccountHolder, amount, transferDescription]);
 
     // Check if can send Zalo (has phone or zaloUserId)
     const canSendZalo = !!(student.parentPhone?.trim() || student.phone?.trim() || student.zaloUserId?.trim());
