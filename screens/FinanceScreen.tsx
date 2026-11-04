@@ -55,6 +55,11 @@ const OverviewTab: React.FC<{startDate: string, endDate: string}> = ({startDate,
         const monthlyPaidCount = state.invoices
             .filter(i => i.month >= startMonth && i.month <= endMonth && i.status === 'PAID')
             .length;
+        
+        // Số tiền đã thu theo tháng học (chỉ hóa đơn PAID)
+        const monthlyPaidAmount = state.invoices
+            .filter(i => i.month >= startMonth && i.month <= endMonth && i.status === 'PAID')
+            .reduce((sum, i) => sum + i.amount, 0);
 
         // 2. Thực thu từ Học phí (Cash Tuition): Từ giao dịch thanh toán thực tế trong khoảng thời gian
         const tuitionCollected = state.transactions
@@ -87,6 +92,7 @@ const OverviewTab: React.FC<{startDate: string, endDate: string}> = ({startDate,
             accrualRevenue,
             monthlyTuition,
             monthlyInvoiceCount,
+            monthlyPaidAmount,
             monthlyPaidCount,
             cashRevenue,
             totalExpenses,
@@ -105,7 +111,7 @@ const OverviewTab: React.FC<{startDate: string, endDate: string}> = ({startDate,
                     value={`${financialSummary.monthlyTuition.toLocaleString('vi-VN')} ₫`} 
                     icon={ICONS.finance} 
                     color="text-purple-600 dark:text-purple-400"
-                    subtitle={`${financialSummary.monthlyPaidCount}/${financialSummary.monthlyInvoiceCount} HĐ đã thanh toán`}
+                    subtitle={`Đã thu: ${financialSummary.monthlyPaidAmount.toLocaleString('vi-VN')} ₫ (${financialSummary.monthlyPaidCount}/${financialSummary.monthlyInvoiceCount} HĐ)`}
                 />
                 <Card title={`Doanh thu ghi nhận (Hóa đơn)`} value={`${financialSummary.accrualRevenue.toLocaleString('vi-VN')} ₫`} icon={ICONS.reports} color="text-blue-600 dark:text-blue-400" />
                 <Card 
