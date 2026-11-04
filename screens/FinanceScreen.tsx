@@ -188,7 +188,7 @@ const OverviewTab: React.FC<{startDate: string, endDate: string}> = ({startDate,
                                         <td className={cellClass}>{t.date.substring(0, 10)}</td>
                                         <td className={cellClass}>{student?.name || t.studentId}</td>
                                         <td className={cellClass}>{t.type === 'PAYMENT' ? 'Thanh toán' : t.type === 'ADJUSTMENT_CREDIT' ? 'Điều chỉnh +' : t.type}</td>
-                                        <td className={`${cellClass} max-w-[200px] truncate`}>{t.note || ''}</td>
+                                        <td className={`${cellClass} max-w-[200px] truncate`}>{t.description || ''}</td>
                                         <td className={`${cellClass} text-right font-medium text-green-600`}>+{fmt(t.amount)} ₫</td>
                                     </tr>
                                 );
@@ -290,7 +290,7 @@ const OverviewTab: React.FC<{startDate: string, endDate: string}> = ({startDate,
                         <tbody className="divide-y dark:divide-slate-700">
                             {items.map(s => (
                                 <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50">
-                                    <td className={cellClass}>{s.studentId || s.id.substring(0, 8)}</td>
+                                    <td className={cellClass}>{s.id}</td>
                                     <td className={cellClass}>{s.name}</td>
                                     <td className={`${cellClass} max-w-[200px] truncate`}>
                                         {state.classes.filter(c => c.studentIds?.includes(s.id)).map(c => c.name).join(', ') || '—'}
