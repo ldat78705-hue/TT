@@ -402,6 +402,8 @@ const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
 
     const handleToggleStatus = async (center: any) => {
         const newStatus = center.status === 'ACTIVE' ? 'LOCKED' : 'ACTIVE';
+        const action = newStatus === 'LOCKED' ? 'KHÓA' : 'MỞ KHÓA';
+        if (!window.confirm(`Bạn có chắc muốn ${action} trung tâm "${center.name}"?`)) return;
         try {
             await apiCall('toggle_status', { slug: center.slug, status: newStatus });
             setMessage(`✅ ${center.name}: ${newStatus === 'ACTIVE' ? 'Đã mở khóa' : 'Đã khóa'}`);
@@ -446,6 +448,7 @@ const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
 
     const handleRemoveCredentials = async () => {
         if (!credTarget) return;
+        if (!window.confirm(`Bạn có chắc muốn XÓA tài khoản đăng nhập của "${credTarget.name}"? Trung tâm sẽ không thể đăng nhập nữa.`)) return;
         try {
             await apiCall('remove_credentials', { slug: credTarget.slug });
             setMessage(`✅ Đã xóa tài khoản đăng nhập của "${credTarget.name}"`);
@@ -776,7 +779,7 @@ const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium mb-1">{credTarget.loginUsername ? 'Mật khẩu mới' : 'Mật khẩu'}</label>
-                                        <input type="text" value={creds.loginPassword}
+                                        <input type="password" value={creds.loginPassword}
                                             onChange={e => setCreds({...creds, loginPassword: e.target.value})}
                                             className="form-input" placeholder="Nhập mật khẩu" required />
                                     </div>
@@ -966,7 +969,7 @@ const CenterAccountsManager: React.FC<{
                         </div>
                         <div>
                             <label className="block text-xs font-medium mb-1">Mật khẩu mới</label>
-                            <input type="text" value={editForm.newPassword}
+                            <input type="password" value={editForm.newPassword}
                                 onChange={e => setEditForm({...editForm, newPassword: e.target.value})}
                                 className="form-input text-sm" placeholder="Để trống = giữ nguyên" />
                         </div>

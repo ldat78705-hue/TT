@@ -206,7 +206,12 @@ export default async function handler(req: any, res: any) {
             if (!slug) return res.status(400).json({ error: 'Thiếu mã trung tâm' });
 
             const centerRef = doc(db, REGISTRY_COLLECTION, slug);
+            const centerDoc = await getDoc(centerRef);
+            if (!centerDoc.exists()) {
+                return res.status(404).json({ error: `Trung tâm "${slug}" không tồn tại` });
+            }
             await updateDoc(centerRef, { status: status || 'LOCKED' });
+            invalidateCenterCache(slug);
             return res.status(200).json({ success: true, status: status || 'LOCKED' });
         }
 
@@ -215,12 +220,19 @@ export default async function handler(req: any, res: any) {
             const { slug } = body;
             if (!slug) return res.status(400).json({ error: 'Thiếu mã trung tâm' });
 
-            // 1. Delete all documents in center data collection
             const colName = `center_${slug}`;
+            
+            // === STEP 1: Delete registry FIRST to prevent race condition ===
+            // If getSplitData runs during delete, it checks registry.
+            // Registry gone = shouldSeed=false = no auto-seed = no resurrection.
+            await deleteDoc(doc(db, REGISTRY_COLLECTION, slug));
+            invalidateCenterCache(slug);
+
+            // === STEP 2: Auto-backup + delete data ===
             try {
                 const docsSnapshot = await getDocs(collection(db, colName));
                 
-                // === SAFETY: Auto-backup before deleting center ===
+                // Auto-backup before deleting
                 try {
                     const NON_SHARDED_KEYS = ['students', 'teachers', 'staff', 'classes', 'rooms', 'settings', 'announcements', 'progressReports'];
                     const backupPayload: Record<string, any> = {};
@@ -242,7 +254,6 @@ export default async function handler(req: any, res: any) {
                 }
                 
                 if (docsSnapshot.size > 0) {
-                    // Keep _autobackup docs so data can be recovered if needed
                     const DELETE_PROTECTED = ['_autobackup'];
                     const deleteBatches: any[] = [];
                     let batch = writeBatch(db);
@@ -263,12 +274,6 @@ export default async function handler(req: any, res: any) {
             } catch (e) {
                 console.error(`Error deleting center data for ${slug}:`, e);
             }
-
-            // 2. Delete registry entry
-            await deleteDoc(doc(db, REGISTRY_COLLECTION, slug));
-            
-            // 3. Invalidate server-side cache so deleted center doesn't "come back"
-            invalidateCenterCache(slug);
             
             return res.status(200).json({ success: true, message: `Đã xóa trung tâm "${slug}" và toàn bộ dữ liệu` });
         }
@@ -287,13 +292,7 @@ export default async function handler(req: any, res: any) {
             }
 
             const storedPassword = adminDoc.data().password;
-            const defaultPassword = 'Thanhdat';
             let isValid = verifyPassword(currentPassword, storedPassword);
-            
-            // Fallback: allow default password to work even if hash format is incompatible
-            if (!isValid && currentPassword === defaultPassword) {
-                isValid = true;
-            }
             
             if (!isValid) {
                 return res.status(401).json({ error: 'Mật khẩu hiện tại không đúng' });
@@ -661,6 +660,23 @@ export default async function handler(req: any, res: any) {
                     batch.set(doc(db, colName, '_sync'), { syncId: newSyncId, lastUpdatedAt: Date.now() });
                     opCount++;
                     await flushBatch();
+
+                    // Ensure registry entry exists for restored center
+                    const registryRef = doc(db, REGISTRY_COLLECTION, slug);
+                    const existingRegistry = await getDoc(registryRef);
+                    if (!existingRegistry.exists()) {
+                        const settings = centerData.settings || {};
+                        await setDoc(registryRef, {
+                            name: settings.name || slug,
+                            slug,
+                            plan: 'free',
+                            status: 'ACTIVE',
+                            createdAt: new Date().toISOString(),
+                            expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+                            collectionName: colName,
+                            restoredAt: new Date().toISOString()
+                        });
+                    }
 
                     restored++;
                 }
