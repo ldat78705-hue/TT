@@ -476,6 +476,8 @@ export default async function handler(req: any, res: any) {
                     docsSnapshot.forEach((docSnap) => {
                         const id = docSnap.id;
                         if (id === '_sync') return;
+                        // Skip special docs not part of app data
+                        if (id.startsWith('_messageLog') || id.startsWith('webhookLog') || id.startsWith('_autobackup')) return;
                         const docData = docSnap.data().data;
 
                         let baseCol = id;
@@ -530,11 +532,14 @@ export default async function handler(req: any, res: any) {
                     if (!centerData) continue;
 
                     // First: delete all existing docs in this center collection
+                    // IMPORTANT: Protect special docs (messageLog, webhookLog, autobackup)
+                    const RESTORE_ALL_PROTECTED = ['_messageLog', 'webhookLog', '_autobackup'];
                     const existingDocs = await getDocs(collection(db, colName));
                     const deleteBatches: any[] = [];
                     let deleteBatch = writeBatch(db);
                     let deleteCount = 0;
                     existingDocs.forEach((d) => {
+                        if (RESTORE_ALL_PROTECTED.some(prefix => d.id.startsWith(prefix))) return;
                         deleteBatch.delete(doc(db, colName, d.id));
                         deleteCount++;
                         if (deleteCount >= 450) {
@@ -572,7 +577,7 @@ export default async function handler(req: any, res: any) {
                         const items = centerData[col];
                         if (!Array.isArray(items) || items.length === 0) continue;
 
-                        // Group by shard key
+                        // Group by shard key (must match getShardKey in data.ts)
                         const shards: Record<string, any[]> = {};
                         for (const item of items) {
                             let shardKey = col; // fallback
@@ -580,9 +585,18 @@ export default async function handler(req: any, res: any) {
                                 if (['transactions', 'income', 'expenses'].includes(col) && item.date) {
                                     const match = item.date.match(/^(\d{4})-(\d{2})/);
                                     if (match) shardKey = `${col}_${match[1]}_${match[2]}`;
-                                } else if (['attendance', 'invoices', 'payrolls'].includes(col) && item.date) {
+                                } else if (col === 'attendance' && item.date) {
+                                    // Attendance: shard by MONTH + CLASS
                                     const match = item.date.match(/^(\d{4})-(\d{2})/);
-                                    if (match) shardKey = `${col}_${match[1]}_${match[2]}`;
+                                    const classId = item.classId || 'unknown';
+                                    if (match) shardKey = `attendance_${match[1]}_${match[2]}_${classId}`;
+                                } else if (col === 'invoices' && item.month) {
+                                    // Invoices: shard by month field (YYYY-MM)
+                                    const parts = item.month.split('-');
+                                    if (parts.length === 2) shardKey = `invoices_${parts[0]}_${parts[1]}`;
+                                } else if (col === 'payrolls' && item.year && item.month) {
+                                    // Payrolls: shard by year + month
+                                    shardKey = `payrolls_${item.year}_${item.month.toString().padStart(2, '0')}`;
                                 }
                             } catch {}
                             if (!shards[shardKey]) shards[shardKey] = [];

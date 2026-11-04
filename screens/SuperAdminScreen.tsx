@@ -297,7 +297,7 @@ const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
             try {
                 const text = await file.text();
                 const data = JSON.parse(text);
-                if (!data.centersData && !data.students) {
+                if (!data.centers && !data.centersData && !data.students) {
                     setMessage('❌ File không đúng định dạng sao lưu EduCenterPro.'); return;
                 }
                 setRestoreConfirm({open: true, data, source: `file "${file.name}"`});
@@ -315,7 +315,7 @@ const SuperAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
             });
             if (!resp.ok) throw new Error('Tải thất bại');
             const data = await resp.json();
-            if (!data.centersData && !data.students) {
+            if (!data.centers && !data.centersData && !data.students) {
                 setMessage('❌ File không đúng định dạng sao lưu.'); return;
             }
             setRestoreConfirm({open: true, data, source: `Drive "${fileName}"`});
