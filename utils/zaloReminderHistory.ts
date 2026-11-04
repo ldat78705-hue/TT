@@ -23,12 +23,25 @@ export interface ZaloReminderEntry {
     sentAt: string; // ISO datetime
 }
 
+// Simple cache to avoid repeated JSON.parse per render cycle
+let _cachedHistory: ZaloReminderEntry[] | null = null;
+let _cacheTimestamp = 0;
+const CACHE_TTL = 2000; // 2 seconds
+
 function getHistory(): ZaloReminderEntry[] {
+    const now = Date.now();
+    if (_cachedHistory && (now - _cacheTimestamp) < CACHE_TTL) {
+        return _cachedHistory;
+    }
     try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return [];
-        return JSON.parse(raw) as ZaloReminderEntry[];
+        if (!raw) { _cachedHistory = []; _cacheTimestamp = now; return []; }
+        _cachedHistory = JSON.parse(raw) as ZaloReminderEntry[];
+        _cacheTimestamp = now;
+        return _cachedHistory;
     } catch {
+        _cachedHistory = [];
+        _cacheTimestamp = now;
         return [];
     }
 }
@@ -38,6 +51,9 @@ function saveHistory(entries: ZaloReminderEntry[]): void {
         // Keep only latest MAX_ENTRIES
         const trimmed = entries.slice(-MAX_ENTRIES);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+        // Invalidate cache
+        _cachedHistory = trimmed;
+        _cacheTimestamp = Date.now();
     } catch {
         // localStorage full — ignore
     }
@@ -179,4 +195,6 @@ export function getGroupReminderLabel(studentId: string, invoices: { studentId: 
  */
 export function clearReminderHistory(): void {
     localStorage.removeItem(STORAGE_KEY);
+    _cachedHistory = null;
+    _cacheTimestamp = 0;
 }
