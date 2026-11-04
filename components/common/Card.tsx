@@ -6,12 +6,13 @@ interface CardProps {
   value: string | number;
   icon: React.ReactElement<{ className?: string }>;
   color: string; // Now a text color class, e.g., 'text-blue-600'
+  subtitle?: string;
   linkTo?: string;
   linkState?: object;
   onClick?: () => void;
 }
 
-export const Card: React.FC<CardProps> = ({ title, value, icon, color, linkTo, linkState, onClick }) => {
+export const Card: React.FC<CardProps> = ({ title, value, icon, color, subtitle, linkTo, linkState, onClick }) => {
   const isInteractive = !!(linkTo || onClick);
   
   const content = (
@@ -24,6 +25,7 @@ export const Card: React.FC<CardProps> = ({ title, value, icon, color, linkTo, l
       <div className="overflow-hidden flex-1">
         <p className={`text-sm font-medium text-slate-700 dark:text-slate-300 truncate ${isInteractive ? 'group-hover:text-primary transition-colors' : ''}`}>{title}</p>
         <p className="text-2xl font-bold text-slate-800 dark:text-white truncate">{value}</p>
+        {subtitle && <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{subtitle}</p>}
       </div>
       {isInteractive && (
         <div className="ml-2 text-slate-300 dark:text-slate-600 group-hover:text-primary group-hover:translate-x-0.5 transition-all duration-200">

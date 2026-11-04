@@ -37,6 +37,25 @@ const OverviewTab: React.FC<{startDate: string, endDate: string}> = ({startDate,
             .filter(i => i.generatedDate >= startDate && i.generatedDate <= endDate && i.status !== 'CANCELLED')
             .reduce((sum, i) => sum + i.amount, 0);
 
+        // 1b. Học phí theo tháng học: Tổng hóa đơn thuộc tháng học trong khoảng thời gian
+        // VD: startDate = "2026-10-01", endDate = "2026-10-31" → lấy hóa đơn có month = "2026-10"
+        // Bất kể ngày chốt (generatedDate) là 28/10, 29/10 hay 5/11
+        const startMonth = startDate.substring(0, 7); // "YYYY-MM"
+        const endMonth = endDate.substring(0, 7);
+        const monthlyTuition = state.invoices
+            .filter(i => i.month >= startMonth && i.month <= endMonth && i.status !== 'CANCELLED')
+            .reduce((sum, i) => sum + i.amount, 0);
+        
+        // Số hóa đơn theo tháng học
+        const monthlyInvoiceCount = state.invoices
+            .filter(i => i.month >= startMonth && i.month <= endMonth && i.status !== 'CANCELLED')
+            .length;
+        
+        // Số hóa đơn đã thanh toán theo tháng học
+        const monthlyPaidCount = state.invoices
+            .filter(i => i.month >= startMonth && i.month <= endMonth && i.status === 'PAID')
+            .length;
+
         // 2. Thực thu từ Học phí (Cash Tuition): Từ giao dịch thanh toán thực tế trong khoảng thời gian
         const tuitionCollected = state.transactions
             .filter(t => t.date.substring(0, 10) >= startDate && t.date.substring(0, 10) <= endDate && t.amount > 0)
@@ -66,6 +85,9 @@ const OverviewTab: React.FC<{startDate: string, endDate: string}> = ({startDate,
 
         return {
             accrualRevenue,
+            monthlyTuition,
+            monthlyInvoiceCount,
+            monthlyPaidCount,
             cashRevenue,
             totalExpenses,
             cashFlow: cashRevenue - totalExpenses,
@@ -77,7 +99,14 @@ const OverviewTab: React.FC<{startDate: string, endDate: string}> = ({startDate,
     
     return (
         <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <Card 
+                    title={`Học phí theo tháng học`} 
+                    value={`${financialSummary.monthlyTuition.toLocaleString('vi-VN')} ₫`} 
+                    icon={ICONS.finance} 
+                    color="text-purple-600 dark:text-purple-400"
+                    subtitle={`${financialSummary.monthlyPaidCount}/${financialSummary.monthlyInvoiceCount} HĐ đã thanh toán`}
+                />
                 <Card title={`Doanh thu ghi nhận (Hóa đơn)`} value={`${financialSummary.accrualRevenue.toLocaleString('vi-VN')} ₫`} icon={ICONS.reports} color="text-blue-600 dark:text-blue-400" />
                 <Card 
                     title={`Tổng Thực thu (Tiền mặt)`} 
