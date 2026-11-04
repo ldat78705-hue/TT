@@ -13,7 +13,7 @@ import { TuitionFeeNoticeModal } from './TuitionFeeNoticeModal';
 import { BulkInvoiceExportModal } from './BulkInvoiceExportModal';
 import { AdvancePaymentModal } from './AdvancePaymentModal';
 import { BalanceStatementModal } from './BalanceStatementModal';
-import { recalculateAllInvoices, zaloSendOverdueReminders } from '../../services/api';
+import { recalculateAllInvoices, zaloSendOverdueReminders, markInvoiceReminder } from '../../services/api';
 import { ZaloSendModal } from './ZaloSendModal';
 import { uploadDebtNoticeImage, deleteDebtNoticeImage } from '../../utils/firebaseStorage';
 import { TuitionFeeNotice } from './TuitionFeeNotice';
@@ -315,6 +315,7 @@ export const InvoicesTab: React.FC = () => {
         { header: 'Số tiền', accessor: (item) => `${item.amount.toLocaleString('vi-VN')} ₫`, sortable: true, sortKey: 'amount' },
         { header: 'Ngày tạo', accessor: 'generatedDate', sortable: true },
         { header: 'Trạng thái', accessor: getStatusBadge, sortable: true, sortKey: 'status' },
+        { header: 'Nhắc gần nhất', accessor: (item) => item.lastReminderDate ? new Date(item.lastReminderDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—', sortable: true, sortKey: 'lastReminderDate' },
     ];
 
     const handleGenerate = async (month: number, year: number, classIds?: string[], hideUnexcused?: boolean) => {
@@ -447,6 +448,13 @@ export const InvoicesTab: React.FC = () => {
                                         if (result.success) {
                                             const { sent, failed, skipped } = result.summary;
                                             toast.success(`Gửi nhắc HĐ: ${sent} thành công, ${failed} thất bại, ${skipped} bỏ qua`);
+                                            // Ghi nhận lần nhắc gần nhất
+                                            if (sent > 0) {
+                                                try {
+                                                    const remindedIds = selectedUnpaidInvoices.map(inv => inv.id);
+                                                    await markInvoiceReminder({ invoiceIds: remindedIds, reminderDate: new Date().toISOString() });
+                                                } catch (e) { console.warn('Failed to mark reminder date:', e); }
+                                            }
                                         } else {
                                             toast.error(result.error || 'Lỗi gửi nhắc nhở');
                                         }

@@ -13,7 +13,7 @@ import { Pagination } from '../components/common/Pagination';
 import { ResetPasswordModal } from '../components/auth/ChangePasswordModal';
 import { PaymentModal } from '../components/finance/PaymentModal';
 import { ExportButton } from '../components/common/ExportButton';
-import { zaloSendTuition, zaloGetFollowersList } from '../services/api';
+import { zaloSendTuition, zaloGetFollowersList, markInvoiceReminder } from '../services/api';
 import { printHtml } from '../utils/html';
 import { getStudentZaloPhone } from '../utils/zaloDeepLink';
 import { ZaloSendModal } from '../components/finance/ZaloSendModal';
@@ -936,7 +936,12 @@ export const StudentsScreen: React.FC = () => {
                                                     try {
                                                         const unpaidInv = state.invoices.filter(inv => inv.studentId === student.id && inv.status === 'UNPAID').sort((a, b) => a.month.localeCompare(b.month))[0];
                                                         const result = await zaloSendTuition(student.name, student.parentName || 'Phụ huynh', student.parentPhone || student.phone || '', (student as any).zaloUserId, student.balance, state.settings.name || '', unpaidInv?.month, state.classes.filter(c => c.studentIds.includes(student.id)).map(c => c.name).join(', '));
-                                                        if (result.success) toast.success(result.message);
+                                                        if (result.success) {
+                                                            toast.success(result.message);
+                                                            // Ghi nhận lần nhắc gần nhất
+                                                            const unpaidIds = state.invoices.filter(inv => inv.studentId === student.id && inv.status === 'UNPAID').map(inv => inv.id);
+                                                            if (unpaidIds.length > 0) markInvoiceReminder({ invoiceIds: unpaidIds, reminderDate: new Date().toISOString() }).catch(console.warn);
+                                                        }
                                                         else toast.error(result.error || 'Lỗi gửi Zalo');
                                                     } catch (e: any) { toast.error(e.message || 'Lỗi gửi Zalo'); }
                                                 }}

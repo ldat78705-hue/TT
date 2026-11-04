@@ -9,7 +9,7 @@ import { useData } from '../../hooks/useDataContext';
 import { useToast } from '../../hooks/useToast';
 import { copyAndOpenZalo, buildDebtMessage, getStudentZaloPhone, getZaloDeepLink } from '../../utils/zaloDeepLink';
 import { addReminderEntry, getLastReminderLabel } from '../../utils/zaloReminderHistory';
-import { zaloSendTuition } from '../../services/api';
+import { zaloSendTuition, markInvoiceReminder } from '../../services/api';
 
 declare global {
     interface Window {
@@ -127,8 +127,20 @@ export const ZaloSendModal: React.FC<ZaloSendModalProps> = ({ isOpen, onClose, s
             source,
             amount: debtAmount,
         });
+        // Ghi nhận lần nhắc gần nhất vào hóa đơn
+        const reminderDate = new Date().toISOString();
+        if (invoice?.id) {
+            // Nhắc riêng 1 hóa đơn
+            markInvoiceReminder({ invoiceIds: [invoice.id], reminderDate }).catch(console.warn);
+        } else {
+            // Nhắc chung (từ trang Học viên) → cập nhật TẤT CẢ hóa đơn UNPAID của student
+            const unpaidIds = invoices.filter(i => i.studentId === student.id && i.status === 'UNPAID').map(i => i.id);
+            if (unpaidIds.length > 0) {
+                markInvoiceReminder({ invoiceIds: unpaidIds, reminderDate }).catch(console.warn);
+            }
+        }
         onSent?.();
-    }, [student, zaloPhone, invoice, source, debtAmount, onSent]);
+    }, [student, zaloPhone, invoice, invoices, source, debtAmount, onSent]);
 
     const handlePreviewText = () => setStep('preview-text');
 
