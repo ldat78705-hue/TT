@@ -1135,14 +1135,17 @@ export function applyOperation(
             const collectionKeys: ('students' | 'teachers' | 'staff' | 'classes')[] = payload;
             for (const key of collectionKeys) { (data as any)[key] = []; }
             if (collectionKeys.includes('students')) {
-                data.attendance = []; data.invoices = []; data.progressReports = []; data.transactions = [];
+                // SAFETY: Do NOT clear sharded data (attendance, invoices, transactions)
+                // as this would delete ALL historical financial records and attendance.
+                // Only clear NON-SHARDED related data.
+                data.progressReports = [];
                 data.classes.forEach(c => { c.studentIds = []; });
             }
             if (collectionKeys.includes('teachers')) {
-                data.payrolls = [];
+                // SAFETY: Do NOT clear payrolls (sharded)
                 data.classes.forEach(c => { c.teacherIds = []; });
             }
-            if (collectionKeys.includes('classes')) { data.attendance = []; data.progressReports = []; }
+            if (collectionKeys.includes('classes')) { data.progressReports = []; }
             break;
         }
 

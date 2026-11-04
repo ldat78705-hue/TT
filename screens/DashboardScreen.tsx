@@ -200,7 +200,7 @@ const AlertsAndAnnouncementsWidget: React.FC<{
                             announcements.slice(0, 5).map(ann => (
                                 <div key={ann.id} className="p-3 bg-indigo-50 dark:bg-slate-700/50 rounded-lg">
                                     <h3 className="font-semibold text-indigo-800 dark:text-indigo-300">{ann.title}</h3>
-                                    <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{ann.content.substring(0, 100)}...</p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{(ann.content || '').substring(0, 100)}...</p>
                                     <p className="text-xs text-gray-500 dark:text-gray-400 text-right mt-2">{ann.createdAt} - {ann.createdBy}</p>
                                 </div>
                             ))
@@ -276,7 +276,8 @@ const AdminDashboard: React.FC = () => {
     }, [classes, attendance]);
 
 
-    const WeeklyCalendarWidget: React.FC<{ classes: Class[], teachers: Teacher[] }> = ({ classes, teachers }) => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const WeeklyCalendarWidget = useMemo(() => ({ classes, teachers }: { classes: Class[], teachers: Teacher[] }) => {
         const vnTimeStr = getVietnamTime();
         const vnDateObj = new Date(vnTimeStr);
         const todayDayIdx = vnDateObj.getDay(); // 0=Sun
@@ -351,7 +352,7 @@ const AdminDashboard: React.FC = () => {
                 </div>
             </div>
         );
-    };
+    }, []);
 
     const [widgetVisibility, setWidgetVisibility] = useState<Record<string, boolean>>(() => {
         try {
@@ -586,7 +587,7 @@ const TeacherDashboard: React.FC = () => {
                                 relevantAnnouncements.slice(0, 5).map(ann => (
                                     <div key={ann.id} className="p-3 bg-indigo-50 dark:bg-slate-700/50 rounded-lg">
                                         <h3 className="font-semibold text-indigo-800 dark:text-indigo-300">{ann.title}</h3>
-                                        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{ann.content.substring(0, 100)}...</p>
+                                        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{(ann.content || '').substring(0, 100)}...</p>
                                         <p className="text-xs text-gray-500 dark:text-gray-400 text-right mt-2">{ann.createdAt} - {ann.createdBy}</p>
                                     </div>
                                 ))

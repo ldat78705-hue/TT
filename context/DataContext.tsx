@@ -142,11 +142,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     refreshData();
   }, [refreshData]);
 
-  // Auto-polling: refresh data every 5 minutes when tab is visible
-  // 5-minute interval is optimized for free-tier hosting (Vercel/Firebase Spark):
-  // - 1 user × 288 calls/day = ~8,640/month (vs 43,200 at 60s)
-  // - Safe for 5+ concurrent users within 100k free invocations/month
-  // - Tab visibility change triggers immediate refresh (covers most real-time needs)
+  // Keep a ref of isSubmitting so polling effect doesn't tear down on every mutation
+  const isSubmittingRef = React.useRef(isSubmitting);
+  React.useEffect(() => { isSubmittingRef.current = isSubmitting; }, [isSubmitting]);
+
   useEffect(() => {
     let intervalId: ReturnType<typeof setInterval> | null = null;
     let lastRefreshTime = Date.now(); // Bắt đầu = now để debounce lần đầu (refreshData đã load rồi)
@@ -157,7 +156,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (now - lastRefreshTime < 30000) return;
       lastRefreshTime = now;
       
-      if (!isSubmitting) {
+      if (!isSubmittingRef.current) {
         api.loadInitialData()
           .then(data => setState({ ...data, loading: false }))
           .catch(() => { /* silent — don't disrupt UI on background poll failure */ });
@@ -197,7 +196,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       stopPolling();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [isSubmitting]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Helper function to handle API operations that return the full updated state
   // This replaces the manual state updates which were causing type errors

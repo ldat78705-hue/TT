@@ -322,10 +322,10 @@ export const SettingsScreen: React.FC = () => {
     };
 
     const dataTypes: { key: 'students' | 'teachers' | 'staff' | 'classes'; label: string }[] = [
-        { key: 'students', label: 'Học viên (bao gồm học phí, điểm danh,...)' },
-        { key: 'teachers', label: 'Giáo viên (bao gồm bảng lương)' },
+        { key: 'students', label: 'Học viên (danh sách HS, báo cáo tiến độ)' },
+        { key: 'teachers', label: 'Giáo viên' },
         { key: 'staff', label: 'Nhân viên (Quản lý, Kế toán)' },
-        { key: 'classes', label: 'Lớp học (bao gồm điểm danh, báo cáo)' },
+        { key: 'classes', label: 'Lớp học (danh sách lớp, báo cáo tiến độ)' },
     ];
     
     const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);

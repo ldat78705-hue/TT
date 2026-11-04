@@ -613,6 +613,8 @@ function getAffectedCollections(opName: string): string[] | null {
         deleteRoom: ['rooms', 'classes'],
         // Maintenance
         recalculateAllInvoices: ['invoices'],
+        // CRITICAL: clearCollections only clears NON-SHARDED data now (safe behavior)
+        clearCollections: ['students', 'teachers', 'staff', 'classes', 'progressReports'],
         // Audit
         addAuditLog: ['auditLogs'],
     };
