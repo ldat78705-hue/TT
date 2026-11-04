@@ -112,7 +112,7 @@ export const ZaloSendModal: React.FC<ZaloSendModalProps> = ({ isOpen, onClose, s
     const lastReminderLabel = useMemo(() => {
         if (!student) return null;
         return getStudentReminderLabel(student.id, invoices);
-    }, [student, isOpen]); // re-check on open
+    }, [student, isOpen, invoices]); // re-check on open or data change
 
     // Log reminder to history
     const logReminder = useCallback((method: 'text' | 'image') => {

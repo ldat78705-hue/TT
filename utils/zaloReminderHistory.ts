@@ -135,9 +135,15 @@ export function getStudentReminderLabel(studentId: string, invoices: { studentId
         }
     }
     
-    // 2. Check localStorage
-    const localLast = getLastReminder(studentId);
-    const localDate = localLast?.sentAt || null;
+    // 2. Check localStorage (exclude group entries — those are separate)
+    const history = getHistory();
+    let localDate: string | null = null;
+    for (let i = history.length - 1; i >= 0; i--) {
+        if (history[i].studentId === studentId && history[i].source !== 'class_group') {
+            localDate = history[i].sentAt;
+            break;
+        }
+    }
     
     // 3. Use whichever is more recent
     let bestDate: string | null = null;
