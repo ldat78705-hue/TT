@@ -253,8 +253,8 @@ export async function getSplitData(centerId: string = '_legacy', forceRefresh = 
                 const id = docSnap.id;
                 if (id === '_sync') return;
                 // Skip documents not managed by the sharding system
-                // These are managed separately (e.g. by /api/zalo endpoint)
-                if (id.startsWith('_messageLog') || id.startsWith('webhookLog')) return;
+                // These are managed separately (e.g. by /api/zalo endpoint, auto-backup system)
+                if (id.startsWith('_messageLog') || id.startsWith('webhookLog') || id.startsWith('_autobackup')) return;
                 
                 hasData = true;
                 const docData = docSnap.data().data;
@@ -626,6 +626,32 @@ export async function executeOperationInternal(operation: { op: string, payload:
         const cache = getCenterCache(centerId);
         const colName = getCollectionName(centerId);
         const currentData = await getSplitData(centerId);
+
+        // === AUTO-BACKUP before destructive operations ===
+        const DESTRUCTIVE_OPS = ['clearCollections', 'clearAllTransactions', 'deleteAttendanceByMonth'];
+        if (DESTRUCTIVE_OPS.includes(operation.op)) {
+            try {
+                const backupShards = shardAppData(currentData);
+                const backupTimestamp = Date.now();
+                const backupDocId = `_autobackup_${backupTimestamp}`;
+                // Save a compact snapshot of NON_SHARDED data (students, teachers, classes, etc.)
+                const NON_SHARDED_BACKUP = ['students', 'teachers', 'staff', 'classes', 'rooms', 'settings', 'announcements', 'progressReports'];
+                const backupData: Record<string, any> = {};
+                NON_SHARDED_BACKUP.forEach(col => {
+                    backupData[col] = (currentData as any)[col];
+                });
+                await setDoc(doc(db, colName, backupDocId), { 
+                    data: backupData, 
+                    operation: operation.op, 
+                    timestamp: backupTimestamp,
+                    type: 'auto_backup'
+                });
+                console.log(`Auto-backup created: ${backupDocId} before ${operation.op}`);
+            } catch (backupErr) {
+                console.error('Auto-backup failed (proceeding with operation):', backupErr);
+            }
+        }
+
         const dataClone = structuredClone(currentData);
         const updatedData = applyOperation(dataClone, operation);
         const updatedShards = shardAppData(updatedData);
@@ -654,7 +680,7 @@ export async function executeOperationInternal(operation: { op: string, payload:
         // Only check deletions for affected collections
         // IMPORTANT: Never delete documents that are NOT managed by the sharding system
         // (e.g. _messageLog_*, webhookLogs, auditLogs stored separately, etc.)
-        const PROTECTED_PREFIXES = ['_messageLog', 'webhookLog'];
+        const PROTECTED_PREFIXES = ['_messageLog', 'webhookLog', '_autobackup'];
         Object.keys(cache.rawShardStrings).forEach(key => {
             if (key === '_sync') return;
             // Never delete protected documents (message logs, webhook logs, etc.)
@@ -1181,7 +1207,7 @@ export default async function handler(req: any, res: any) {
 
                 // 1. Delete all existing DATA documents to ensure a clean slate
                 // IMPORTANT: Preserve documents not managed by the sharding system
-                const RESTORE_PROTECTED_PREFIXES = ['_messageLog', 'webhookLog'];
+                const RESTORE_PROTECTED_PREFIXES = ['_messageLog', 'webhookLog', '_autobackup'];
                 const querySnapshot = await getDocs(collection(db, colName));
                 querySnapshot.forEach(docSnap => {
                     // Never delete protected documents (message logs, webhook logs)

@@ -2,7 +2,7 @@ import { getMockDataState } from './_lib/mockData.js';
 import { verifyToken } from './_lib/jwt.js';
 import { UserRole } from '../types.js';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, doc, writeBatch, collection, getDocs } from 'firebase/firestore';
+import { getFirestore, doc, writeBatch, collection, getDocs, setDoc } from 'firebase/firestore';
 import { hashPassword } from './_lib/crypto.js';
 import { authenticateServer } from './_lib/serverAuth.js';
 import fs from 'fs';
@@ -58,6 +58,28 @@ export default async function handler(req: any, res: any) {
             await authenticateServer();
             const mockData = getMockDataState();
             
+            // === SAFETY: Auto-backup before reset ===
+            try {
+                const currentSnapshot = await getDocs(collection(db, colName));
+                const backupData: Record<string, any> = {};
+                const NON_SHARDED_KEYS = ['students', 'teachers', 'staff', 'classes', 'rooms', 'settings', 'announcements', 'progressReports'];
+                currentSnapshot.forEach(docSnap => {
+                    if (NON_SHARDED_KEYS.includes(docSnap.id)) {
+                        backupData[docSnap.id] = docSnap.data().data;
+                    }
+                });
+                const backupDocId = `_autobackup_reset_${Date.now()}`;
+                await setDoc(doc(db, colName, backupDocId), { 
+                    data: backupData, 
+                    operation: 'resetToMockData', 
+                    timestamp: Date.now(),
+                    type: 'auto_backup'
+                });
+                console.log(`Auto-backup created: ${backupDocId} before reset`);
+            } catch (backupErr) {
+                console.error('Auto-backup failed:', backupErr);
+            }
+
             // Hash passwords in mock data
             if (mockData.settings?.adminPassword) {
                 mockData.settings.adminPassword = hashPassword(mockData.settings.adminPassword);
@@ -80,9 +102,11 @@ export default async function handler(req: any, res: any) {
 
             const batch = writeBatch(db);
             
-            // Delete all existing documents (shards) in THIS center's collection
+            // Delete existing documents BUT protect special docs
+            const RESET_PROTECTED_PREFIXES = ['_messageLog', 'webhookLog', '_autobackup'];
             const querySnapshot = await getDocs(collection(db, colName));
             querySnapshot.forEach(docSnap => {
+                if (RESET_PROTECTED_PREFIXES.some(prefix => docSnap.id.startsWith(prefix))) return;
                 batch.delete(docSnap.ref);
             });
 
