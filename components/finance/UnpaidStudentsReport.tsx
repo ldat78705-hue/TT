@@ -16,7 +16,7 @@ import { zaloSendOverdueReminders, markInvoiceReminder } from '../../services/ap
 import { uploadDebtNoticeImage, deleteDebtNoticeImage } from '../../utils/firebaseStorage';
 import { getStudentZaloPhone } from '../../utils/zaloDeepLink';
 import { ZaloSendModal } from './ZaloSendModal';
-import { addReminderEntry, getLastReminderLabel } from '../../utils/zaloReminderHistory';
+import { addReminderEntry, getStudentReminderLabel } from '../../utils/zaloReminderHistory';
 import { DebtNotice } from './DebtNotice';
 
 declare global {
@@ -217,7 +217,7 @@ export const UnpaidStudentsReport: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const columns: Column<Student & { classNames: string }>[] = useMemo(() => [
         { header: 'Họ tên', accessor: (item) => {
-            const label = getLastReminderLabel(item.id);
+            const label = getStudentReminderLabel(item.id, state.invoices);
             return (
                 <div className="flex items-center gap-2">
                     <span>{item.name}</span>

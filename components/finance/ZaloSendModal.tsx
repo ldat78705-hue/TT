@@ -8,7 +8,7 @@ import { Student, Invoice } from '../../types';
 import { useData } from '../../hooks/useDataContext';
 import { useToast } from '../../hooks/useToast';
 import { copyAndOpenZalo, buildDebtMessage, getStudentZaloPhone, getZaloDeepLink } from '../../utils/zaloDeepLink';
-import { addReminderEntry, getLastReminderLabel } from '../../utils/zaloReminderHistory';
+import { addReminderEntry, getStudentReminderLabel } from '../../utils/zaloReminderHistory';
 import { zaloSendTuition, markInvoiceReminder } from '../../services/api';
 
 declare global {
@@ -111,7 +111,7 @@ export const ZaloSendModal: React.FC<ZaloSendModalProps> = ({ isOpen, onClose, s
 
     const lastReminderLabel = useMemo(() => {
         if (!student) return null;
-        return getLastReminderLabel(student.id);
+        return getStudentReminderLabel(student.id, invoices);
     }, [student, isOpen]); // re-check on open
 
     // Log reminder to history

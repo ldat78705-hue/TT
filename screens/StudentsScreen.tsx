@@ -17,7 +17,7 @@ import { zaloSendTuition, zaloGetFollowersList, markInvoiceReminder } from '../s
 import { printHtml } from '../utils/html';
 import { getStudentZaloPhone } from '../utils/zaloDeepLink';
 import { ZaloSendModal } from '../components/finance/ZaloSendModal';
-import { getLastReminderLabel, addReminderEntry } from '../utils/zaloReminderHistory';
+import { getStudentReminderLabel, addReminderEntry } from '../utils/zaloReminderHistory';
 
 const removeAccents = (str: string) => {
   if (!str) return '';
@@ -507,7 +507,7 @@ export const StudentsScreen: React.FC = () => {
         { 
             header: 'Họ tên', 
             accessor: (item: Student) => {
-                const reminderLabel = item.balance < 0 ? getLastReminderLabel(item.id) : null;
+                const reminderLabel = item.balance < 0 ? getStudentReminderLabel(item.id, state.invoices) : null;
                 return (
                 <div>
                     <div className="flex items-center gap-2">

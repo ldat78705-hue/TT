@@ -85,20 +85,16 @@ export function wasRemindedToday(studentId: string): boolean {
 }
 
 /**
- * Get a human-readable "time ago" label for the last reminder.
+ * Format a date string into human-readable "time ago" label.
  * e.g. "Hôm nay 08:30", "Hôm qua", "3 ngày trước"
  */
-export function getLastReminderLabel(studentId: string): string | null {
-    const last = getLastReminder(studentId);
-    if (!last) return null;
-    
-    const sentDate = new Date(last.sentAt);
+export function formatReminderDate(isoDate: string): string {
+    const sentDate = new Date(isoDate);
     const now = new Date();
     const diffMs = now.getTime() - sentDate.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     
     if (diffDays === 0) {
-        // Today
         return `Hôm nay ${sentDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`;
     } else if (diffDays === 1) {
         return 'Hôm qua';
@@ -107,6 +103,52 @@ export function getLastReminderLabel(studentId: string): string | null {
     } else {
         return sentDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
     }
+}
+
+/**
+ * Get a human-readable "time ago" label for the last reminder.
+ * Uses localStorage only (single device).
+ */
+export function getLastReminderLabel(studentId: string): string | null {
+    const last = getLastReminder(studentId);
+    if (!last) return null;
+    return formatReminderDate(last.sentAt);
+}
+
+/**
+ * Get reminder label combining DB invoices + localStorage.
+ * DB data syncs across all devices (invoices[].lastReminderDate).
+ * localStorage is fallback for current device only.
+ * 
+ * @param studentId - Student ID to check
+ * @param invoices - All invoices from state (synced via DB)
+ * @returns Human-readable label or null
+ */
+export function getStudentReminderLabel(studentId: string, invoices: { studentId: string; status: string; lastReminderDate?: string }[]): string | null {
+    // 1. Check DB: find latest lastReminderDate from student's UNPAID invoices
+    let latestDbDate: string | null = null;
+    for (const inv of invoices) {
+        if (inv.studentId === studentId && inv.status === 'UNPAID' && inv.lastReminderDate) {
+            if (!latestDbDate || inv.lastReminderDate > latestDbDate) {
+                latestDbDate = inv.lastReminderDate;
+            }
+        }
+    }
+    
+    // 2. Check localStorage
+    const localLast = getLastReminder(studentId);
+    const localDate = localLast?.sentAt || null;
+    
+    // 3. Use whichever is more recent
+    let bestDate: string | null = null;
+    if (latestDbDate && localDate) {
+        bestDate = latestDbDate > localDate ? latestDbDate : localDate;
+    } else {
+        bestDate = latestDbDate || localDate;
+    }
+    
+    if (!bestDate) return null;
+    return formatReminderDate(bestDate);
 }
 
 /**

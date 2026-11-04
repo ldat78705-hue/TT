@@ -17,7 +17,7 @@ import { recalculateAllInvoices, zaloSendOverdueReminders, markInvoiceReminder }
 import { ZaloSendModal } from './ZaloSendModal';
 import { uploadDebtNoticeImage, deleteDebtNoticeImage } from '../../utils/firebaseStorage';
 import { TuitionFeeNotice } from './TuitionFeeNotice';
-import { addReminderEntry, getLastReminderLabel } from '../../utils/zaloReminderHistory';
+import { addReminderEntry, getStudentReminderLabel } from '../../utils/zaloReminderHistory';
 
 declare global {
     interface Window {
@@ -312,7 +312,7 @@ export const InvoicesTab: React.FC = () => {
     const columns: Column<Invoice>[] = [
         { header: 'Mã HĐ', accessor: 'id', sortable: true },
         { header: 'Học viên', accessor: (item) => {
-            const label = item.status === 'UNPAID' ? getLastReminderLabel(item.studentId) : null;
+            const label = item.status === 'UNPAID' ? getStudentReminderLabel(item.studentId, state.invoices) : null;
             return (
                 <div className="flex items-center gap-2">
                     <span>{item.studentName}</span>
