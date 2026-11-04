@@ -1091,11 +1091,16 @@ export function applyOperation(
         // SETTINGS & DATA MANAGEMENT
         case 'updateSettings': {
             const originalSettings = data.settings;
+            // SECURITY: Strip sensitive fields that should ONLY be changed via dedicated updateUserPassword
+            const { adminPassword: _ap, viewerPassword: _vp, ...safePayload } = payload;
             // Merge: preserve existing server-side fields (zaloAccessToken, zaloTokenExpiresAt, etc.)
-            data.settings = { ...originalSettings, ...payload };
-            // Preserve admin password if not provided
-            if (originalSettings && originalSettings.adminPassword && !payload.adminPassword) {
+            data.settings = { ...originalSettings, ...safePayload };
+            // Always preserve admin password (can only be changed via updateUserPassword)
+            if (originalSettings && originalSettings.adminPassword) {
                 data.settings.adminPassword = originalSettings.adminPassword;
+            }
+            if (originalSettings && originalSettings.viewerPassword) {
+                data.settings.viewerPassword = originalSettings.viewerPassword;
             }
             break;
         }
@@ -1132,8 +1137,12 @@ export function applyOperation(
             break;
         }
         case 'clearCollections': {
-            const collectionKeys: ('students' | 'teachers' | 'staff' | 'classes')[] = payload;
-            for (const key of collectionKeys) { (data as any)[key] = []; }
+            // SECURITY: Only allow clearing specific non-sharded collections
+            const ALLOWED_CLEAR_KEYS = ['students', 'teachers', 'staff', 'classes'];
+            const collectionKeys: string[] = payload;
+            const validKeys = collectionKeys.filter(k => ALLOWED_CLEAR_KEYS.includes(k));
+            if (validKeys.length === 0) throw new Error('Không có module hợp lệ để xóa.');
+            for (const key of validKeys) { (data as any)[key] = []; }
             if (collectionKeys.includes('students')) {
                 // SAFETY: Do NOT clear sharded data (attendance, invoices, transactions)
                 // as this would delete ALL historical financial records and attendance.
