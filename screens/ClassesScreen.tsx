@@ -12,7 +12,8 @@ import { ConfirmationModal } from '../components/common/ConfirmationModal';
 import { ListItemCard } from '../components/common/ListItemCard';
 import { TuitionFeeNotice } from '../components/finance/TuitionFeeNotice';
 import { uploadDebtNoticeImage, deleteDebtNoticeImage } from '../utils/firebaseStorage';
-import { sllScanGroups } from '../services/api';
+import { sllScanGroups, markInvoiceReminder } from '../services/api';
+import { addReminderEntry, getStudentReminderLabel } from '../utils/zaloReminderHistory';
 
 declare global {
     interface Window {
@@ -787,13 +788,21 @@ export const ClassesScreen: React.FC = () => {
                                     <table className="w-full text-sm">
                                         <thead><tr className="border-b"><th className="text-left p-1">Học viên</th><th className="text-right p-1">Số tiền</th><th className="text-right p-1">Tháng</th></tr></thead>
                                         <tbody>
-                                            {unpaidList.map(({ student, invoice: inv }) => (
+                                            {unpaidList.map(({ student, invoice: inv }) => {
+                                                const reminderLabel = getStudentReminderLabel(student.id, state.invoices);
+                                                return (
                                                 <tr key={student.id} className="border-b border-gray-100 dark:border-gray-700">
-                                                    <td className="p-1">{student.name}</td>
+                                                    <td className="p-1">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <span>{student.name}</span>
+                                                            {reminderLabel && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 font-medium whitespace-nowrap" title={`Nhắc gần nhất: ${reminderLabel}`}>🔔 {reminderLabel}</span>}
+                                                        </div>
+                                                    </td>
                                                     <td className="p-1 text-right text-red-600 font-medium">{Math.abs(student.balance).toLocaleString('vi-VN')}đ</td>
                                                     <td className="p-1 text-right text-gray-500">{inv.month}</td>
                                                 </tr>
-                                            ))}
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
                                 </div>
@@ -872,6 +881,24 @@ export const ClassesScreen: React.FC = () => {
                                                     toast.info(warnMsg);
                                                 } else {
                                                     toast.success(result.message || 'Đã gửi nhắc HP vào nhóm!');
+                                                }
+                                                // Ghi nhận lần nhắc — đồng bộ localStorage + DB
+                                                const reminderDate = new Date().toISOString();
+                                                const allInvIds: string[] = [];
+                                                for (const { student, invoice: inv } of unpaidList) {
+                                                    addReminderEntry({
+                                                        studentId: student.id,
+                                                        studentName: student.name,
+                                                        parentName: student.parentName,
+                                                        phone: student.parentPhone || student.phone || '',
+                                                        method: 'text',
+                                                        source: 'class_group',
+                                                        amount: inv.amount,
+                                                    });
+                                                    allInvIds.push(inv.id);
+                                                }
+                                                if (allInvIds.length > 0) {
+                                                    markInvoiceReminder({ invoiceIds: allInvIds, reminderDate }).catch(console.warn);
                                                 }
                                                 setTuitionReminderModal({ isOpen: false, cls: null });
                                             } else {
