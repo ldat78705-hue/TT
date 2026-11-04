@@ -152,6 +152,23 @@ export function getStudentReminderLabel(studentId: string, invoices: { studentId
 }
 
 /**
+ * Get group reminder label from DB invoices (lastGroupReminderDate).
+ * Nhắc nhóm hiển thị riêng, chỉ dùng ở trang Lớp học.
+ */
+export function getGroupReminderLabel(studentId: string, invoices: { studentId: string; status: string; lastGroupReminderDate?: string }[]): string | null {
+    let latestDate: string | null = null;
+    for (const inv of invoices) {
+        if (inv.studentId === studentId && inv.status === 'UNPAID' && inv.lastGroupReminderDate) {
+            if (!latestDate || inv.lastGroupReminderDate > latestDate) {
+                latestDate = inv.lastGroupReminderDate;
+            }
+        }
+    }
+    if (!latestDate) return null;
+    return formatReminderDate(latestDate);
+}
+
+/**
  * Clear all reminder history.
  */
 export function clearReminderHistory(): void {

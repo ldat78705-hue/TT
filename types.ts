@@ -130,7 +130,8 @@ export interface Invoice {
   status: 'PAID' | 'UNPAID' | 'CANCELLED';
   generatedDate: string; // "YYYY-MM-DD"
   paidDate: string | null; // "YYYY-MM-DD"
-  lastReminderDate?: string; // ISO date of last payment reminder sent
+  lastReminderDate?: string; // ISO date — nhắc cá nhân qua Zalo riêng
+  lastGroupReminderDate?: string; // ISO date — nhắc qua nhóm Zalo lớp
 }
 
 export enum TransactionType {

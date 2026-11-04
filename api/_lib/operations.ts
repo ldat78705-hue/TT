@@ -756,6 +756,16 @@ export function applyOperation(
             break;
         }
 
+        case 'markGroupReminder': {
+            const { invoiceIds, reminderDate } = payload;
+            if (!Array.isArray(invoiceIds)) break;
+            for (const invId of invoiceIds) {
+                const inv = data.invoices.find(i => i.id === invId);
+                if (inv) inv.lastGroupReminderDate = reminderDate || getVietnamTime();
+            }
+            break;
+        }
+
         // TRANSACTIONS
         case 'addAdjustment': {
             const { studentId, amount, date, description, type, paymentMethod } = payload;

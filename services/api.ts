@@ -193,6 +193,7 @@ export const generateInvoices = (payload: { month: number, year: number, classId
 export const cancelInvoice = (invoiceId: string) => patchData({ op: 'cancelInvoice', payload: { invoiceId } });
 export const updateInvoiceStatus = (payload: { invoiceId: string, status: 'PAID' | 'UNPAID' }) => patchData({ op: 'updateInvoiceStatus', payload });
 export const markInvoiceReminder = (payload: { invoiceIds: string[], reminderDate: string }) => patchData({ op: 'markInvoiceReminder', payload });
+export const markGroupReminder = (payload: { invoiceIds: string[], reminderDate: string }) => patchData({ op: 'markGroupReminder', payload });
 
 export const addAdjustment = (payload: { studentId: string; amount: number; date: string; description: string; type: 'CREDIT' | 'DEBIT'; paymentMethod?: 'transfer' | 'cash' }) => patchData({ op: 'addAdjustment', payload });
 export const addAdvancePayment = (payload: { studentId: string; amount: number; date: string; description: string; paymentMethod?: 'transfer' | 'cash'; months?: number; details?: string }) => patchData({ op: 'addAdvancePayment', payload });

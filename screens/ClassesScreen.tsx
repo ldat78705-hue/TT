@@ -12,8 +12,8 @@ import { ConfirmationModal } from '../components/common/ConfirmationModal';
 import { ListItemCard } from '../components/common/ListItemCard';
 import { TuitionFeeNotice } from '../components/finance/TuitionFeeNotice';
 import { uploadDebtNoticeImage, deleteDebtNoticeImage } from '../utils/firebaseStorage';
-import { sllScanGroups, markInvoiceReminder } from '../services/api';
-import { addReminderEntry, getStudentReminderLabel } from '../utils/zaloReminderHistory';
+import { sllScanGroups, markGroupReminder } from '../services/api';
+import { addReminderEntry, getGroupReminderLabel } from '../utils/zaloReminderHistory';
 
 declare global {
     interface Window {
@@ -789,7 +789,7 @@ export const ClassesScreen: React.FC = () => {
                                         <thead><tr className="border-b"><th className="text-left p-1">Học viên</th><th className="text-right p-1">Số tiền</th><th className="text-right p-1">Tháng</th></tr></thead>
                                         <tbody>
                                             {unpaidList.map(({ student, invoice: inv }) => {
-                                                const reminderLabel = getStudentReminderLabel(student.id, state.invoices);
+                                                const reminderLabel = getGroupReminderLabel(student.id, state.invoices);
                                                 return (
                                                 <tr key={student.id} className="border-b border-gray-100 dark:border-gray-700">
                                                     <td className="p-1">
@@ -882,7 +882,7 @@ export const ClassesScreen: React.FC = () => {
                                                 } else {
                                                     toast.success(result.message || 'Đã gửi nhắc HP vào nhóm!');
                                                 }
-                                                // Ghi nhận lần nhắc — đồng bộ localStorage + DB
+                                                // Ghi nhận lần nhắc nhóm — localStorage + DB (lastGroupReminderDate riêng)
                                                 const reminderDate = new Date().toISOString();
                                                 const allInvIds: string[] = [];
                                                 for (const { student, invoice: inv } of unpaidList) {
@@ -898,7 +898,7 @@ export const ClassesScreen: React.FC = () => {
                                                     allInvIds.push(inv.id);
                                                 }
                                                 if (allInvIds.length > 0) {
-                                                    markInvoiceReminder({ invoiceIds: allInvIds, reminderDate }).catch(console.warn);
+                                                    markGroupReminder({ invoiceIds: allInvIds, reminderDate }).catch(console.warn);
                                                 }
                                                 setTuitionReminderModal({ isOpen: false, cls: null });
                                             } else {
