@@ -272,8 +272,16 @@ export async function getSplitData(centerId: string = '_legacy', forceRefresh = 
                 if (Array.isArray(docData)) {
                     if (!data[baseCol]) data[baseCol] = [];
                     data[baseCol].push(...docData);
+                } else if (docData !== null && docData !== undefined) {
+                    // Non-array data (settings, etc.) — only set for base collection keys
+                    // For shard docs (attendance_*, invoices_*), skip corrupt non-array data
+                    if (id === baseCol) {
+                        data[baseCol] = docData;
+                    } else {
+                        console.warn(`Corrupt shard doc ${id}: expected array, got ${typeof docData}. Skipping.`);
+                    }
                 } else {
-                    data[baseCol] = docData;
+                    console.warn(`Null/undefined data in doc ${id}. Skipping.`);
                 }
             });
 
@@ -626,6 +634,8 @@ function getAffectedCollections(opName: string): string[] | null {
         recalculateAllInvoices: ['invoices'],
         // CRITICAL: clearCollections only clears NON-SHARDED data now (safe behavior)
         clearCollections: ['students', 'teachers', 'staff', 'classes', 'progressReports'],
+        // Maintenance
+        compactData: [], // No-op, no collections affected
         // Audit
         addAuditLog: ['auditLogs'],
     };
