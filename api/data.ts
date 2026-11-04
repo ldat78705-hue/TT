@@ -1216,6 +1216,23 @@ export default async function handler(req: any, res: any) {
                 const restoredDataFromFile = operation.payload as Omit<AppData, 'loading'>;
                 const restoredShards = shardAppData(restoredDataFromFile);
                 
+                // === SAFETY: Auto-backup before restore ===
+                try {
+                    const currentData = await getSplitData(centerId);
+                    const NON_SHARDED_BACKUP = ['students', 'teachers', 'staff', 'classes', 'rooms', 'settings', 'announcements', 'progressReports'];
+                    const backupData: Record<string, any> = {};
+                    NON_SHARDED_BACKUP.forEach(col => { backupData[col] = (currentData as any)[col]; });
+                    const backupDocId = `_autobackup_restore_${Date.now()}`;
+                    await setDoc(doc(db, colName, backupDocId), {
+                        data: backupData,
+                        operation: 'restoreData',
+                        timestamp: Date.now(),
+                        type: 'auto_backup'
+                    });
+                    console.log(`Auto-backup created: ${backupDocId} before restoreData`);
+                } catch (backupErr) {
+                    console.error('Auto-backup before restore failed (proceeding):', backupErr);
+                }
                 // 1. Delete all existing DATA documents to ensure a clean slate
                 // IMPORTANT: Preserve documents not managed by the sharding system
                 // Use multiple batches to stay under Firestore 500-op limit

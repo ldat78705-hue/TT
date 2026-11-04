@@ -219,11 +219,36 @@ export default async function handler(req: any, res: any) {
             const colName = `center_${slug}`;
             try {
                 const docsSnapshot = await getDocs(collection(db, colName));
+                
+                // === SAFETY: Auto-backup before deleting center ===
+                try {
+                    const NON_SHARDED_KEYS = ['students', 'teachers', 'staff', 'classes', 'rooms', 'settings', 'announcements', 'progressReports'];
+                    const backupPayload: Record<string, any> = {};
+                    docsSnapshot.forEach(d => {
+                        if (NON_SHARDED_KEYS.includes(d.id)) backupPayload[d.id] = d.data().data;
+                    });
+                    if (Object.keys(backupPayload).length > 0) {
+                        const backupDocId = `_autobackup_delete_center_${Date.now()}`;
+                        await setDoc(doc(db, colName, backupDocId), {
+                            data: backupPayload,
+                            operation: 'delete_center',
+                            slug: slug,
+                            timestamp: Date.now(),
+                            type: 'auto_backup'
+                        });
+                    }
+                } catch (bkErr) {
+                    console.error(`Auto-backup before delete center failed for ${slug}:`, bkErr);
+                }
+                
                 if (docsSnapshot.size > 0) {
+                    // Keep _autobackup docs so data can be recovered if needed
+                    const DELETE_PROTECTED = ['_autobackup'];
                     const deleteBatches: any[] = [];
                     let batch = writeBatch(db);
                     let count = 0;
                     docsSnapshot.forEach((docSnap) => {
+                        if (DELETE_PROTECTED.some(prefix => docSnap.id.startsWith(prefix))) return;
                         batch.delete(doc(db, colName, docSnap.id));
                         count++;
                         if (count >= 450) {
@@ -530,6 +555,27 @@ export default async function handler(req: any, res: any) {
                     const colName = `center_${slug}`;
                     const centerData = centersData[slug];
                     if (!centerData) continue;
+
+                    // === SAFETY: Auto-backup before overwriting this center ===
+                    try {
+                        const existingSnapshot = await getDocs(collection(db, colName));
+                        const NON_SHARDED_KEYS = ['students', 'teachers', 'staff', 'classes', 'rooms', 'settings', 'announcements', 'progressReports'];
+                        const backupPayload: Record<string, any> = {};
+                        existingSnapshot.forEach(d => {
+                            if (NON_SHARDED_KEYS.includes(d.id)) backupPayload[d.id] = d.data().data;
+                        });
+                        if (Object.keys(backupPayload).length > 0) {
+                            const backupDocId = `_autobackup_restore_all_${Date.now()}`;
+                            await setDoc(doc(db, colName, backupDocId), {
+                                data: backupPayload,
+                                operation: 'restore_all',
+                                timestamp: Date.now(),
+                                type: 'auto_backup'
+                            });
+                        }
+                    } catch (bkErr) {
+                        console.error(`Auto-backup before restore_all failed for ${slug}:`, bkErr);
+                    }
 
                     // First: delete all existing docs in this center collection
                     // IMPORTANT: Protect special docs (messageLog, webhookLog, autobackup)
