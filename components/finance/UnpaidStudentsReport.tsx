@@ -439,9 +439,16 @@ export const UnpaidStudentsReport: React.FC = () => {
                         className="form-select"
                     >
                         <option value="all">Lọc theo lớp - Tất cả</option>
-                        {classes.map(c => (
+                        {classes.filter(c => (c.classStatus || 'ACTIVE') !== 'ARCHIVED').map(c => (
                             <option key={c.id} value={c.id}>{c.name}</option>
                         ))}
+                        {classes.filter(c => (c.classStatus || 'ACTIVE') === 'ARCHIVED').length > 0 && (
+                            <optgroup label="📦 Lớp đã lưu trữ">
+                                {classes.filter(c => (c.classStatus || 'ACTIVE') === 'ARCHIVED').map(c => (
+                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                ))}
+                            </optgroup>
+                        )}
                     </select>
                 </div>
 

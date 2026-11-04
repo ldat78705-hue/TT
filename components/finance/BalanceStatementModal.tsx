@@ -138,7 +138,12 @@ export const BalanceStatementModal: React.FC<BalanceStatementModalProps> = ({ is
                         </select>
                         <select value={filterClass} onChange={e => setFilterClass(e.target.value)} className="form-select">
                             <option value="all">Tất cả lớp</option>
-                            {state.classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            {state.classes.filter(c => (c.classStatus || 'ACTIVE') !== 'ARCHIVED').map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            {state.classes.filter(c => (c.classStatus || 'ACTIVE') === 'ARCHIVED').length > 0 && (
+                                <optgroup label="📦 Lớp đã lưu trữ">
+                                    {state.classes.filter(c => (c.classStatus || 'ACTIVE') === 'ARCHIVED').map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                </optgroup>
+                            )}
                         </select>
                         <select
                             value={selectedStudentId}

@@ -491,7 +491,12 @@ export const ReportsScreen: React.FC = () => {
                 <div className="flex items-center gap-2 flex-wrap">
                     <select value={classFilter} onChange={e => setClassFilter(e.target.value)} className="form-select py-1 px-2 text-sm w-40">
                         <option value="all">Tất cả các lớp</option>
-                        {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        {classes.filter(c => (c.classStatus || 'ACTIVE') !== 'ARCHIVED').map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        {classes.filter(c => (c.classStatus || 'ACTIVE') === 'ARCHIVED').length > 0 && (
+                            <optgroup label="📦 Lớp đã lưu trữ">
+                                {classes.filter(c => (c.classStatus || 'ACTIVE') === 'ARCHIVED').map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            </optgroup>
+                        )}
                     </select>
                     <div className="flex items-center gap-2">
                         <span className="text-sm font-medium whitespace-nowrap">Từ:</span>

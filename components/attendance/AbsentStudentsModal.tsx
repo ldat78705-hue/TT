@@ -102,9 +102,16 @@ export const AbsentStudentsModal: React.FC<AbsentStudentsModalProps> = ({ isOpen
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Lớp học</label>
                         <select value={classFilter} onChange={e => setClassFilter(e.target.value)} className="form-select w-full">
                             <option value="all">Tất cả các lớp</option>
-                            {state.classes.map(c => (
+                            {state.classes.filter(c => (c.classStatus || 'ACTIVE') !== 'ARCHIVED').map(c => (
                                 <option key={c.id} value={c.id}>{c.name}</option>
                             ))}
+                            {state.classes.filter(c => (c.classStatus || 'ACTIVE') === 'ARCHIVED').length > 0 && (
+                                <optgroup label="📦 Lớp đã lưu trữ">
+                                    {state.classes.filter(c => (c.classStatus || 'ACTIVE') === 'ARCHIVED').map(c => (
+                                        <option key={c.id} value={c.id}>{c.name}</option>
+                                    ))}
+                                </optgroup>
+                            )}
                         </select>
                     </div>
                 </div>
