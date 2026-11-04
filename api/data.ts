@@ -245,13 +245,14 @@ export async function getSplitData(centerId: string = '_legacy', forceRefresh = 
             };
             
             let hasData = false;
+            let hasSyncDoc = false; // Track if center has ever been written to
             const newRawStrings: Record<string, string> = {};
 
             const querySnapshot = await getDocs(collection(db, colName));
             
             querySnapshot.forEach((docSnap) => {
                 const id = docSnap.id;
-                if (id === '_sync') return;
+                if (id === '_sync') { hasSyncDoc = true; return; }
                 // Skip documents not managed by the sharding system
                 // These are managed separately (e.g. by /api/zalo endpoint, auto-backup system)
                 if (id.startsWith('_messageLog') || id.startsWith('webhookLog') || id.startsWith('_autobackup')) return;
@@ -277,6 +278,16 @@ export async function getSplitData(centerId: string = '_legacy', forceRefresh = 
             });
 
             if (!hasData) {
+                // SAFETY: If _sync doc exists, this center has been active before.
+                // Empty data likely means a partial Firestore read — do NOT overwrite with mock data.
+                if (hasSyncDoc) {
+                    console.warn(`Center ${centerId}: _sync exists but no data docs found. Possible partial read. NOT seeding to prevent data loss.`);
+                    // Return empty state instead of seeding
+                    cache.rawShardStrings = newRawStrings;
+                    cache.cachedData = data as Omit<AppData, 'loading'>;
+                    return cache.cachedData;
+                }
+                
                 // CRITICAL: Only auto-seed for legacy collection or centers that exist in registry
                 // This prevents deleted centers from being re-created
                 let shouldSeed = (centerId === '_legacy');
@@ -1205,30 +1216,47 @@ export default async function handler(req: any, res: any) {
                 const restoredDataFromFile = operation.payload as Omit<AppData, 'loading'>;
                 const restoredShards = shardAppData(restoredDataFromFile);
                 
-                const batch = writeBatch(db);
-
                 // 1. Delete all existing DATA documents to ensure a clean slate
                 // IMPORTANT: Preserve documents not managed by the sharding system
+                // Use multiple batches to stay under Firestore 500-op limit
                 const RESTORE_PROTECTED_PREFIXES = ['_messageLog', 'webhookLog', '_autobackup'];
                 const querySnapshot = await getDocs(collection(db, colName));
-                querySnapshot.forEach(docSnap => {
-                    // Never delete protected documents (message logs, webhook logs)
-                    if (RESTORE_PROTECTED_PREFIXES.some(prefix => docSnap.id.startsWith(prefix))) return;
-                    batch.delete(docSnap.ref);
-                });
+                let deleteBatch = writeBatch(db);
+                let deleteCount = 0;
+                for (const docSnap of querySnapshot.docs) {
+                    if (RESTORE_PROTECTED_PREFIXES.some(prefix => docSnap.id.startsWith(prefix))) continue;
+                    deleteBatch.delete(docSnap.ref);
+                    deleteCount++;
+                    if (deleteCount >= 450) {
+                        await deleteBatch.commit();
+                        deleteBatch = writeBatch(db);
+                        deleteCount = 0;
+                    }
+                }
+                if (deleteCount > 0) await deleteBatch.commit();
 
-                // 2. Set new shards from the backup
+                // 2. Set new shards from the backup (in batches)
                 const newRawStrings: Record<string, string> = {};
-                Object.keys(restoredShards).forEach(key => {
-                    batch.set(doc(db, colName, key), { data: restoredShards[key] });
+                let writeBatchObj = writeBatch(db);
+                let writeCount = 0;
+                const shardKeys = Object.keys(restoredShards);
+                for (const key of shardKeys) {
+                    writeBatchObj.set(doc(db, colName, key), { data: restoredShards[key] });
                     newRawStrings[key] = JSON.stringify(restoredShards[key]);
-                });
+                    writeCount++;
+                    if (writeCount >= 450) {
+                        await writeBatchObj.commit();
+                        writeBatchObj = writeBatch(db);
+                        writeCount = 0;
+                    }
+                }
                 
                 const newSyncId = Date.now().toString() + '_' + Math.random().toString(36).substring(2);
-                batch.set(doc(db, colName, '_sync'), { syncId: newSyncId, lastUpdatedAt: Date.now() });
+                writeBatchObj.set(doc(db, colName, '_sync'), { syncId: newSyncId, lastUpdatedAt: Date.now() });
+                writeCount++;
                 
                 try {
-                    await batch.commit();
+                    await writeBatchObj.commit();
                     const cache = getCenterCache(centerId);
                     cache.cachedData = restoredDataFromFile;
                     cache.localSyncId = newSyncId;

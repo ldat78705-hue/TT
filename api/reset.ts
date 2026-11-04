@@ -100,23 +100,32 @@ export default async function handler(req: any, res: any) {
                 });
             }
 
-            const batch = writeBatch(db);
-            
             // Delete existing documents BUT protect special docs
+            // Use multiple batches to stay under Firestore 500-op limit
             const RESET_PROTECTED_PREFIXES = ['_messageLog', 'webhookLog', '_autobackup'];
             const querySnapshot = await getDocs(collection(db, colName));
-            querySnapshot.forEach(docSnap => {
-                if (RESET_PROTECTED_PREFIXES.some(prefix => docSnap.id.startsWith(prefix))) return;
-                batch.delete(docSnap.ref);
-            });
+            let deleteBatch = writeBatch(db);
+            let deleteCount = 0;
+            for (const docSnap of querySnapshot.docs) {
+                if (RESET_PROTECTED_PREFIXES.some(prefix => docSnap.id.startsWith(prefix))) continue;
+                deleteBatch.delete(docSnap.ref);
+                deleteCount++;
+                if (deleteCount >= 450) {
+                    await deleteBatch.commit();
+                    deleteBatch = writeBatch(db);
+                    deleteCount = 0;
+                }
+            }
+            if (deleteCount > 0) await deleteBatch.commit();
 
             // Set new base collections for THIS center
+            const writeBatchObj = writeBatch(db);
             BASE_COLLECTIONS.forEach(col => {
-                batch.set(doc(db, colName, col), { data: mockData[col] });
+                writeBatchObj.set(doc(db, colName, col), { data: mockData[col] });
             });
-            batch.set(doc(db, colName, '_sync'), { lastUpdatedAt: Date.now() });
+            writeBatchObj.set(doc(db, colName, '_sync'), { lastUpdatedAt: Date.now() });
             
-            await batch.commit();
+            await writeBatchObj.commit();
             
             // Strip passwords before returning
             if (mockData.teachers) {
