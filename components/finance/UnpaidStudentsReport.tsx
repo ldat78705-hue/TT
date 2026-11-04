@@ -12,11 +12,11 @@ import { ListItemCard } from '../common/ListItemCard';
 import { BulkDebtPrintModal } from './BulkDebtPrintModal';
 import { PaymentModal } from './PaymentModal';
 import { ClassDebtReportModal } from './ClassDebtReportModal';
-import { zaloSendOverdueReminders } from '../../services/api';
+import { zaloSendOverdueReminders, markInvoiceReminder } from '../../services/api';
 import { uploadDebtNoticeImage, deleteDebtNoticeImage } from '../../utils/firebaseStorage';
 import { getStudentZaloPhone } from '../../utils/zaloDeepLink';
 import { ZaloSendModal } from './ZaloSendModal';
-import { getLastReminderLabel } from '../../utils/zaloReminderHistory';
+import { addReminderEntry, getLastReminderLabel } from '../../utils/zaloReminderHistory';
 import { DebtNotice } from './DebtNotice';
 
 declare global {
@@ -390,6 +390,27 @@ export const UnpaidStudentsReport: React.FC = () => {
                                         if (result.success) {
                                             const { sent, failed, skipped } = result.summary;
                                             toast.success(`Gửi nhắc nhở: ${sent} thành công, ${failed} thất bại, ${skipped} bỏ qua`);
+                                            // Ghi nhận lần nhắc — đồng bộ cả localStorage + DB
+                                            if (sent > 0) {
+                                                const reminderDate = new Date().toISOString();
+                                                const allUnpaidInvIds: string[] = [];
+                                                for (const s of selectedStudentObjs) {
+                                                    addReminderEntry({
+                                                        studentId: s.id,
+                                                        studentName: s.name,
+                                                        parentName: s.parentName,
+                                                        phone: s.parentPhone || s.phone || '',
+                                                        method: 'text',
+                                                        source: 'debt_bulk',
+                                                        amount: Math.abs(s.balance),
+                                                    });
+                                                    const unpaidIds = state.invoices.filter(inv => inv.studentId === s.id && inv.status === 'UNPAID').map(inv => inv.id);
+                                                    allUnpaidInvIds.push(...unpaidIds);
+                                                }
+                                                if (allUnpaidInvIds.length > 0) {
+                                                    markInvoiceReminder({ invoiceIds: allUnpaidInvIds, reminderDate }).catch(console.warn);
+                                                }
+                                            }
                                         } else {
                                             toast.error(result.error || 'Lỗi gửi nhắc nhở');
                                         }

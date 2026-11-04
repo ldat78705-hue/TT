@@ -17,6 +17,7 @@ import { zaloSendTuition, zaloGetFollowersList, markInvoiceReminder } from '../s
 import { printHtml } from '../utils/html';
 import { getStudentZaloPhone } from '../utils/zaloDeepLink';
 import { ZaloSendModal } from '../components/finance/ZaloSendModal';
+import { getLastReminderLabel, addReminderEntry } from '../utils/zaloReminderHistory';
 
 const removeAccents = (str: string) => {
   if (!str) return '';
@@ -505,11 +506,16 @@ export const StudentsScreen: React.FC = () => {
         { header: 'Mã HV', accessor: 'id' as keyof Student, sortable: true },
         { 
             header: 'Họ tên', 
-            accessor: (item: Student) => (
+            accessor: (item: Student) => {
+                const reminderLabel = item.balance < 0 ? getLastReminderLabel(item.id) : null;
+                return (
                 <div>
-                    <Link to={`/student/${item.id}`} className="text-primary dark:text-indigo-400 hover:underline font-semibold">
-                        {item.name}
-                    </Link>
+                    <div className="flex items-center gap-2">
+                        <Link to={`/student/${item.id}`} className="text-primary dark:text-indigo-400 hover:underline font-semibold">
+                            {item.name}
+                        </Link>
+                        {reminderLabel && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 font-medium whitespace-nowrap" title={`Lần nhắc gần nhất: ${reminderLabel}`}>🔔 {reminderLabel}</span>}
+                    </div>
                     {item.tags && item.tags.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-0.5">
                             {item.tags.map(tag => (
@@ -520,7 +526,7 @@ export const StudentsScreen: React.FC = () => {
                         </div>
                     )}
                 </div>
-            ),
+            )},
             sortable: true,
             sortKey: 'name' as keyof Student,
         },
@@ -938,7 +944,16 @@ export const StudentsScreen: React.FC = () => {
                                                         const result = await zaloSendTuition(student.name, student.parentName || 'Phụ huynh', student.parentPhone || student.phone || '', (student as any).zaloUserId, student.balance, state.settings.name || '', unpaidInv?.month, state.classes.filter(c => c.studentIds.includes(student.id)).map(c => c.name).join(', '));
                                                         if (result.success) {
                                                             toast.success(result.message);
-                                                            // Ghi nhận lần nhắc gần nhất
+                                                            // Ghi nhận lần nhắc — đồng bộ localStorage + DB
+                                                            addReminderEntry({
+                                                                studentId: student.id,
+                                                                studentName: student.name,
+                                                                parentName: student.parentName,
+                                                                phone: student.parentPhone || student.phone || '',
+                                                                method: 'text',
+                                                                source: 'students_oa',
+                                                                amount: Math.abs(student.balance),
+                                                            });
                                                             const unpaidIds = state.invoices.filter(inv => inv.studentId === student.id && inv.status === 'UNPAID').map(inv => inv.id);
                                                             if (unpaidIds.length > 0) markInvoiceReminder({ invoiceIds: unpaidIds, reminderDate: new Date().toISOString() }).catch(console.warn);
                                                         }

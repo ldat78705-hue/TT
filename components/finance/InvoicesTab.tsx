@@ -17,6 +17,7 @@ import { recalculateAllInvoices, zaloSendOverdueReminders, markInvoiceReminder }
 import { ZaloSendModal } from './ZaloSendModal';
 import { uploadDebtNoticeImage, deleteDebtNoticeImage } from '../../utils/firebaseStorage';
 import { TuitionFeeNotice } from './TuitionFeeNotice';
+import { addReminderEntry, getLastReminderLabel } from '../../utils/zaloReminderHistory';
 
 declare global {
     interface Window {
@@ -310,12 +311,19 @@ export const InvoicesTab: React.FC = () => {
 
     const columns: Column<Invoice>[] = [
         { header: 'Mã HĐ', accessor: 'id', sortable: true },
-        { header: 'Học viên', accessor: 'studentName', sortable: true },
+        { header: 'Học viên', accessor: (item) => {
+            const label = item.status === 'UNPAID' ? getLastReminderLabel(item.studentId) : null;
+            return (
+                <div className="flex items-center gap-2">
+                    <span>{item.studentName}</span>
+                    {label && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 font-medium whitespace-nowrap" title={`Lần nhắc gần nhất: ${label}`}>🔔 {label}</span>}
+                </div>
+            );
+        }, sortable: true, sortKey: 'studentName' },
         { header: 'Tháng', accessor: 'month', sortable: true },
         { header: 'Số tiền', accessor: (item) => `${item.amount.toLocaleString('vi-VN')} ₫`, sortable: true, sortKey: 'amount' },
         { header: 'Ngày tạo', accessor: 'generatedDate', sortable: true },
         { header: 'Trạng thái', accessor: getStatusBadge, sortable: true, sortKey: 'status' },
-        { header: 'Nhắc gần nhất', accessor: (item) => item.lastReminderDate ? new Date(item.lastReminderDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—', sortable: true, sortKey: 'lastReminderDate' },
     ];
 
     const handleGenerate = async (month: number, year: number, classIds?: string[], hideUnexcused?: boolean) => {
@@ -454,6 +462,22 @@ export const InvoicesTab: React.FC = () => {
                                                     const remindedIds = selectedUnpaidInvoices.map(inv => inv.id);
                                                     await markInvoiceReminder({ invoiceIds: remindedIds, reminderDate: new Date().toISOString() });
                                                 } catch (e) { console.warn('Failed to mark reminder date:', e); }
+                                                // Ghi localStorage cho badge 🔔
+                                                for (const inv of selectedUnpaidInvoices) {
+                                                    const student = state.students.find(s => s.id === inv.studentId);
+                                                    if (student) {
+                                                        addReminderEntry({
+                                                            studentId: student.id,
+                                                            studentName: student.name,
+                                                            parentName: student.parentName,
+                                                            phone: student.parentPhone || student.phone || '',
+                                                            method: 'text',
+                                                            invoiceId: inv.id,
+                                                            source: 'invoices_bulk',
+                                                            amount: inv.amount,
+                                                        });
+                                                    }
+                                                }
                                             }
                                         } else {
                                             toast.error(result.error || 'Lỗi gửi nhắc nhở');
