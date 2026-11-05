@@ -784,25 +784,24 @@ export const ClassesScreen: React.FC = () => {
                         
                         return (
                             <>
+                                {/* Nhắc nhóm gần nhất — 1 badge duy nhất */}
+                                {(() => {
+                                    // Lấy label nhắc nhóm từ bất kỳ HV nào (tất cả cùng 1 lần nhắc)
+                                    const firstLabel = getGroupReminderLabel(unpaidList[0].student.id, state.invoices);
+                                    if (!firstLabel) return null;
+                                    return <div className="flex items-center gap-2 text-xs"><span className="px-2 py-1 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 font-medium">🔔 Nhắc nhóm gần nhất: {firstLabel}</span></div>;
+                                })()}
                                 <div className="max-h-60 overflow-y-auto">
                                     <table className="w-full text-sm">
                                         <thead><tr className="border-b"><th className="text-left p-1">Học viên</th><th className="text-right p-1">Số tiền</th><th className="text-right p-1">Tháng</th></tr></thead>
                                         <tbody>
-                                            {unpaidList.map(({ student, invoice: inv }) => {
-                                                const reminderLabel = getGroupReminderLabel(student.id, state.invoices);
-                                                return (
+                                            {unpaidList.map(({ student, invoice: inv }) => (
                                                 <tr key={student.id} className="border-b border-gray-100 dark:border-gray-700">
-                                                    <td className="p-1">
-                                                        <div className="flex items-center gap-1.5">
-                                                            <span>{student.name}</span>
-                                                            {reminderLabel && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 font-medium whitespace-nowrap" title={`Nhắc gần nhất: ${reminderLabel}`}>🔔 {reminderLabel}</span>}
-                                                        </div>
-                                                    </td>
+                                                    <td className="p-1">{student.name}</td>
                                                     <td className="p-1 text-right text-red-600 font-medium">{Math.abs(student.balance).toLocaleString('vi-VN')}đ</td>
                                                     <td className="p-1 text-right text-gray-500">{inv.month}</td>
                                                 </tr>
-                                                );
-                                            })}
+                                            ))}
                                         </tbody>
                                     </table>
                                 </div>
