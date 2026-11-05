@@ -630,6 +630,9 @@ function getAffectedCollections(opName: string): string[] | null {
         addRoom: ['rooms'],
         updateRoom: ['rooms'],
         deleteRoom: ['rooms', 'classes'],
+        // Reminders
+        markInvoiceReminder: ['invoices'],
+        markGroupReminder: ['invoices'],
         // Maintenance
         recalculateAllInvoices: ['invoices'],
         // CRITICAL: clearCollections only clears NON-SHARDED data now (safe behavior)

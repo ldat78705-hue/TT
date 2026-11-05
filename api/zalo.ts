@@ -1131,21 +1131,26 @@ export default async function handler(req: any, res: any) {
                 // Build student list text
                 let studentListText = '';
                 let deadline = '';
+                let latestInvoiceMonth = ''; // Track the latest (newest) invoice month
                 for (let i = 0; i < unpaidStudents.length; i++) {
                     const st = unpaidStudents[i];
                     const amount = typeof st.amount === 'number' ? Math.abs(st.amount).toLocaleString('vi-VN') + 'đ' : (st.amount || '');
                     studentListText += `${i + 1}. ${st.name}: ${amount}\n`;
                     
-                    // Calculate deadline from latest invoice month (only need once)
-                    const dDay = settings.tuitionDeadlineDay || 10;
-                    if (!deadline && st.invoiceMonth) {
-                        const [invYear, invMonth] = st.invoiceMonth.split('-').map(Number);
-                        const deadlineDate = new Date(invYear, invMonth, dDay);
-                        deadline = `${String(dDay).padStart(2, '0')}/${String(deadlineDate.getMonth() + 1).padStart(2, '0')}/${deadlineDate.getFullYear()}`;
+                    // Find the latest (newest) invoice month across all students
+                    if (st.invoiceMonth && st.invoiceMonth > latestInvoiceMonth) {
+                        latestInvoiceMonth = st.invoiceMonth;
                     }
                 }
+                
+                // Calculate deadline from latest invoice month
+                const dDay = settings.tuitionDeadlineDay || 10;
+                if (latestInvoiceMonth) {
+                    const [invYear, invMonth] = latestInvoiceMonth.split('-').map(Number);
+                    const deadlineDate = new Date(invYear, invMonth, dDay); // invMonth 1-based + Date 0-based = next month
+                    deadline = `${String(dDay).padStart(2, '0')}/${String(deadlineDate.getMonth() + 1).padStart(2, '0')}/${deadlineDate.getFullYear()}`;
+                }
                 if (!deadline) {
-                    const dDay = settings.tuitionDeadlineDay || 10;
                     const now = new Date();
                     const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, dDay);
                     deadline = `${String(dDay).padStart(2, '0')}/${String(nextMonth.getMonth() + 1).padStart(2, '0')}/${nextMonth.getFullYear()}`;
