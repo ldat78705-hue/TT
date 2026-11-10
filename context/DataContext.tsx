@@ -79,6 +79,7 @@ interface DataContextType {
     cancelInvoice: (invoiceId: string) => Promise<void>;
     updateInvoiceStatus: (payload: { invoiceId: string, status: 'PAID' | 'UNPAID' }) => Promise<void>;
     markInvoiceReminder: (payload: { invoiceIds: string[], reminderDate: string }) => Promise<void>;
+    markGroupReminder: (payload: { invoiceIds: string[], reminderDate: string }) => Promise<void>;
     addAdjustment: (payload: { studentId: string; amount: number; date: string; description: string; type: 'CREDIT' | 'DEBIT'; paymentMethod?: 'transfer' | 'cash' }) => Promise<void>;
     addAdvancePayment: (payload: { studentId: string; amount: number; date: string; description: string; paymentMethod?: 'transfer' | 'cash'; months?: number; details?: string }) => Promise<void>;
     updateTransaction: (transaction: Transaction) => Promise<void>;
@@ -287,6 +288,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     cancelInvoice: handleStateUpdateOperation(api.cancelInvoice, 'cancelInvoice'),
     updateInvoiceStatus: handleStateUpdateOperation(api.updateInvoiceStatus, 'updateInvoiceStatus'),
     markInvoiceReminder: handleStateUpdateOperation(api.markInvoiceReminder, 'markInvoiceReminder'),
+    markGroupReminder: handleStateUpdateOperation(api.markGroupReminder, 'markGroupReminder'),
     
     addAdjustment: handleStateUpdateOperation(api.addAdjustment, 'addAdjustment'),
     addAdvancePayment: handleStateUpdateOperation(api.addAdvancePayment, 'addAdvancePayment'),

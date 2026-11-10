@@ -12,7 +12,7 @@ import { ConfirmationModal } from '../components/common/ConfirmationModal';
 import { ListItemCard } from '../components/common/ListItemCard';
 import { TuitionFeeNotice } from '../components/finance/TuitionFeeNotice';
 import { uploadDebtNoticeImage, deleteDebtNoticeImage } from '../utils/firebaseStorage';
-import { sllScanGroups, markGroupReminder } from '../services/api';
+import { sllScanGroups } from '../services/api';
 import { addReminderEntry, getGroupReminderLabel } from '../utils/zaloReminderHistory';
 
 declare global {
@@ -385,7 +385,7 @@ const ClassForm: React.FC<{
 }
 
 export const ClassesScreen: React.FC = () => {
-    const { state, addClass, updateClass, deleteClass, archiveClass, restoreClass } = useData();
+    const { state, addClass, updateClass, deleteClass, archiveClass, restoreClass, markGroupReminder } = useData();
     const { toast } = useToast();
     const location = useLocation();
     const navigate = useNavigate();
