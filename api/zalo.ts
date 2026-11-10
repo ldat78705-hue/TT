@@ -869,9 +869,10 @@ export default async function handler(req: any, res: any) {
                             
                             console.log(`[send_overdue] [${si + 1}/${overdueStudents.length}] Gửi cho ${student.name} (${phone})`);
                             
-                            // Gửi tin nhắn text (có retry 1 lần nếu fail)
+                            // Gửi tin nhắn text (retry 1 lần chỉ khi SLL trả lỗi rõ ràng, KHÔNG retry khi timeout)
                             let sendResult = await sendViaSLL(sll.baseUrl, sll.apiKey, sll.accountId, phone, finalMessage);
-                            if (!sendResult.ok) {
+                            if (!sendResult.ok && sendResult.error && !sendResult.error.includes('timeout')) {
+                                // SLL trả lỗi rõ ràng (không phải timeout) → an toàn retry
                                 console.warn(`[send_overdue] Text fail lần 1: ${sendResult.error}. Retry sau 5s...`);
                                 await new Promise(r => setTimeout(r, 5000));
                                 sendResult = await sendViaSLL(sll.baseUrl, sll.apiKey, sll.accountId, phone, finalMessage);
@@ -1189,25 +1190,45 @@ export default async function handler(req: any, res: any) {
                     for (const st of unpaidStudents) {
                         if (st.imageUrl) {
                             let success = false;
-                            for (let attempt = 0; attempt < 2; attempt++) {
+                            let shouldRetry = false;
+                            // Attempt 1
+                            try {
+                                await new Promise(r => setTimeout(r, baseDelay));
+                                const imgRes = await fetch(sllUrl, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json', 'x-api-key': sll.apiKey },
+                                    body: JSON.stringify({ groupId, message: `📄 Phiếu HP - ${st.name}`, imageUrl: st.imageUrl }),
+                                    signal: AbortSignal.timeout(20000),
+                                });
+                                const imgResult = await imgRes.json();
+                                if (imgResult.ok) {
+                                    imagesSent++;
+                                    success = true;
+                                } else {
+                                    // SLL trả lỗi rõ ràng → an toàn để retry (chưa gửi thành công)
+                                    shouldRetry = true;
+                                }
+                            } catch {
+                                // Timeout/network error → KHÔNG retry vì có thể SLL đã gửi rồi
+                                // Chỉ đánh dấu failed
+                            }
+                            // Attempt 2 — chỉ retry khi SLL trả ok:false (chưa gửi)
+                            if (!success && shouldRetry) {
                                 try {
-                                    await new Promise(r => setTimeout(r, attempt === 0 ? baseDelay : 4000));
-                                    const imgRes = await fetch(sllUrl, {
+                                    await new Promise(r => setTimeout(r, 4000));
+                                    const imgRes2 = await fetch(sllUrl, {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json', 'x-api-key': sll.apiKey },
                                         body: JSON.stringify({ groupId, message: `📄 Phiếu HP - ${st.name}`, imageUrl: st.imageUrl }),
-                                        signal: AbortSignal.timeout(20000), // 20s timeout per image
+                                        signal: AbortSignal.timeout(20000),
                                     });
-                                    const imgResult = await imgRes.json();
-                                    if (imgResult.ok) {
+                                    const imgResult2 = await imgRes2.json();
+                                    if (imgResult2.ok) {
                                         imagesSent++;
                                         success = true;
-                                        break;
-                                    } else if (attempt === 0) {
-                                        continue; // retry once
                                     }
                                 } catch {
-                                    if (attempt === 0) continue; // retry once
+                                    // Retry also failed — give up
                                 }
                             }
                             if (!success) {
