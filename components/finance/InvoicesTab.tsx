@@ -13,7 +13,7 @@ import { TuitionFeeNoticeModal } from './TuitionFeeNoticeModal';
 import { BulkInvoiceExportModal } from './BulkInvoiceExportModal';
 import { AdvancePaymentModal } from './AdvancePaymentModal';
 import { BalanceStatementModal } from './BalanceStatementModal';
-import { recalculateAllInvoices, zaloSendOverdueReminders, markInvoiceReminder } from '../../services/api';
+import { recalculateAllInvoices, zaloSendOverdueReminders } from '../../services/api';
 import { ZaloSendModal } from './ZaloSendModal';
 import { uploadDebtNoticeImage, deleteDebtNoticeImage } from '../../utils/firebaseStorage';
 import { TuitionFeeNotice } from './TuitionFeeNotice';
@@ -169,7 +169,7 @@ const GenerateInvoicesModal: React.FC<{
 };
 
 export const InvoicesTab: React.FC = () => {
-    const { state, generateInvoices, cancelInvoice, updateInvoiceStatus, refreshData } = useData();
+    const { state, generateInvoices, cancelInvoice, updateInvoiceStatus, markInvoiceReminder, refreshData } = useData();
     const { role } = useAuth();
     const { toast } = useToast();
     const [isGenerateModalOpen, setGenerateModalOpen] = useState(false);

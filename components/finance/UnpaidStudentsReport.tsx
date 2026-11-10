@@ -12,7 +12,7 @@ import { ListItemCard } from '../common/ListItemCard';
 import { BulkDebtPrintModal } from './BulkDebtPrintModal';
 import { PaymentModal } from './PaymentModal';
 import { ClassDebtReportModal } from './ClassDebtReportModal';
-import { zaloSendOverdueReminders, markInvoiceReminder } from '../../services/api';
+import { zaloSendOverdueReminders } from '../../services/api';
 import { uploadDebtNoticeImage, deleteDebtNoticeImage } from '../../utils/firebaseStorage';
 import { getStudentZaloPhone } from '../../utils/zaloDeepLink';
 import { ZaloSendModal } from './ZaloSendModal';
@@ -26,7 +26,7 @@ declare global {
 }
 
 export const UnpaidStudentsReport: React.FC = () => {
-    const { state } = useData();
+    const { state, markInvoiceReminder } = useData();
     const { role } = useAuth();
     const { toast } = useToast();
     const { students, classes, settings, transactions, attendance } = state;

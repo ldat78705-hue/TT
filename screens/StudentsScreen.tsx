@@ -13,7 +13,7 @@ import { Pagination } from '../components/common/Pagination';
 import { ResetPasswordModal } from '../components/auth/ChangePasswordModal';
 import { PaymentModal } from '../components/finance/PaymentModal';
 import { ExportButton } from '../components/common/ExportButton';
-import { zaloSendTuition, zaloGetFollowersList, markInvoiceReminder } from '../services/api';
+import { zaloSendTuition, zaloGetFollowersList } from '../services/api';
 import { printHtml } from '../utils/html';
 import { getStudentZaloPhone } from '../utils/zaloDeepLink';
 import { ZaloSendModal } from '../components/finance/ZaloSendModal';
@@ -267,7 +267,7 @@ const StudentForm: React.FC<{
 
 
 export const StudentsScreen: React.FC = () => {
-    const { state, addStudent, updateStudent, deleteStudent, archiveStudent, restoreStudent } = useData();
+    const { state, addStudent, updateStudent, deleteStudent, archiveStudent, restoreStudent, markInvoiceReminder } = useData();
     const { role } = useAuth();
     const { toast } = useToast();
     const location = useLocation();

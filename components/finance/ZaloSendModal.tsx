@@ -9,7 +9,7 @@ import { useData } from '../../hooks/useDataContext';
 import { useToast } from '../../hooks/useToast';
 import { copyAndOpenZalo, buildDebtMessage, getStudentZaloPhone, getZaloDeepLink } from '../../utils/zaloDeepLink';
 import { addReminderEntry, getStudentReminderLabel } from '../../utils/zaloReminderHistory';
-import { zaloSendTuition, markInvoiceReminder } from '../../services/api';
+import { zaloSendTuition } from '../../services/api';
 
 declare global {
     interface Window {
@@ -33,7 +33,7 @@ interface ZaloSendModalProps {
 }
 
 export const ZaloSendModal: React.FC<ZaloSendModalProps> = ({ isOpen, onClose, student, invoice, source = 'general', onSent }) => {
-    const { state } = useData();
+    const { state, markInvoiceReminder } = useData();
     const { settings, transactions, invoices, attendance, classes } = state;
     const { toast } = useToast();
     const noticeRef = useRef<HTMLDivElement>(null);
