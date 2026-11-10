@@ -1,5 +1,9 @@
 {
   "functions": {
+    "api/zalo.ts": {
+      "maxDuration": 60,
+      "includeFiles": "firebase-applet-config.json"
+    },
     "api/*.ts": {
       "includeFiles": "firebase-applet-config.json"
     }

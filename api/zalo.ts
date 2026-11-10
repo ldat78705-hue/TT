@@ -1173,29 +1173,36 @@ export default async function handler(req: any, res: any) {
                         return res.status(400).json({ error: textResult.error || 'Lỗi gửi tin nhắn text vào nhóm' });
                     }
                     
-                    // 2. Send individual invoice images
+                    // 2. Send individual invoice images (with retry + longer rate limit)
                     let imagesSent = 0;
                     let imagesFailed = 0;
                     const failedStudentNames: string[] = [];
                     const skippedStudentNames: string[] = [];
                     for (const st of unpaidStudents) {
                         if (st.imageUrl) {
-                            try {
-                                await new Promise(r => setTimeout(r, 1500)); // Rate limit
-                                const imgRes = await fetch(sllUrl, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json', 'x-api-key': sll.apiKey },
-                                    body: JSON.stringify({ groupId, message: `📄 Phiếu HP - ${st.name}`, imageUrl: st.imageUrl }),
-                                    signal: AbortSignal.timeout(15000),
-                                });
-                                const imgResult = await imgRes.json();
-                                if (imgResult.ok) {
-                                    imagesSent++;
-                                } else {
-                                    imagesFailed++;
-                                    failedStudentNames.push(st.name || 'N/A');
+                            let success = false;
+                            for (let attempt = 0; attempt < 2; attempt++) {
+                                try {
+                                    await new Promise(r => setTimeout(r, attempt === 0 ? 3000 : 5000)); // 3s first, 5s retry
+                                    const imgRes = await fetch(sllUrl, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json', 'x-api-key': sll.apiKey },
+                                        body: JSON.stringify({ groupId, message: `📄 Phiếu HP - ${st.name}`, imageUrl: st.imageUrl }),
+                                        signal: AbortSignal.timeout(30000), // 30s timeout for images
+                                    });
+                                    const imgResult = await imgRes.json();
+                                    if (imgResult.ok) {
+                                        imagesSent++;
+                                        success = true;
+                                        break;
+                                    } else if (attempt === 0) {
+                                        continue; // retry once
+                                    }
+                                } catch {
+                                    if (attempt === 0) continue; // retry once
                                 }
-                            } catch {
+                            }
+                            if (!success) {
                                 imagesFailed++;
                                 failedStudentNames.push(st.name || 'N/A');
                             }
