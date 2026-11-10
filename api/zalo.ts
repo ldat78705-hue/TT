@@ -1165,7 +1165,7 @@ export default async function handler(req: any, res: any) {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'x-api-key': sll.apiKey },
                         body: JSON.stringify({ groupId, message: groupTuitionMsg }),
-                        signal: AbortSignal.timeout(15000),
+                        signal: AbortSignal.timeout(30000),
                     });
                     const textResult = await textRes.json();
                     
@@ -1173,7 +1173,15 @@ export default async function handler(req: any, res: any) {
                         return res.status(400).json({ error: textResult.error || 'Lỗi gửi tin nhắn text vào nhóm' });
                     }
                     
-                    // 2. Send individual invoice images (with retry + longer rate limit)
+                    // 2. Send individual invoice images (with retry + adaptive rate limit)
+                    const studentsWithImages = unpaidStudents.filter((s: any) => s.imageUrl);
+                    // Adaptive delay: fit within ~50s total (Vercel 60s limit minus text send time)
+                    // Each image needs: delay + ~2s network = delay + 2
+                    // Total: N * (delay + 2) <= 50 → delay = max(1.5, min(3, 50/N - 2))
+                    const baseDelay = studentsWithImages.length > 0
+                        ? Math.max(1500, Math.min(3000, Math.floor((50000 / studentsWithImages.length) - 2000)))
+                        : 3000;
+                    
                     let imagesSent = 0;
                     let imagesFailed = 0;
                     const failedStudentNames: string[] = [];
@@ -1183,12 +1191,12 @@ export default async function handler(req: any, res: any) {
                             let success = false;
                             for (let attempt = 0; attempt < 2; attempt++) {
                                 try {
-                                    await new Promise(r => setTimeout(r, attempt === 0 ? 3000 : 5000)); // 3s first, 5s retry
+                                    await new Promise(r => setTimeout(r, attempt === 0 ? baseDelay : 4000));
                                     const imgRes = await fetch(sllUrl, {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json', 'x-api-key': sll.apiKey },
                                         body: JSON.stringify({ groupId, message: `📄 Phiếu HP - ${st.name}`, imageUrl: st.imageUrl }),
-                                        signal: AbortSignal.timeout(30000), // 30s timeout for images
+                                        signal: AbortSignal.timeout(20000), // 20s timeout per image
                                     });
                                     const imgResult = await imgRes.json();
                                     if (imgResult.ok) {
