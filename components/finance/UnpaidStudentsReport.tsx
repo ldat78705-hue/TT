@@ -538,6 +538,10 @@ export const UnpaidStudentsReport: React.FC = () => {
                                         </button>
                                     )
                                 },
+                                ...(() => {
+                                    const rl = getStudentReminderLabel(s.id, state.invoices);
+                                    return rl ? [{ label: "🔔 Nhắc gần nhất", value: rl }] : [];
+                                })(),
                             ]}
                             actions={!isViewer ? (
                                 <div className="flex items-center gap-1">

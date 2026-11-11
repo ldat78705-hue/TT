@@ -917,6 +917,12 @@ export const StudentsScreen: React.FC = () => {
                                 <p className={`font-bold text-base ${student.balance < 0 ? 'text-red-500' : 'text-green-600'}`}>
                                     {student.balance.toLocaleString('vi-VN')} ₫
                                 </p>
+                                {(() => {
+                                    if (student.balance >= 0) return null;
+                                    const label = getStudentReminderLabel(student.id, state.invoices);
+                                    if (!label) return null;
+                                    return <span className="inline-block mt-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 font-medium">🔔 {label}</span>;
+                                })()}
                             </div>
                         </div>
 

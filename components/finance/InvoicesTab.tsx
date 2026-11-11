@@ -646,6 +646,10 @@ export const InvoicesTab: React.FC = () => {
                         details={[
                             { label: "Mã HĐ", value: inv.id },
                             { label: "Số tiền", value: `${inv.amount.toLocaleString('vi-VN')} ₫` },
+                            ...(inv.status === 'UNPAID' ? (() => {
+                                const rl = getStudentReminderLabel(inv.studentId, state.invoices);
+                                return rl ? [{ label: "🔔 Nhắc gần nhất", value: rl }] : [];
+                            })() : []),
                         ]}
                         status={{
                             text: inv.status,
