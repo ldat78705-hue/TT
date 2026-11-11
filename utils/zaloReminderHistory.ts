@@ -96,8 +96,10 @@ export function getLastReminder(studentId: string): ZaloReminderEntry | null {
 export function wasRemindedToday(studentId: string): boolean {
     const last = getLastReminder(studentId);
     if (!last) return false;
-    const today = new Date().toISOString().slice(0, 10);
-    return last.sentAt.slice(0, 10) === today;
+    const vnFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }); // YYYY-MM-DD
+    const sentDay = vnFormatter.format(new Date(last.sentAt));
+    const today = vnFormatter.format(new Date());
+    return sentDay === today;
 }
 
 /**
@@ -107,18 +109,34 @@ export function wasRemindedToday(studentId: string): boolean {
 export function formatReminderDate(isoDate: string): string {
     const sentDate = new Date(isoDate);
     const now = new Date();
-    const diffMs = now.getTime() - sentDate.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     
-    if (diffDays === 0) {
-        return `Hôm nay ${sentDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`;
-    } else if (diffDays === 1) {
-        return 'Hôm qua';
-    } else if (diffDays <= 7) {
-        return `${diffDays} ngày trước`;
-    } else {
-        return sentDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+    // So sánh theo NGÀY LỊCH (Vietnam timezone), không theo khoảng cách 24h
+    const vnFormatter = new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit' });
+    const sentDayStr = vnFormatter.format(sentDate); // "11/11/2026"
+    const todayStr = vnFormatter.format(now);
+    
+    if (sentDayStr === todayStr) {
+        return `Hôm nay ${sentDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' })}`;
     }
+    
+    // Check yesterday: tạo ngày hôm qua
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = vnFormatter.format(yesterday);
+    
+    if (sentDayStr === yesterdayStr) {
+        return `Hôm qua ${sentDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' })}`;
+    }
+    
+    // Tính số ngày chênh lệch theo lịch
+    const sentMidnight = new Date(sentDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' })); // YYYY-MM-DD
+    const todayMidnight = new Date(now.toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }));
+    const diffDays = Math.round((todayMidnight.getTime() - sentMidnight.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays <= 7) {
+        return `${diffDays} ngày trước`;
+    }
+    return sentDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' });
 }
 
 /**
